@@ -1,7 +1,14 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": ["PORT", "DATABASE_URL", "NODE_ENV", "RUNNER_BASE_URL", "RUNNER_SHARED_SECRET"],
+  "globalEnv": [
+    "PORT",
+    "DATABASE_URL",
+    "NODE_ENV",
+    "RUNNER_BASE_URL",
+    "RUNNER_SHARED_SECRET",
+    "API_CALLBACK_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "db:generate"],

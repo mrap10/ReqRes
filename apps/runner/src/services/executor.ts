@@ -3,6 +3,7 @@ import { createTempDir } from "../utils/tempDir.js";
 import path from "path";
 import fs from "fs/promises";
 import { cleanupDir } from "../utils/cleanup.js";
+import axios from "axios";
 
 export async function runExecution(payload: ExecutionRequest): Promise<ExecuteResponse> {
   const start = Date.now();
@@ -20,7 +21,7 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
 
     const results = [{ name: "Health Check", passed: true }];
 
-    return {
+    const response: ExecuteResponse = {
       submissionId: payload.submissionId,
       status: "PASSED",
       results,
@@ -28,14 +29,30 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
       stdout: "Simulation complete.",
       stderr: "",
     };
+
+    await axios.post(process.env.API_CALLBACK_URL!, response, {
+      headers: {
+        "x-runner-secret": process.env.RUNNER_SHARED_SECRET!,
+      },
+    });
+
+    return response;
   } catch (error) {
-    return {
+    const response: ExecuteResponse = {
       submissionId: payload.submissionId,
       status: "ERROR",
       results: [],
       durationMs: Date.now() - start,
       stderr: String(error),
     };
+
+    await axios.post(process.env.API_CALLBACK_URL!, response, {
+      headers: {
+        "x-runner-secret": process.env.RUNNER_SHARED_SECRET!,
+      },
+    });
+
+    return response;
   } finally {
     await cleanupDir(workspace);
   }

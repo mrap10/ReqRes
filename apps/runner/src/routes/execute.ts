@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { runExecution } from "../services/executor.js";
+import { requireRunnerSecret } from "../middleware/auth.js";
 
 export const executeRouter = Router();
 
@@ -20,7 +21,7 @@ const ExecuteSchema = z.object({
   }),
 });
 
-executeRouter.post("/", async (req, res) => {
+executeRouter.post("/", requireRunnerSecret, async (req, res) => {
   const parseResult = ExecuteSchema.safeParse(req.body);
 
   if (!parseResult.success) {
