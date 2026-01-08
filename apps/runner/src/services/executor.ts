@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs/promises";
 import { cleanupDir } from "../utils/cleanup.js";
 import axios from "axios";
+import { runDocker } from "./dockerRun.js";
 
 export async function runExecution(payload: ExecutionRequest): Promise<ExecuteResponse> {
   const start = Date.now();
@@ -16,15 +17,12 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
       await fs.writeFile(fullPath, content, "utf-8");
     }
 
-    // stubbed for now
-    await new Promise((r) => setTimeout(r, 500));
-
-    const results = [{ name: "Health Check", passed: true }];
+    const output = await runDocker(workspace, payload.testConfig.timeoutMs);
 
     const response: ExecuteResponse = {
       submissionId: payload.submissionId,
       status: "PASSED",
-      results,
+      results: parseTestOutput(output),
       durationMs: Date.now() - start,
       stdout: "Simulation complete.",
       stderr: "",
@@ -56,4 +54,10 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
   } finally {
     await cleanupDir(workspace);
   }
+}
+
+function parseTestOutput(output: { stdout: string; stderr: string }): ExecuteResponse["results"] {
+  // just a placeholder implementation, should parse actual test results
+  const hasOutput = output.stdout.length > 0 || output.stderr.length > 0;
+  return hasOutput ? [{ name: "sample", passed: true, error: output.stdout }] : [];
 }

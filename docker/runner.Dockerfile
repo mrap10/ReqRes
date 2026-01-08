@@ -6,6 +6,6 @@ COPY . .
 
 RUN npm install
 
-CMD ["node", "dist/index.js"]
+CMD ["npm", "test", "--", "--runInBand"]
 
 # todo: will touch down here after some progress to /apps
