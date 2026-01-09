@@ -3,7 +3,7 @@ import { executeRouter } from "./src/routes/execute.js";
 
 const PORT = process.env.PORT;
 
-const app = express();
+export const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/internal/execute", executeRouter);

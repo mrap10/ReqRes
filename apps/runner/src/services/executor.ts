@@ -15,6 +15,12 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
       const fullPath = path.join(workspace, filePath);
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.writeFile(fullPath, content, "utf-8");
+
+      await fs.mkdir(path.join(workspace, "tests"), { recursive: true });
+      await fs.copyFile(
+        path.join(__dirname, "../../tests/health-check/health.test.ts"),
+        path.join(workspace, "tests/health.test.ts")
+      );
     }
 
     const output = await runDocker(workspace, payload.testConfig.timeoutMs);

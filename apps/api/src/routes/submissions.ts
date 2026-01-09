@@ -14,13 +14,15 @@ declare module "express-serve-static-core" {
 const router = Router();
 
 const CreateSubmissionSchema = z.object({
-  problemId: z.uuid(),
+  problemId: z.cuid(),
   code: z.object({
     files: z.record(z.string(), z.string()),
   }),
 });
 
 router.post("/", async (req, res) => {
+  console.log("Received request body:", JSON.stringify(req.body, null, 2));
+
   const parseResult = CreateSubmissionSchema.safeParse(req.body);
 
   if (!parseResult.success) {
@@ -29,11 +31,11 @@ router.post("/", async (req, res) => {
       .json({ error: "Invalid submission payload", details: parseResult.error.flatten() });
   }
 
-  const userId = req.user.id; // assuming req.user is populated by authentication middleware
+  const userId = req.user?.id || "6bdee8fd-e5d1-44d6-80c1-00db5a7fc86c"; // temporary fallback for testing
   const { problemId, code } = parseResult.data;
 
   const problem = await prisma.problem.findFirst({
-    where: { id: problemId, isActive: true },
+    where: { id: problemId, isPublished: true },
     include: { testConfig: true },
   });
 
@@ -84,6 +86,29 @@ router.post("/", async (req, res) => {
   res.json({
     submissionId: submission.id,
     status: "RUNNING",
+  });
+});
+
+router.get("/:id", async (req, res) => {
+  const submissionId = req.params.id;
+
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+  });
+
+  if (!submission) {
+    return res.status(404).json({ error: "Submission not found" });
+  }
+
+  res.json({
+    id: submission.id,
+    problemId: submission.problemId,
+    userId: submission.userId,
+    status: submission.status,
+    durationMs: submission.durations,
+    output: submission.output,
+    createdAt: submission.createdAt,
+    updatedAt: submission.updatedAt,
   });
 });
 
