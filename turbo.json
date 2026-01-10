@@ -7,7 +7,8 @@
     "NODE_ENV",
     "RUNNER_BASE_URL",
     "RUNNER_SHARED_SECRET",
-    "API_CALLBACK_URL"
+    "API_CALLBACK_URL",
+    "JWT_SECRET"
   ],
   "tasks": {
     "build": {

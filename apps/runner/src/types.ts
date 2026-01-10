@@ -2,6 +2,7 @@ export type ExecutionRequest = {
   submissionId: string;
   problem: {
     id: string;
+    slug: string;
     submissionType: "EXPRESS_API";
   };
   codeBundle: {

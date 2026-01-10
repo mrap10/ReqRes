@@ -9,6 +9,11 @@ const ExecuteSchema = z.object({
   submissionId: z.uuid(),
   problem: z.object({
     id: z.uuid(),
+    slug: z
+      .string()
+      .min(1)
+      .max(100)
+      .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
     submissionType: z.literal("EXPRESS_API"),
   }),
   codeBundle: z.object({

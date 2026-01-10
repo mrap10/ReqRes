@@ -6,6 +6,44 @@ import { cleanupDir } from "../utils/cleanup.js";
 import axios from "axios";
 import { runDocker } from "./dockerRun.js";
 
+const TESTS_BASE_DIR = path.join(__dirname, "../../tests");
+
+// whitelisting for now (will replace it with dynamic check later in v1)
+const ALLOWED_PROBLEM_SLUGS = new Set([
+  "health-check",
+  "jwt-auth",
+  // new problem slugs here
+]);
+
+async function copyTestFiles(problemSlug: string, workspace: string): Promise<void> {
+  if (!ALLOWED_PROBLEM_SLUGS.has(problemSlug)) {
+    throw new Error(`Unknown problem slug: ${problemSlug}`);
+  }
+
+  const sanitizedSlug = path.basename(problemSlug);
+  const testSourceDir = path.join(TESTS_BASE_DIR, sanitizedSlug);
+  const testDestDir = path.join(workspace, "tests");
+
+  try {
+    await fs.access(testSourceDir);
+  } catch {
+    throw new Error(`Test suite not found for problem: ${problemSlug}`);
+  }
+
+  await fs.mkdir(testDestDir, { recursive: true });
+
+  const files = await fs.readdir(testSourceDir);
+  for (const file of files) {
+    const srcPath = path.join(testSourceDir, file);
+    const destPath = path.join(testDestDir, file);
+
+    const stat = await fs.stat(srcPath);
+    if (stat.isFile()) {
+      await fs.copyFile(srcPath, destPath);
+    }
+  }
+}
+
 export async function runExecution(payload: ExecutionRequest): Promise<ExecuteResponse> {
   const start = Date.now();
   const workspace = await createTempDir();
@@ -15,13 +53,9 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
       const fullPath = path.join(workspace, filePath);
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.writeFile(fullPath, content, "utf-8");
-
-      await fs.mkdir(path.join(workspace, "tests"), { recursive: true });
-      await fs.copyFile(
-        path.join(__dirname, "../../tests/health-check/health.test.ts"),
-        path.join(workspace, "tests/health.test.ts")
-      );
     }
+
+    await copyTestFiles(payload.problem.slug, workspace);
 
     const output = await runDocker(workspace, payload.testConfig.timeoutMs);
 

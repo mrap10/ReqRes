@@ -12,6 +12,10 @@ app.get("/", (_, res) => {
   res.json({ status: "runner ok" });
 });
 
+app.get("/health", (_, res) => {
+  res.json({ status: "healthy" });
+});
+
 app.listen(PORT, () => {
   console.log(`Runner server is running on port ${PORT}: http://localhost:${PORT}`);
 });

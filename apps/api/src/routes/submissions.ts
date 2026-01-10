@@ -21,8 +21,6 @@ const CreateSubmissionSchema = z.object({
 });
 
 router.post("/", async (req, res) => {
-  console.log("Received request body:", JSON.stringify(req.body, null, 2));
-
   const parseResult = CreateSubmissionSchema.safeParse(req.body);
 
   if (!parseResult.success) {
@@ -59,6 +57,7 @@ router.post("/", async (req, res) => {
         submissionId: submission.id,
         problem: {
           id: problem.id,
+          slug: problem.slug,
           submissionType: problem.submissionType,
         },
         codeBundle: code,
