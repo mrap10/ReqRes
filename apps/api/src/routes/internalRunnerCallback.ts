@@ -15,15 +15,15 @@ router.post("/result", async (req, res) => {
     where: { id: submissionId },
     data: {
       status,
-      durationMs,
-      output: stderr || stdout,
+      durations: durationMs,
+      output: stderr || stdout || "Execution completed",
     },
   });
 
   await prisma.executionResult.create({
     data: {
       submissionId,
-      rawResult: JSON.stringify({ results, stdout, stderr }),
+      rawResult: JSON.stringify({ results, stdout, stderr, durationMs }),
     },
   });
 

@@ -6,9 +6,9 @@ import { requireRunnerSecret } from "../middleware/auth.js";
 export const executeRouter = Router();
 
 const ExecuteSchema = z.object({
-  submissionId: z.uuid(),
+  submissionId: z.string().regex(/^c[a-z0-9]{24}$/, "Invalid CUID format"),
   problem: z.object({
-    id: z.uuid(),
+    id: z.string().regex(/^c[a-z0-9]{24}$/, "Invalid CUID format"),
     slug: z
       .string()
       .min(1)

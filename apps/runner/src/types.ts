@@ -29,3 +29,27 @@ export type ExecuteResponse = {
   stderr?: string;
   stdout?: string;
 };
+
+export type JestJSON = {
+  success: boolean;
+  numTotalTests: number;
+  numPassedTests: number;
+  numFailedTests: number;
+  numPendingTests: number;
+  testResults: Array<{
+    name: string;
+    status: "passed" | "failed";
+    assertionResults: Array<{
+      ancestorTitles: string[];
+      title: string;
+      status: "passed" | "failed" | "pending" | "skipped";
+      fullName: string;
+      failureMessages: string[];
+      duration?: number;
+      location?: {
+        line: number;
+        column: number;
+      };
+    }>;
+  }>;
+};
