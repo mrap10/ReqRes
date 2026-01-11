@@ -26,7 +26,7 @@ async function main() {
       isPublished: true,
       testConfig: {
         create: {
-          timeoutMs: 3000,
+          timeoutMs: 30000,
           memoryMb: 256,
         },
       },
@@ -103,7 +103,7 @@ async function main() {
       isPublished: true,
       testConfig: {
         create: {
-          timeoutMs: 5000,
+          timeoutMs: 30000,
           memoryMb: 256,
         },
       },

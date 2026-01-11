@@ -1,6 +1,6 @@
-import request from "supertest";
-import jwt from "jsonwebtoken";
-import { app } from "../../index.js";
+const request = require("supertest");
+const jwt = require("jsonwebtoken");
+const { app } = require("../../app");
 
 describe("JWT Authentication Middleware", () => {
   it("rejects request with no token", async () => {
@@ -17,7 +17,7 @@ describe("JWT Authentication Middleware", () => {
   it("accepts valid token", async () => {
     const token = jwt.sign(
       { id: "user-123", email: "test@routepress.dev" },
-      process.env.JWT_SECRET!
+      process.env.JWT_SECRET
     );
 
     const res = await request(app)

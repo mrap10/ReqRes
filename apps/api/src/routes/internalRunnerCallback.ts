@@ -4,6 +4,8 @@ import { Router } from "express";
 const router = Router();
 
 router.post("/result", async (req, res) => {
+  console.log("runner callback raw body:", JSON.stringify(req.body, null, 2));
+
   const secret = req.headers["x-runner-secret"];
   if (secret !== process.env.RUNNER_SHARED_SECRET) {
     return res.status(403).json({ error: "Forbidden" });
@@ -16,12 +18,16 @@ router.post("/result", async (req, res) => {
     data: {
       status,
       durations: durationMs,
-      output: stderr || stdout || "Execution completed",
+      output: status === "PASSED" ? stdout : stderr || stdout || "Execution failed!",
     },
   });
 
-  await prisma.executionResult.create({
-    data: {
+  await prisma.executionResult.upsert({
+    where: { submissionId },
+    update: {
+      rawResult: JSON.stringify({ results, stdout, stderr, durationMs }),
+    },
+    create: {
       submissionId,
       rawResult: JSON.stringify({ results, stdout, stderr, durationMs }),
     },

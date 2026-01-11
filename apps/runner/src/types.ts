@@ -36,6 +36,9 @@ export type JestJSON = {
   numPassedTests: number;
   numFailedTests: number;
   numPendingTests: number;
+  numTotalTestSuites?: number;
+  numPassedTestSuites?: number;
+  numFailedTestSuites?: number;
   testResults: Array<{
     name: string;
     status: "passed" | "failed";

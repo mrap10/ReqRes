@@ -1,28 +1,32 @@
 import { ExecuteResponse, ExecutionRequest, JestJSON } from "../types.js";
 import { createTempDir } from "../utils/tempDir.js";
 import path from "path";
+import { fileURLToPath } from "url";
 import fs from "fs/promises";
 import { cleanupDir } from "../utils/cleanup.js";
 import axios from "axios";
 import { runDocker } from "./dockerRun.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const TESTS_BASE_DIR = path.join(__dirname, "../../tests");
 
 // whitelisting for now (will replace it with dynamic check later in v1)
 const ALLOWED_PROBLEM_SLUGS = new Set([
   "health-check",
-  "jwt-auth",
+  "jwt-authentication-express",
   // new problem slugs here
 ]);
 
-async function copyTestFiles(problemSlug: string, workspace: string): Promise<void> {
+async function copyTestFiles(problemSlug: string, workspace: string): Promise<boolean> {
   if (!ALLOWED_PROBLEM_SLUGS.has(problemSlug)) {
     throw new Error(`Unknown problem slug: ${problemSlug}`);
   }
 
   const sanitizedSlug = path.basename(problemSlug);
   const testSourceDir = path.join(TESTS_BASE_DIR, sanitizedSlug);
-  const testDestDir = path.join(workspace, "tests");
+  const testDestDir = path.join(workspace, "tests", sanitizedSlug);
 
   try {
     await fs.access(testSourceDir);
@@ -32,6 +36,7 @@ async function copyTestFiles(problemSlug: string, workspace: string): Promise<vo
 
   await fs.mkdir(testDestDir, { recursive: true });
 
+  let hasSetupFile = false;
   const files = await fs.readdir(testSourceDir);
   for (const file of files) {
     const srcPath = path.join(testSourceDir, file);
@@ -40,8 +45,13 @@ async function copyTestFiles(problemSlug: string, workspace: string): Promise<vo
     const stat = await fs.stat(srcPath);
     if (stat.isFile()) {
       await fs.copyFile(srcPath, destPath);
+      if (file === "setup.js") {
+        hasSetupFile = true;
+      }
     }
   }
+
+  return hasSetupFile;
 }
 
 export async function runExecution(payload: ExecutionRequest): Promise<ExecuteResponse> {
@@ -50,6 +60,9 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
 
   try {
     for (const [filePath, content] of Object.entries(payload.codeBundle.files)) {
+      if (filePath.endsWith(".ts")) {
+        throw new Error("TypeScript files are not supported in this runner version.");
+      }
       const fullPath = path.join(workspace, filePath);
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.writeFile(fullPath, content, "utf-8");
@@ -59,23 +72,12 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
     const packageJson = {
       name: "user-submission",
       version: "1.0.0",
-      type: "module",
       scripts: {
-        test: "jest",
+        test: "jest --runInBand",
       },
       dependencies: {
         express: "^5.2.1",
         jsonwebtoken: "^9.0.2",
-      },
-      devDependencies: {
-        "@types/express": "^5.0.0",
-        "@types/jest": "^30.0.0",
-        "@types/jsonwebtoken": "^9.0.7",
-        "@types/supertest": "^6.0.3",
-        jest: "^30.2.0",
-        supertest: "^7.2.2",
-        "ts-node": "^10.9.2",
-        typescript: "^5.9.2",
       },
     };
     await fs.writeFile(
@@ -84,36 +86,16 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
       "utf-8"
     );
 
-    const jestConfig = `export default {
-  preset: 'ts-jest/presets/default-esm',
+    const hasSetupFile = await copyTestFiles(payload.problem.slug, workspace);
+
+    const jestConfig = `
+module.exports = {
   testEnvironment: 'node',
-  extensionsToTreatAsEsm: ['.ts'],
-  moduleNameMapper: {
-    '^(\\\\.{1,2}/.*)\\\\.js$': '$1',
-  },
-  transform: {
-    '^.+\\\\.tsx?$': ['ts-node', { useESM: true }],
-  },
-};`;
+  testMatch: ['<rootDir>/tests/**/*.test.js'],
+  ${hasSetupFile ? `setupFilesAfterEnv: ['<rootDir>/tests/${payload.problem.slug}/setup.js'],` : ""}
+};
+`;
     await fs.writeFile(path.join(workspace, "jest.config.js"), jestConfig, "utf-8");
-
-    const tsConfig = {
-      compilerOptions: {
-        target: "ES2022",
-        module: "ESNext",
-        moduleResolution: "bundler",
-        esModuleInterop: true,
-        strict: true,
-        skipLibCheck: true,
-      },
-    };
-    await fs.writeFile(
-      path.join(workspace, "tsconfig.json"),
-      JSON.stringify(tsConfig, null, 2),
-      "utf-8"
-    );
-
-    await copyTestFiles(payload.problem.slug, workspace);
 
     const jestResults = await runDocker(workspace, payload.testConfig.timeoutMs);
     const parsedResults = parseTestOutput(jestResults);
