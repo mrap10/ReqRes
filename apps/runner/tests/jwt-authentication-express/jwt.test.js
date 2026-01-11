@@ -15,10 +15,7 @@ describe("JWT Authentication Middleware", () => {
   });
 
   it("accepts valid token", async () => {
-    const token = jwt.sign(
-      { id: "user-123", email: "test@routepress.dev" },
-      process.env.JWT_SECRET
-    );
+    const token = jwt.sign({ id: "user-123", email: "test@reqres.site" }, process.env.JWT_SECRET);
 
     const res = await request(app)
       .get("/profile")
@@ -27,7 +24,7 @@ describe("JWT Authentication Middleware", () => {
 
     expect(res.body).toEqual({
       id: "user-123",
-      email: "test@routepress.dev",
+      email: "test@reqres.site",
     });
   });
 });
