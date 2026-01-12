@@ -2,11 +2,11 @@ import { prisma } from "../src/client.js";
 
 async function seedUser() {
   await prisma.user.upsert({
-    where: { email: "dev@routepress.local" },
+    where: { email: "dev@reqres.site" },
     update: {},
     create: {
       id: "6bdee8fd-e5d1-44d6-80c1-00db5a7fc86c",
-      email: "dev@routepress.local",
+      email: "dev@reqres.site",
       password: "dev-only",
       username: "devuser",
     },
@@ -16,17 +16,17 @@ async function seedUser() {
 
 async function seedHealthCheck() {
   const existing = await prisma.problem.findUnique({
-    where: { slug: "health-check-api" },
+    where: { slug: "health-check" },
   });
 
   if (existing) {
-    console.log("⊘ health-check-api already exists, skipping");
+    console.log("⊘ health-check already exists, skipping");
     return;
   }
 
   await prisma.problem.create({
     data: {
-      slug: "health-check-api",
+      slug: "health-check",
       title: "Health Check API",
       description:
         "Create a simple health check API endpoint that returns a 200 status code with a JSON response indicating the service is healthy.",
@@ -38,12 +38,12 @@ async function seedHealthCheck() {
                 Body: { "status": "healthy" }
             `,
       starterCode: `
-                import express from 'express';
-
-                export const app = express();
+                const express = require('express');
+                const app = express();
                 
                 // Your code here
 
+                module.exports = { app };
             `,
       submissionType: "EXPRESS_API",
       isPublished: true,
@@ -115,13 +115,13 @@ async function seedJwtAuth() {
         - ✓ jsonwebtoken allowed
       `,
       starterCode: `
-        import express from 'express';
-        import jwt from 'jsonwebtoken';
-
-        export const app = express();
+        const express = require('express');
+        const jwt = require('jsonwebtoken');
+        const app = express();
 
         // Your code here
 
+        module.exports = { app };
       `,
       submissionType: "EXPRESS_API",
       isPublished: true,
@@ -199,10 +199,10 @@ async function seedCrudInMemory() {
         - ✓ Generate unique IDs (UUID recommended)
       `,
       starterCode: `
-        import express from 'express';
-        import { randomUUID } from 'crypto';
+        const express = require('express');
+        const { randomUUID } = require('crypto');
 
-        export const app = express();
+        const app = express();
         app.use(express.json());
 
         // In-memory store
@@ -210,6 +210,7 @@ async function seedCrudInMemory() {
 
         // Your code here
 
+        module.exports = { app };
       `,
       submissionType: "EXPRESS_API",
       isPublished: true,
@@ -285,11 +286,11 @@ async function seedZodValidation() {
         - ✓ Export Express \`app\`
       `,
       starterCode: `
-        import express from 'express';
-        import { z } from 'zod';
-        import { randomUUID } from 'crypto';
+        const express = require('express');
+        const { z } = require('zod');
+        const { randomUUID } = require('crypto');
 
-        export const app = express();
+        const app = express();
         app.use(express.json());
 
         // In-memory store
@@ -299,6 +300,7 @@ async function seedZodValidation() {
 
         // Your code here
 
+        module.exports = { app };
       `,
       submissionType: "EXPRESS_API",
       isPublished: true,
@@ -313,6 +315,75 @@ async function seedZodValidation() {
   console.log("✓ Seeded zod-validation");
 }
 
+async function seedRateLimitingMiddleware() {
+  const existing = await prisma.problem.findUnique({
+    where: { slug: "rate-limiting-middleware" },
+  });
+
+  if (existing) {
+    console.log("⊘ rate-limiting-middleware already exists, skipping");
+    return;
+  }
+
+  await prisma.problem.create({
+    data: {
+      slug: "rate-limiting-middleware",
+      title: "Rate Limiting Middleware",
+      description: `
+        Implement rate limiting middleware for an Express application.
+
+        Your task is to create middleware that limits the number of requests a client
+        can make to the server within a specified time window. This is essential for
+        preventing abuse and ensuring fair usage of the API.
+
+        The middleware should track requests based on the client's IP address and
+        enforce a limit of **3 requests per 10 seconds** per IP. If a client exceeds this limit, the
+        server should respond with a **429 Too Many Requests** status code.
+
+        You may use in-memory storage to track request counts, but be mindful that
+        this data will be lost when the server restarts.
+      `,
+      difficulty: "MEDIUM",
+      track: "express",
+      instructions: `
+        Implement rate limiting middleware for an Express app.
+
+        ### Requirements
+        - Limit each client (by IP) to 3 requests per 10 seconds
+        - Apply middleware globally
+        - Respond with 429 Too Many Requests when limit is exceeded
+
+        ### Constraints
+        - ✓ Use in-memory storage for tracking
+        - ⊘ No \`app.listen()\`
+        - ✓ Export Express \`app\`
+
+      `,
+      starterCode: `
+        const express = require('express');
+        const app = express();
+
+        // Your code here
+
+        app.get('/', (req, res) => {
+          res.send('Hello, world!');
+        });
+
+        module.exports = { app };
+      `,
+      submissionType: "EXPRESS_API",
+      isPublished: true,
+      testConfig: {
+        create: {
+          timeoutMs: 60000,
+          memoryMb: 256,
+        },
+      },
+    },
+  });
+  console.log("✓ Seeded rate-limiting-middleware");
+}
+
 async function main() {
   console.log("Starting database seeding...\n");
 
@@ -322,6 +393,7 @@ async function main() {
   await seedJwtAuth();
   await seedCrudInMemory();
   await seedZodValidation();
+  await seedRateLimitingMiddleware();
 
   console.log("\nSeeding completed successfully!");
 }

@@ -16,7 +16,10 @@ const TESTS_BASE_DIR = path.join(__dirname, "../../tests");
 const ALLOWED_PROBLEM_SLUGS = new Set([
   "health-check",
   "jwt-authentication-express",
-  // new problem slugs here
+  "health-check-api",
+  "crud-in-memory-store",
+  "zod-validation",
+  "rate-limiting-middleware",
 ]);
 
 async function copyTestFiles(problemSlug: string, workspace: string): Promise<boolean> {

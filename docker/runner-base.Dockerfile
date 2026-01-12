@@ -8,7 +8,8 @@ RUN echo '{ \
     "express": "^5.2.1", \
     "jest": "^30.0.0", \
     "supertest": "^7.2.2", \
-    "jsonwebtoken": "^9.0.2" \
+    "jsonwebtoken": "^9.0.2", \
+    "zod": "^4.3.5" \
   } \
 }' > package.json
 

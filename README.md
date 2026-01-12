@@ -213,8 +213,4 @@ curl http://localhost:4000/submissions/<submission-id>
 
 ---
 
-todo: haven't tested new problems, prolly 99% will work tho, too tired cuz of that weirdass docker error taking a whole day to fix lol
-
----
-
 Will update this README as the project evolves.

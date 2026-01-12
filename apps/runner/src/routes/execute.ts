@@ -21,7 +21,7 @@ const ExecuteSchema = z.object({
     entryPoint: z.string(),
   }),
   testConfig: z.object({
-    timeoutMs: z.number().min(100).max(30000),
+    timeoutMs: z.number().min(100).max(60000),
     memoryMb: z.number().min(16).max(2048),
   }),
 });

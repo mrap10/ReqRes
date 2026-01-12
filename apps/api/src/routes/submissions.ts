@@ -74,7 +74,7 @@ router.post("/", async (req, res) => {
         headers: {
           "x-runner-secret": process.env.RUNNER_SHARED_SECRET,
         },
-        timeout: 30000,
+        timeout: 60000,
       }
     )
     .catch((err) => {
