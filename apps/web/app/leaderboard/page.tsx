@@ -1,3 +1,4 @@
+import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
 
 export default function LeaderboardPage() {
@@ -19,6 +20,7 @@ export default function LeaderboardPage() {
         </div>
         <div>{/* Leaderboard content goes here */}</div>
       </main>
+      <Footer />
     </div>
   );
 }

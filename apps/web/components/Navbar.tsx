@@ -27,7 +27,7 @@ export default function Navbar() {
   return (
     <div
       className={clsx(
-        "fixed top-2 left-0 w-full border-b shadow-sm z-50",
+        "fixed top-0 left-0 py-2 w-full border-b shadow-sm z-50",
         scrolled
           ? "bg-zinc-950/90 backdrop-blur-md border-b border-white/5"
           : "bg-transparent border-transparent"

@@ -1,3 +1,4 @@
+import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
 
 export default function FeedbackPage() {
@@ -19,6 +20,7 @@ export default function FeedbackPage() {
         </div>
         <div>{/* Feedback content goes here */}</div>
       </main>
+      <Footer />
     </div>
   );
 }

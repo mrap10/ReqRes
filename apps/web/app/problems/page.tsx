@@ -1,4 +1,10 @@
+"use client";
+
+import { Search } from "lucide-react";
 import Navbar from "../../components/Navbar";
+import ProblemCard from "../../components/ProblemCard";
+import Filters from "../../components/Filters";
+import Footer from "../../components/Footer";
 
 export default function ProblemPage() {
   return (
@@ -27,7 +33,37 @@ export default function ProblemPage() {
             </p>
           </div>
         </div>
+
+        <div className="flex flex-col md:flex-row gap-6 mb-8 items-start md:items-center justify-between">
+          <div className="relative w-full md:w-96 group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="size-5 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search problems, tags..."
+              className="block w-full pl-10 pr-3 py-2.5 border border-zinc-800 rounded-xl leading-5 sm:text-sm bg-zinc-900 text-zinc-300 placeholder-zinc-500 focus:outline-none focus:bg-zinc-900 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+            />
+          </div>
+
+          <Filters currentFilter={"all"} setFilter={() => {}} />
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+          <ProblemCard />
+        </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
