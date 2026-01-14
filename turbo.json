@@ -8,7 +8,8 @@
     "RUNNER_BASE_URL",
     "RUNNER_SHARED_SECRET",
     "API_CALLBACK_URL",
-    "JWT_SECRET"
+    "JWT_SECRET",
+    "WEB_BASE_URL"
   ],
   "tasks": {
     "build": {

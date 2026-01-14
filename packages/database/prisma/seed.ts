@@ -5,10 +5,11 @@ async function seedUser() {
     where: { email: "dev@reqres.site" },
     update: {},
     create: {
-      id: "6bdee8fd-e5d1-44d6-80c1-00db5a7fc86c",
+      id: "cmke8l4hl000304ju6o218tod",
       email: "dev@reqres.site",
       password: "dev-only",
       username: "devuser",
+      xp: 1000,
     },
   });
   console.log("✓ Seeded dev user");
@@ -30,8 +31,9 @@ async function seedHealthCheck() {
       title: "Health Check API",
       description:
         "Create a simple health check API endpoint that returns a 200 status code with a JSON response indicating the service is healthy.",
+      shortDescription: "Create a health check endpoint that returns service status.",
       difficulty: "EASY",
-      track: "express",
+      track: "ROUTING",
       instructions: `
                 Create a GET /health endpoint that responds with:
                 Status: 200
@@ -46,6 +48,7 @@ async function seedHealthCheck() {
                 module.exports = { app };
             `,
       submissionType: "EXPRESS_API",
+      tags: ["routing", "basics"],
       isPublished: true,
       testConfig: {
         create: {
@@ -71,7 +74,7 @@ async function seedJwtAuth() {
   await prisma.problem.create({
     data: {
       slug: "jwt-authentication-express",
-      title: "JWT Authentication Middleware",
+      title: "JWT Auth Middleware",
       description: `
         Implement JWT-based authentication middleware for an Express application.
 
@@ -92,8 +95,9 @@ async function seedJwtAuth() {
         use any authentication frameworks like Passport.js. Focus on using only
         Express and jsonwebtoken for this task.
       `,
+      shortDescription: "Implement JWT authentication middleware in Express.",
       difficulty: "MEDIUM",
-      track: "express",
+      track: "MIDDLEWARE",
       instructions: `
         Implement JWT-based authentication in an Express app.
 
@@ -124,6 +128,7 @@ async function seedJwtAuth() {
         module.exports = { app };
       `,
       submissionType: "EXPRESS_API",
+      tags: ["middleware", "security", "jwt"],
       isPublished: true,
       testConfig: {
         create: {
@@ -164,8 +169,9 @@ async function seedCrudInMemory() {
         Note: Data will be lost when the server restarts - this is expected behavior
         for an in-memory store.
       `,
+      shortDescription: "Build a CRUD API with in-memory data storage.",
       difficulty: "EASY",
-      track: "express",
+      track: "DATABASE",
       instructions: `
         Implement a CRUD API with in-memory storage.
 
@@ -213,6 +219,7 @@ async function seedCrudInMemory() {
         module.exports = { app };
       `,
       submissionType: "EXPRESS_API",
+      tags: ["crud", "in-memory", "basics"],
       isPublished: true,
       testConfig: {
         create: {
@@ -253,8 +260,9 @@ async function seedZodValidation() {
         The validated data should be stored in memory (similar to the CRUD problem) and
         returned with a generated ID upon successful creation.
       `,
+      shortDescription: "Implement request validation using Zod schemas.",
       difficulty: "EASY",
-      track: "express",
+      track: "MIDDLEWARE",
       instructions: `
         Implement Zod validation for user registration.
 
@@ -303,6 +311,7 @@ async function seedZodValidation() {
         module.exports = { app };
       `,
       submissionType: "EXPRESS_API",
+      tags: ["validation", "zod", "middleware"],
       isPublished: true,
       testConfig: {
         create: {
@@ -343,8 +352,9 @@ async function seedRateLimitingMiddleware() {
         You may use in-memory storage to track request counts, but be mindful that
         this data will be lost when the server restarts.
       `,
+      shortDescription: "Implement rate limiting middleware in Express.",
       difficulty: "MEDIUM",
-      track: "express",
+      track: "MIDDLEWARE",
       instructions: `
         Implement rate limiting middleware for an Express app.
 
@@ -372,6 +382,7 @@ async function seedRateLimitingMiddleware() {
         module.exports = { app };
       `,
       submissionType: "EXPRESS_API",
+      tags: ["middleware", "rate-limiting", "security"],
       isPublished: true,
       testConfig: {
         create: {

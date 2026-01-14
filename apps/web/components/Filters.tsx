@@ -1,4 +1,4 @@
-import { Server, ShieldCheck, Terminal, Zap } from "lucide-react";
+import { Database, Server, ShieldCheck, Terminal, Zap } from "lucide-react";
 
 interface FiltersProps {
   currentFilter: string;
@@ -11,6 +11,7 @@ export default function Filters({ currentFilter, setFilter }: FiltersProps) {
     { id: "routing", label: "Routing", icon: Server },
     { id: "middleware", label: "Middleware", icon: Zap },
     { id: "security", label: "Security", icon: ShieldCheck },
+    { id: "database", label: "Database", icon: Database },
   ];
 
   return (

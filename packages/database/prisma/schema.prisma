@@ -12,6 +12,7 @@ model User {
   email     String   @unique
   username  String   @unique
   password  String
+  xp        Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -30,17 +31,26 @@ enum SubmissionType {
   EXPRESS_API
 }
 
+enum ProblemTrack {
+  ROUTING
+  MIDDLEWARE
+  SECURITY
+  DATABASE
+}
+
 model Problem {
   id                 String     @id @default(cuid())
   slug               String     @unique
   title              String
   description        String     @db.Text
+  shortDescription   String     @db.Text
   difficulty         Difficulty
-  track              String
+  track              ProblemTrack
   instructions       String     @db.Text
   constraints        String?
   starterCode        String?    @db.Text
   submissionType     SubmissionType
+  tags               String[]   @default([])
   isPublished        Boolean    @default(false)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
@@ -80,9 +90,10 @@ model Submission {
   userId        String
   problemId     String
   codeBundle    String
-  status        String
+  status        SubmissionStatus @default(PENDING)
   output        String?
   durations     Int?
+  score         Int?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
