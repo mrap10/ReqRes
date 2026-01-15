@@ -1,26 +1,47 @@
-import Footer from "../../../components/Footer";
-import Navbar from "../../../components/Navbar";
+import ProblemHeader from "../../../components/ProblemHeader";
+import LeftSideProblemsPage from "../../../components/LeftSideProblemsPage";
+import { getProblemDetail } from "../../../actions";
+import Link from "next/link";
 
-export default async function Page({ params }: { params: { slug: string } }) {
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  return (
-    <div className="bg-zinc-950 min-h-screen text-slate-200 selection:bg-indigo-500/30 selection:text-indigo-200 font-sans">
-      <Navbar />
-      <main className="max-w-7xl mx-auto px-6 pt-24 pb-20">
-        <div className="mb-12 flex flex-row justify-between items-center gap-6">
-          <div className="max-w-5xl">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
-              View <span className="text-indigo-400">Problem</span>
-            </h1>
-            <p className="text-zinc-400 text-lg">Problem details for slug: {slug}</p>
+  const problemDetail = await getProblemDetail(slug);
+
+  if (!problemDetail) {
+    return (
+      <div className="flex flex-col h-screen bg-zinc-950 text-slate-200 font-sans overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+        <ProblemHeader title="Problem not found" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🔍</span>
+            </div>
+            <h3 className="text-lg font-medium text-white mb-2">Problem not found</h3>
+            <p className="text-zinc-500 mb-4">
+              The problem you&apos;re looking for doesn&apos;t exist.
+            </p>
+            <Link href="/problems" className="text-indigo-400 hover:text-indigo-300 font-medium">
+              ← Back to problems
+            </Link>
           </div>
         </div>
-        <div>{/* Other components for a problem goes here */}</div>
-      </main>
-      <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-zinc-950 text-slate-200 font-sans overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+      <ProblemHeader title={problemDetail.title} />
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-1/2 min-w-[400px] border-r border-zinc-800 flex flex-col bg-zinc-950/50">
+          <LeftSideProblemsPage problemDetails={problemDetail} />
+        </div>
+
+        <div className="w-1/2 flex flex-col bg-zinc-950">
+          <h1>here the editor ui will go</h1>
+        </div>
+      </div>
     </div>
   );
 }
-
-// maintaining layout consistency with other pages for now, but this page will have diff layout to other parent pages in future.
