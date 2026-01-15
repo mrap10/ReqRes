@@ -60,7 +60,8 @@ export type ProblemDetailDTO = {
   description: string;
   shortDescription: string;
   instructions: string;
-  constraints?: string;
+  constraints: string[];
+  examples?: Record<string, unknown>;
   starterCode?: string;
   difficulty: ProblemDifficulty;
   track: ProblemTrack;

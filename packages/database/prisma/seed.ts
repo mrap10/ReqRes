@@ -34,19 +34,33 @@ async function seedHealthCheck() {
       shortDescription: "Create a health check endpoint that returns service status.",
       difficulty: "EASY",
       track: "ROUTING",
-      instructions: `
-                Create a GET /health endpoint that responds with:
-                Status: 200
-                Body: { "status": "healthy" }
-            `,
-      starterCode: `
-                const express = require('express');
-                const app = express();
-                
-                // Your code here
+      instructions: `- Create a \`GET\` route at \`/health\`
+- Return a status code of \`200\`
+- Return a JSON body: \`{ "status": "healthy" }\``,
+      constraints: [
+        "The endpoint must be exactly '/health'",
+        "The HTTP method must be GET",
+        "Response must be valid JSON",
+        "Status code must be exactly 200",
+        "Response time < 50ms",
+      ],
+      examples: {
+        request: {
+          method: "GET",
+          url: "http://localhost:3000/health",
+          curl: "curl -X GET http://localhost:3000/health",
+        },
+        response: {
+          status: "HTTP/1.1 200 OK",
+          body: { status: "healthy" },
+        },
+      },
+      starterCode: `const express = require('express');
+const app = express();
 
-                module.exports = { app };
-            `,
+// TODO: Implement the health check endpoint here
+
+module.exports = { app };`,
       submissionType: "EXPRESS_API",
       tags: ["routing", "basics"],
       isPublished: true,
@@ -75,58 +89,52 @@ async function seedJwtAuth() {
     data: {
       slug: "jwt-authentication-express",
       title: "JWT Auth Middleware",
-      description: `
-        Implement JWT-based authentication middleware for an Express application.
-
-        Your task is to create an authentication middleware that verifies JWT tokens
-        provided in the \`Authorization\` header of incoming requests. The middleware
-        should protect a sample route \`GET /profile\`, allowing access only to requests
-        with valid tokens.
-
-        Use the \`jsonwebtoken\` package to handle token verification. The JWT secret
-        key should be retrieved from the environment variable \`JWT_SECRET\`.
-
-        If the token is missing or invalid, the middleware should respond with a 401
-        Unauthorized status. If the token is valid, the request should proceed to the
-        protected route, which will return a JSON object containing the user's profile
-        information extracted from the token.
-
-        Ensure your implementation does not include any hardcoded secrets and does not
-        use any authentication frameworks like Passport.js. Focus on using only
-        Express and jsonwebtoken for this task.
-      `,
+      description:
+        "Implement JWT-based authentication middleware for an Express application. Your task is to create an authentication middleware that verifies JWT tokens provided in the `Authorization` header of incoming requests. The middleware should protect a sample route `GET /profile`, allowing access only to requests with valid tokens.",
       shortDescription: "Implement JWT authentication middleware in Express.",
       difficulty: "MEDIUM",
       track: "MIDDLEWARE",
-      instructions: `
-        Implement JWT-based authentication in an Express app.
+      instructions: `### Requirements
+- Implement an authentication middleware
+- Protect a \`GET /profile\` route
+- Use JWT from \`Authorization: Bearer <token>\`
+- Verify token using \`process.env.JWT_SECRET\`
 
-        ### Requirements
-        - Implement an authentication middleware
-        - Protect a \`GET /profile\` route
-        - Use JWT from \`Authorization: Bearer <token>\`
-        - Verify token using \`process.env.JWT_SECRET\`
+### Expected Behavior
+- Missing or invalid token → \`401\` Unauthorized
+- Valid token → return user profile from decoded token`,
+      constraints: [
+        "No app.listen()",
+        "Export Express app",
+        "No hardcoded secrets",
+        "No Passport or auth frameworks",
+        "Use jsonwebtoken package",
+      ],
+      examples: {
+        request: {
+          method: "GET",
+          url: "http://localhost:3000/profile",
+          headers: { Authorization: "Bearer <your-jwt-token>" },
+          curl: 'curl -X GET http://localhost:3000/profile -H "Authorization: Bearer <token>"',
+        },
+        response: {
+          success: {
+            status: "HTTP/1.1 200 OK",
+            body: { id: "123", email: "user@example.com" },
+          },
+          error: {
+            status: "HTTP/1.1 401 Unauthorized",
+            body: { error: "Unauthorized" },
+          },
+        },
+      },
+      starterCode: `const express = require('express');
+const jwt = require('jsonwebtoken');
+const app = express();
 
-        ### Expected Behavior
-        - Missing or invalid token → 401 Unauthorized
-        - Valid token → return user profile
+// Your code here
 
-        ### Constraints
-        - ⊘ No \`app.listen()\`
-        - ✓ Export Express \`app\`
-        - ⊘ No hardcoded secrets
-        - ⊘ No Passport or auth frameworks
-        - ✓ jsonwebtoken allowed
-      `,
-      starterCode: `
-        const express = require('express');
-        const jwt = require('jsonwebtoken');
-        const app = express();
-
-        // Your code here
-
-        module.exports = { app };
-      `,
+module.exports = { app };`,
       submissionType: "EXPRESS_API",
       tags: ["middleware", "security", "jwt"],
       isPublished: true,
@@ -155,69 +163,76 @@ async function seedCrudInMemory() {
     data: {
       slug: "crud-in-memory-store",
       title: "CRUD In-Memory Store",
-      description: `
-        Build a complete CRUD API with an in-memory data store.
-
-        Your task is to implement a simple REST API that manages items stored in memory.
-        The API should support creating, reading, updating, and deleting items without
-        using any database or file system - all data should be stored in a JavaScript
-        array in memory.
-
-        Each item should have an \`id\` (string), \`name\` (string), and \`value\` (number).
-        The \`id\` should be automatically generated (you can use UUID or any unique string).
-
-        Note: Data will be lost when the server restarts - this is expected behavior
-        for an in-memory store.
-      `,
+      description:
+        "Build a complete CRUD API with an in-memory data store. Your task is to implement a simple REST API that manages items stored in memory. Each item should have an `id` (string), `name` (string), and `value` (number). The `id` should be automatically generated using UUID.",
       shortDescription: "Build a CRUD API with in-memory data storage.",
       difficulty: "EASY",
       track: "DATABASE",
-      instructions: `
-        Implement a CRUD API with in-memory storage.
+      instructions: `### Required Endpoints
 
-        ### Required Endpoints
+**POST /items**
+- Body: \`{ name: string, value: number }\`
+- Response: \`201\` with created item \`{ id, name, value }\`
 
-        **POST /items**
-        - Body: { name: string, value: number }
-        - Response: 201 with created item { id, name, value }
+**GET /items**
+- Response: \`200\` with array of all items
 
-        **GET /items**
-        - Response: 200 with array of all items
+**GET /items/:id**
+- Response: \`200\` with item \`{ id, name, value }\`
+- Response: \`404\` if not found
 
-        **GET /items/:id**
-        - Response: 200 with item { id, name, value }
-        - Response: 404 if not found
+**PUT /items/:id**
+- Body: \`{ name: string, value: number }\`
+- Response: \`200\` with updated item
+- Response: \`404\` if not found
 
-        **PUT /items/:id**
-        - Body: { name: string, value: number }
-        - Response: 200 with updated item
-        - Response: 404 if not found
+**DELETE /items/:id**
+- Response: \`204\` on success
+- Response: \`404\` if not found`,
+      constraints: [
+        "Store data in an in-memory array",
+        "No database or file system",
+        "No app.listen()",
+        "Export Express app",
+        "Generate unique IDs (UUID recommended)",
+      ],
+      examples: {
+        create: {
+          request: {
+            method: "POST",
+            url: "http://localhost:3000/items",
+            body: { name: "Widget", value: 100 },
+            curl: 'curl -X POST http://localhost:3000/items -H "Content-Type: application/json" -d \'{"name":"Widget","value":100}\'',
+          },
+          response: {
+            status: "HTTP/1.1 201 Created",
+            body: { id: "abc-123", name: "Widget", value: 100 },
+          },
+        },
+        getAll: {
+          request: {
+            method: "GET",
+            url: "http://localhost:3000/items",
+            curl: "curl -X GET http://localhost:3000/items",
+          },
+          response: {
+            status: "HTTP/1.1 200 OK",
+            body: [{ id: "abc-123", name: "Widget", value: 100 }],
+          },
+        },
+      },
+      starterCode: `const express = require('express');
+const { randomUUID } = require('crypto');
 
-        **DELETE /items/:id**
-        - Response: 204 on success
-        - Response: 404 if not found
+const app = express();
+app.use(express.json());
 
-        ### Constraints
-        - ✓ Store data in an in-memory array
-        - ⊘ No database or file system
-        - ⊘ No \`app.listen()\`
-        - ✓ Export Express \`app\`
-        - ✓ Generate unique IDs (UUID recommended)
-      `,
-      starterCode: `
-        const express = require('express');
-        const { randomUUID } = require('crypto');
+// In-memory store
+const items = [];
 
-        const app = express();
-        app.use(express.json());
+// Your code here
 
-        // In-memory store
-        const items = [];
-
-        // Your code here
-
-        module.exports = { app };
-      `,
+module.exports = { app };`,
       submissionType: "EXPRESS_API",
       tags: ["crud", "in-memory", "basics"],
       isPublished: true,
@@ -246,70 +261,77 @@ async function seedZodValidation() {
     data: {
       slug: "zod-validation",
       title: "Zod Validation Middleware",
-      description: `
-        Implement request validation using Zod schemas.
-
-        Your task is to create a POST endpoint that validates incoming user data using
-        Zod. The endpoint should enforce strict validation rules and return appropriate
-        error responses when validation fails.
-
-        Zod is a TypeScript-first schema validation library that allows you to define
-        data schemas and validate data against them. You'll use it to ensure that all
-        incoming user data meets your requirements before processing it.
-
-        The validated data should be stored in memory (similar to the CRUD problem) and
-        returned with a generated ID upon successful creation.
-      `,
+      description:
+        "Implement request validation using Zod schemas. Your task is to create a POST endpoint that validates incoming user data using Zod. The endpoint should enforce strict validation rules and return appropriate error responses when validation fails.",
       shortDescription: "Implement request validation using Zod schemas.",
       difficulty: "EASY",
       track: "MIDDLEWARE",
-      instructions: `
-        Implement Zod validation for user registration.
+      instructions: `### Required Endpoint
 
-        ### Required Endpoint
+**POST /users**
+- Body: \`{ email: string, password: string, age: number }\`
+- Validation rules:
+  - \`email\`: must be a valid email format
+  - \`password\`: must be at least 8 characters long
+  - \`age\`: must be a number >= 18
 
-        **POST /users**
-        - Body: { email: string, password: string, age: number }
-        - Validation rules:
-          • email: must be a valid email format
-          • password: must be at least 8 characters long
-          • age: must be a number >= 18
+### Expected Responses
 
-        ### Expected Responses
+**On validation failure:**
+- Status: \`400\`
+- Body: \`{ error: "Invalid request body" }\`
 
-        **On validation failure:**
-        - Status: 400
-        - Body: { error: "Invalid request body" }
+**On success:**
+- Status: \`201\`
+- Body: \`{ id: string, email: string, age: number }\`
+- Note: Do NOT return the password`,
+      constraints: [
+        "Use Zod for validation",
+        "Store users in an in-memory array",
+        "No database or file system",
+        "No app.listen()",
+        "Export Express app",
+      ],
+      examples: {
+        success: {
+          request: {
+            method: "POST",
+            url: "http://localhost:3000/users",
+            body: { email: "user@example.com", password: "securepass123", age: 25 },
+            curl: 'curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d \'{"email":"user@example.com","password":"securepass123","age":25}\'',
+          },
+          response: {
+            status: "HTTP/1.1 201 Created",
+            body: { id: "abc-123", email: "user@example.com", age: 25 },
+          },
+        },
+        failure: {
+          request: {
+            method: "POST",
+            url: "http://localhost:3000/users",
+            body: { email: "invalid", password: "short", age: 15 },
+          },
+          response: {
+            status: "HTTP/1.1 400 Bad Request",
+            body: { error: "Invalid request body" },
+          },
+        },
+      },
+      starterCode: `const express = require('express');
+const { z } = require('zod');
+const { randomUUID } = require('crypto');
 
-        **On success:**
-        - Status: 201
-        - Body: { id: string, email: string, age: number }
-        - Note: Do NOT return the password
+const app = express();
+app.use(express.json());
 
-        ### Constraints
-        - ✓ Use Zod for validation
-        - ✓ Store users in an in-memory array
-        - ⊘ No database or file system
-        - ⊘ No \`app.listen()\`
-        - ✓ Export Express \`app\`
-      `,
-      starterCode: `
-        const express = require('express');
-        const { z } = require('zod');
-        const { randomUUID } = require('crypto');
+// In-memory store
+const users = [];
 
-        const app = express();
-        app.use(express.json());
+// Define your Zod schema here
 
-        // In-memory store
-        const users = [];
+// Your code here
 
-        // Define your Zod schema here
-
-        // Your code here
-
-        module.exports = { app };
-      `,
+module.exports = { app };`,
       submissionType: "EXPRESS_API",
       tags: ["validation", "zod", "middleware"],
       isPublished: true,
@@ -338,49 +360,61 @@ async function seedRateLimitingMiddleware() {
     data: {
       slug: "rate-limiting-middleware",
       title: "Rate Limiting Middleware",
-      description: `
-        Implement rate limiting middleware for an Express application.
-
-        Your task is to create middleware that limits the number of requests a client
-        can make to the server within a specified time window. This is essential for
-        preventing abuse and ensuring fair usage of the API.
-
-        The middleware should track requests based on the client's IP address and
-        enforce a limit of **3 requests per 10 seconds** per IP. If a client exceeds this limit, the
-        server should respond with a **429 Too Many Requests** status code.
-
-        You may use in-memory storage to track request counts, but be mindful that
-        this data will be lost when the server restarts.
-      `,
+      description:
+        "Implement rate limiting middleware for an Express application. Your task is to create middleware that limits the number of requests a client can make to the server within a specified time window. This is essential for preventing abuse and ensuring fair usage of the API.",
       shortDescription: "Implement rate limiting middleware in Express.",
       difficulty: "MEDIUM",
       track: "MIDDLEWARE",
-      instructions: `
-        Implement rate limiting middleware for an Express app.
+      instructions: `### Requirements
+- Limit each client (by IP) to **3 requests per 10 seconds**
+- Apply middleware globally to all routes
+- Respond with \`429 Too Many Requests\` when limit is exceeded
 
-        ### Requirements
-        - Limit each client (by IP) to 3 requests per 10 seconds
-        - Apply middleware globally
-        - Respond with 429 Too Many Requests when limit is exceeded
+### Implementation Details
+- Track requests based on the client's IP address
+- Use in-memory storage to track request counts
+- Reset the counter after the time window expires`,
+      constraints: [
+        "Use in-memory storage for tracking",
+        "No app.listen()",
+        "Export Express app",
+        "Track requests by IP address",
+        "Time window: 10 seconds",
+      ],
+      examples: {
+        success: {
+          request: {
+            method: "GET",
+            url: "http://localhost:3000/",
+            curl: "curl -X GET http://localhost:3000/",
+          },
+          response: {
+            status: "HTTP/1.1 200 OK",
+            body: "Hello, world!",
+          },
+        },
+        rateLimited: {
+          request: {
+            method: "GET",
+            url: "http://localhost:3000/",
+            note: "After 3 requests within 10 seconds",
+          },
+          response: {
+            status: "HTTP/1.1 429 Too Many Requests",
+            body: { error: "Too many requests" },
+          },
+        },
+      },
+      starterCode: `const express = require('express');
+const app = express();
 
-        ### Constraints
-        - ✓ Use in-memory storage for tracking
-        - ⊘ No \`app.listen()\`
-        - ✓ Export Express \`app\`
+// Your rate limiting middleware here
 
-      `,
-      starterCode: `
-        const express = require('express');
-        const app = express();
+app.get('/', (req, res) => {
+  res.send('Hello, world!');
+});
 
-        // Your code here
-
-        app.get('/', (req, res) => {
-          res.send('Hello, world!');
-        });
-
-        module.exports = { app };
-      `,
+module.exports = { app };`,
       submissionType: "EXPRESS_API",
       tags: ["middleware", "rate-limiting", "security"],
       isPublished: true,

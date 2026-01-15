@@ -40,6 +40,7 @@ router.get("/:slug", async (req, res) => {
       instructions: true,
       starterCode: true,
       constraints: true,
+      examples: true,
       difficulty: true,
       track: true,
       tags: true,
