@@ -22,6 +22,25 @@ const ALLOWED_PROBLEM_SLUGS = new Set([
   "rate-limiting-middleware",
 ]);
 
+async function emitLog(
+  submissionId: string,
+  level: "info" | "error" | "warn",
+  message: string
+): Promise<void> {
+  try {
+    await axios.post(
+      `${process.env.API_CALLBACK_URL!.replace("/result", "/log")}`,
+      { submissionId, level, message },
+      {
+        headers: { "x-runner-secret": process.env.RUNNER_SHARED_SECRET! },
+        timeout: 5000,
+      }
+    );
+  } catch (err) {
+    console.error("Failed to emit log:", err);
+  }
+}
+
 async function copyTestFiles(problemSlug: string, workspace: string): Promise<boolean> {
   if (!ALLOWED_PROBLEM_SLUGS.has(problemSlug)) {
     throw new Error(`Unknown problem slug: ${problemSlug}`);
@@ -62,6 +81,8 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
   const workspace = await createTempDir();
 
   try {
+    await emitLog(payload.submissionId, "info", "Preparing execution environment");
+
     for (const [filePath, content] of Object.entries(payload.codeBundle.files)) {
       if (filePath.endsWith(".ts")) {
         throw new Error("TypeScript files are not supported in this runner version.");
@@ -70,6 +91,8 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.writeFile(fullPath, content, "utf-8");
     }
+
+    await emitLog(payload.submissionId, "info", "Setting up test configuration");
 
     // package.json for the test workspace
     const packageJson = {
@@ -100,8 +123,26 @@ module.exports = {
 `;
     await fs.writeFile(path.join(workspace, "jest.config.js"), jestConfig, "utf-8");
 
+    await emitLog(payload.submissionId, "info", "Starting container");
+    await emitLog(payload.submissionId, "info", "Installing dependencies");
+
     const jestResults = await runDocker(workspace, payload.testConfig.timeoutMs);
+
+    await emitLog(payload.submissionId, "info", "Running tests");
+
     const parsedResults = parseTestOutput(jestResults);
+
+    const passedCount = parsedResults.filter((r) => r.passed).length;
+    const totalCount = parsedResults.length;
+    const allPassed = jestResults.success;
+
+    await emitLog(
+      payload.submissionId,
+      allPassed ? "info" : "error",
+      allPassed
+        ? `All tests passed (${passedCount}/${totalCount})`
+        : `Tests completed: ${passedCount}/${totalCount} passed`
+    );
 
     const response: ExecuteResponse = {
       submissionId: payload.submissionId,
@@ -120,6 +161,8 @@ module.exports = {
 
     return response;
   } catch (error) {
+    await emitLog(payload.submissionId, "error", `Execution failed: ${String(error)}`);
+
     const response: ExecuteResponse = {
       submissionId: payload.submissionId,
       status: "ERROR",

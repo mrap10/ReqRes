@@ -1,11 +1,15 @@
 "use client";
 
 import MonacoEditor from "@monaco-editor/react";
-import { useRef } from "react";
+import { useRef, useImperativeHandle, forwardRef } from "react";
 import type { editor, IKeyboardEvent } from "monaco-editor";
 
 interface EditorProps {
   starterCode?: string;
+}
+
+export interface EditorRef {
+  getCode: () => string;
 }
 
 function getEditableRange(code: string): { startLineNumber: number; endLineNumber: number } | null {
@@ -18,8 +22,14 @@ function getEditableRange(code: string): { startLineNumber: number; endLineNumbe
   };
 }
 
-export default function Editor({ starterCode }: EditorProps) {
+const Editor = forwardRef<EditorRef, EditorProps>(function Editor({ starterCode }, ref) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    getCode: () => {
+      return editorRef.current?.getValue() || starterCode || "";
+    },
+  }));
 
   function handleEditorDidMount(
     editorInstance: editor.IStandaloneCodeEditor,
@@ -93,4 +103,6 @@ export default function Editor({ starterCode }: EditorProps) {
       }}
     />
   );
-}
+});
+
+export default Editor;

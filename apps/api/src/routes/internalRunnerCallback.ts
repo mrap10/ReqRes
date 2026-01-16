@@ -36,4 +36,27 @@ router.post("/result", async (req, res) => {
   res.json({ message: "Result recorded" });
 });
 
+router.post("/log", async (req, res) => {
+  const secret = req.headers["x-runner-secret"];
+  if (secret !== process.env.RUNNER_SHARED_SECRET) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const { submissionId, level, message } = req.body;
+
+  if (!submissionId || !level || !message) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  await prisma.executionLog.create({
+    data: {
+      submissionId,
+      level,
+      message,
+    },
+  });
+
+  res.json({ message: "Log recorded" });
+});
+
 export default router;

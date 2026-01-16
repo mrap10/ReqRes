@@ -2,7 +2,7 @@ import ProblemHeader from "../../../components/ProblemHeader";
 import LeftSideProblemsPage from "../../../components/LeftSideProblemsPage";
 import { getProblemDetail } from "../../../actions";
 import Link from "next/link";
-import Editor from "../../../components/Editor";
+import ProblemWorkspace from "../../../components/ProblemWorkspace";
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -39,9 +39,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           <LeftSideProblemsPage problemDetails={problemDetail} />
         </div>
 
-        <div className="w-1/2 flex flex-col bg-zinc-950">
-          <Editor starterCode={problemDetail.starterCode} />
-        </div>
+        <ProblemWorkspace problemId={problemDetail.id} starterCode={problemDetail.starterCode} />
       </div>
     </div>
   );

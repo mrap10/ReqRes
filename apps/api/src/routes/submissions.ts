@@ -30,7 +30,7 @@ router.post("/", async (req, res) => {
       .json({ error: "Invalid submission payload", details: parseResult.error.flatten() });
   }
 
-  const userId = req.user?.id || "6bdee8fd-e5d1-44d6-80c1-00db5a7fc86c"; // temporary fallback for testing
+  const userId = req.user?.id || "cmke8l4hl000304ju6o218tod"; // temporary fallback for testing (dev user from seed)
   const { problemId, code } = parseResult.data;
 
   const problem = await prisma.problem.findFirst({
@@ -42,14 +42,20 @@ router.post("/", async (req, res) => {
     return res.status(404).json({ error: "Problem not found" });
   }
 
-  const submission = await prisma.submission.create({
-    data: {
-      userId,
-      problemId,
-      codeBundle: JSON.stringify(code),
-      status: "PENDING",
-    },
-  });
+  let submission;
+  try {
+    submission = await prisma.submission.create({
+      data: {
+        userId,
+        problemId,
+        codeBundle: JSON.stringify(code),
+        status: "PENDING",
+      },
+    });
+  } catch (error) {
+    console.error("Failed to create submission:", error);
+    return res.status(500).json({ error: "Failed to create submission" });
+  }
 
   axios
     .post(
@@ -129,6 +135,40 @@ router.get("/:id", async (req, res) => {
     results: testResults?.results || [],
     createdAt: submission.createdAt,
     updatedAt: submission.updatedAt,
+  });
+});
+
+router.get("/:id/logs", async (req, res) => {
+  const submissionId = req.params.id;
+
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    select: { id: true, status: true },
+  });
+
+  if (!submission) {
+    return res.status(404).json({ error: "Submission not found" });
+  }
+
+  const logs = await prisma.executionLog.findMany({
+    where: { submissionId },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      level: true,
+      message: true,
+      createdAt: true,
+    },
+  });
+
+  res.json({
+    submissionId,
+    status: submission.status,
+    logs: logs.map((log) => ({
+      type: log.level,
+      message: log.message,
+      timestamp: log.createdAt,
+    })),
   });
 });
 
