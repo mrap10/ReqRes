@@ -58,7 +58,8 @@ async function seedHealthCheck() {
       starterCode: `const express = require('express');
 const app = express();
 
-// TODO: Implement the health check endpoint here
+// Your code here
+
 
 module.exports = { app };`,
       submissionType: "EXPRESS_API",
@@ -133,6 +134,7 @@ const jwt = require('jsonwebtoken');
 const app = express();
 
 // Your code here
+
 
 module.exports = { app };`,
       submissionType: "EXPRESS_API",
@@ -232,6 +234,7 @@ const items = [];
 
 // Your code here
 
+
 module.exports = { app };`,
       submissionType: "EXPRESS_API",
       tags: ["crud", "in-memory", "basics"],
@@ -327,9 +330,8 @@ app.use(express.json());
 // In-memory store
 const users = [];
 
-// Define your Zod schema here
-
 // Your code here
+
 
 module.exports = { app };`,
       submissionType: "EXPRESS_API",
@@ -409,6 +411,7 @@ async function seedRateLimitingMiddleware() {
 const app = express();
 
 // Your rate limiting middleware here
+
 
 app.get('/', (req, res) => {
   res.send('Hello, world!');
