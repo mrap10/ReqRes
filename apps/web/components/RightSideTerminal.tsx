@@ -8,19 +8,27 @@ import {
   Terminal,
   XCircle,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSubmission } from "./SubmissionContext";
+
+const DEFAULT_HEIGHT = 200;
+const HEADER_HEIGHT = 40;
 
 export default function RightSideTerminal() {
   const { submission } = useSubmission();
   const [activeTab, setActiveTab] = useState<"tests" | "console">("console");
-  const [isConsoleOpen, setIsConsoleOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [terminalHeight, setTerminalHeight] = useState<number>(DEFAULT_HEIGHT);
+  const [lastHeight, setLastHeight] = useState<number>(DEFAULT_HEIGHT);
 
   const isRunning = submission.status === "pending" || submission.status === "running";
   const hasResults = submission.testResults.length > 0;
   const passedTests = submission.testResults.filter((t) => t.passed).length;
   const totalTests = submission.testResults.length;
+
+  const isResizingRef = useRef(false);
+  const startYRef = useRef(0);
+  const startHeightRef = useRef(0);
 
   useEffect(() => {
     setMounted(true);
@@ -29,6 +37,7 @@ export default function RightSideTerminal() {
   useEffect(() => {
     if (hasResults) {
       setActiveTab("tests");
+      setTerminalHeight(DEFAULT_HEIGHT);
     }
   }, [hasResults]);
 
@@ -37,21 +46,56 @@ export default function RightSideTerminal() {
 
     if (submission.status === "pending") {
       setActiveTab("console");
-      setIsConsoleOpen(true);
+      setTerminalHeight(DEFAULT_HEIGHT);
     }
   }, [submission.status, mounted]);
 
+  const onMouseDownResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.body.classList.add("resizing");
+
+    isResizingRef.current = true;
+    startYRef.current = e.clientY;
+    startHeightRef.current = terminalHeight;
+
+    window.addEventListener("mousemove", onMouseMoveResize);
+    window.addEventListener("mouseup", onMouseUpResize);
+  };
+
+  const onMouseMoveResize = (e: MouseEvent) => {
+    document.body.classList.add("resizing");
+    if (!isResizingRef.current) return;
+
+    const delta = startYRef.current - e.clientY;
+    const newHeight = Math.min(500, Math.max(80, startHeightRef.current + delta));
+    setTerminalHeight(newHeight);
+  };
+
+  const onMouseUpResize = () => {
+    isResizingRef.current = false;
+    setLastHeight(terminalHeight);
+
+    window.removeEventListener("mousemove", onMouseMoveResize);
+    window.removeEventListener("mouseup", onMouseUpResize);
+  };
+
   return (
     <div
-      className={`border-t border-zinc-800 bg-zinc-900 flex flex-col transition-all duration-300 ${isConsoleOpen ? "basis-[35%]" : "basis-10"}`}
+      className="border-t border-zinc-800 bg-zinc-900 flex flex-col shrink-0 min-h-[40px]"
+      style={{ height: HEADER_HEIGHT + terminalHeight }}
     >
+      <div
+        className="cursor-row-resize bg-zinc-800 hover:bg-zinc-700 transition-colors"
+        style={{ height: 4 }}
+        onMouseDown={onMouseDownResize}
+      />
       <div className="h-10 flex items-center justify-between px-2 bg-zinc-900 shrink-0">
-        <div className="flex">
+        <div className="flex h-full">
           <TabButton
             active={activeTab === "tests"}
             onClick={() => {
               setActiveTab("tests");
-              setIsConsoleOpen(true);
+              setTerminalHeight(DEFAULT_HEIGHT);
             }}
           >
             <div className="flex items-center gap-2">
@@ -70,7 +114,7 @@ export default function RightSideTerminal() {
             active={activeTab === "console"}
             onClick={() => {
               setActiveTab("console");
-              setIsConsoleOpen(true);
+              setTerminalHeight(DEFAULT_HEIGHT);
             }}
           >
             <div className="flex items-center gap-2">
@@ -85,10 +129,16 @@ export default function RightSideTerminal() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsConsoleOpen(!isConsoleOpen)}
+            onClick={() =>
+              setTerminalHeight((h) => {
+                if (h === 0) return lastHeight;
+                setLastHeight(h);
+                return 0;
+              })
+            }
             className="p-1 hover:bg-zinc-800 rounded text-zinc-500 cursor-pointer"
           >
-            {isConsoleOpen ? (
+            {terminalHeight > 0 ? (
               <PanelBottomClose className="w-4 h-4" />
             ) : (
               <PanelBottomOpen className="w-4 h-4" />
@@ -97,9 +147,12 @@ export default function RightSideTerminal() {
         </div>
       </div>
 
-      {isConsoleOpen && (
-        <div className="flex-1 overflow-y-auto p-4 font-mono text-sm bg-zinc-950/50">
-          {activeTab === "tests" ? (
+      <div
+        className="overflow-y-auto p-4 font-mono text-sm bg-zinc-950/50 transition-[height] duration-200"
+        style={{ height: terminalHeight }}
+      >
+        {terminalHeight > 0 &&
+          (activeTab === "tests" ? (
             <TestResultsView
               testResults={submission.testResults}
               isRunning={isRunning}
@@ -107,9 +160,8 @@ export default function RightSideTerminal() {
             />
           ) : (
             <ConsoleView logs={submission.logs} isRunning={isRunning} status={submission.status} />
-          )}
-        </div>
-      )}
+          ))}
+      </div>
     </div>
   );
 }
@@ -268,9 +320,9 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`pl-4 py-2 text-xs font-medium border-t-2 transition-colors cursor-pointer ${
+      className={`px-4 min-w-[120px] h-full text-xs font-medium border-t-2 transition-colors cursor-pointer ${
         active
-          ? "border-indigo-500 text-white bg-zinc-900"
+          ? "border-indigo-500 text-white bg-zinc-950"
           : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"
       }`}
     >

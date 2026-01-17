@@ -32,7 +32,9 @@ function WorkspaceContent({ problemId, starterCode }: ProblemWorkspaceProps) {
   return (
     <div className="w-1/2 flex flex-col bg-zinc-950">
       <RightSideHeader onRun={handleRun} onSubmit={handleSubmit} />
-      <Editor ref={editorRef} starterCode={starterCode} />
+      <div className="flex-1 relative overflow-hidden">
+        <Editor ref={editorRef} starterCode={starterCode} />
+      </div>
       <RightSideTerminal />
     </div>
   );

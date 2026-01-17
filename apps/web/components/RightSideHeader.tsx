@@ -13,7 +13,7 @@ export default function RightSideHeader({ onRun, onSubmit }: RightSideHeaderProp
   const isRunning = submission.status === "pending" || submission.status === "running";
 
   return (
-    <div className="h-10 py-1 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between pl-0 pr-4">
+    <div className="h-10 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between pl-0 pr-4">
       <div className="flex h-full">
         <div className="px-4 h-full bg-zinc-950 border-r border-t-2 border-t-indigo-500 border-zinc-800 flex items-center gap-2 text-sm text-white font-medium min-w-[120px]">
           <div className="text-yellow-400">
@@ -23,7 +23,7 @@ export default function RightSideHeader({ onRun, onSubmit }: RightSideHeaderProp
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 py-1">
         <button
           onClick={onRun}
           disabled={isRunning}
