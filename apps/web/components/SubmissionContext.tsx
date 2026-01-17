@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { toast } from "sonner";
 
 export interface ExecutionLog {
   type: "info" | "error" | "warn";
@@ -21,6 +22,7 @@ export interface SubmissionState {
   testResults: TestResult[];
   output: string | null;
   durationMs: number | null;
+  score: number | null;
 }
 
 interface SubmissionContextType {
@@ -36,6 +38,7 @@ const initialState: SubmissionState = {
   testResults: [],
   output: null,
   durationMs: null,
+  score: null,
 };
 
 const SubmissionContext = createContext<SubmissionContextType | null>(null);
@@ -100,7 +103,14 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
             testResults: data.results || [],
             output: data.output,
             durationMs: data.durationMs,
+            xpEarned: data.xpEarned || 0,
           }));
+
+          if (status === "passed" && data.xpEarned && data.xpEarned > 0) {
+            toast.success(`${data.xpEarned} XP gained! 🎉`, {
+              duration: 3000,
+            });
+          }
 
           if (status === "pending" || status === "running") {
             setTimeout(poll, 1000);
@@ -124,23 +134,26 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
         testResults: [],
         output: null,
         durationMs: null,
+        score: null,
       });
 
       try {
+        const payload = {
+          problemId: problemIdToUse || problemId,
+          code: {
+            files: {
+              "index.js": code,
+            },
+            entryPoint: "index.js",
+          },
+        };
+
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            problemId: problemIdToUse || problemId,
-            code: {
-              files: {
-                "app.js": code,
-              },
-              entryPoint: "app.js",
-            },
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (!res.ok) {

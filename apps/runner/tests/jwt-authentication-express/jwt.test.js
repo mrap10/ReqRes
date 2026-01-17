@@ -1,6 +1,6 @@
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
-const { app } = require("../../app");
+const { app } = require("../../index");
 
 describe("JWT Authentication Middleware", () => {
   it("rejects request with no token", async () => {

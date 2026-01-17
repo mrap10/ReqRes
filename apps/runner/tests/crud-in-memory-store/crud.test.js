@@ -3,7 +3,7 @@ const request = require("supertest");
 let app;
 
 beforeAll(() => {
-  app = require("../../app").app;
+  app = require("../../index").app;
 });
 
 describe("CRUD In-Memory Store", () => {

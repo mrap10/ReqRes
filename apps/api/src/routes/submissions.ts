@@ -57,6 +57,11 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ error: "Failed to create submission" });
   }
 
+  const codeBundleToSend = {
+    files: code.files,
+    entryPoint: code.entryPoint || "index.js",
+  };
+
   axios
     .post(
       `${process.env.RUNNER_BASE_URL}/internal/execute`,
@@ -67,10 +72,7 @@ router.post("/", async (req, res) => {
           slug: problem.slug,
           submissionType: problem.submissionType,
         },
-        codeBundle: {
-          files: code.files,
-          entryPoint: code.entryPoint || "index.ts",
-        },
+        codeBundle: codeBundleToSend,
         testConfig: {
           timeoutMs: problem.testConfig.timeoutMs,
           memoryMb: problem.testConfig.memoryMb,
@@ -133,6 +135,7 @@ router.get("/:id", async (req, res) => {
     durationMs: submission.durations,
     output: submission.output,
     results: testResults?.results || [],
+    xpEarned: submission.score,
     createdAt: submission.createdAt,
     updatedAt: submission.updatedAt,
   });
