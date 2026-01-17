@@ -19,7 +19,7 @@ export default function RightSideHeader({ onRun, onSubmit }: RightSideHeaderProp
           <div className="text-yellow-400">
             <FileCode className="w-4 h-4" />
           </div>
-          index.js
+          app.js
         </div>
       </div>
 

@@ -126,6 +126,14 @@ module.exports = {
     await emitLog(payload.submissionId, "info", "Starting container");
     await emitLog(payload.submissionId, "info", "Installing dependencies");
 
+    if (payload.problem.slug === "rate-limiting-middleware") {
+      await emitLog(
+        payload.submissionId,
+        "info",
+        "Applying rate-limit logic to your middleware implementation"
+      );
+    }
+
     const jestResults = await runDocker(workspace, payload.testConfig.timeoutMs);
 
     await emitLog(payload.submissionId, "info", "Running tests");
@@ -161,14 +169,16 @@ module.exports = {
 
     return response;
   } catch (error) {
-    await emitLog(payload.submissionId, "error", `Execution failed: ${String(error)}`);
+    const errorMessage = String(error);
+    await emitLog(payload.submissionId, "error", `Execution failed: ${errorMessage}`);
+    await emitLog(payload.submissionId, "error", "0 test cases passed due to error");
 
     const response: ExecuteResponse = {
       submissionId: payload.submissionId,
       status: "ERROR",
       results: [],
       durationMs: Date.now() - start,
-      stderr: String(error),
+      stderr: errorMessage,
     };
 
     await axios.post(process.env.API_CALLBACK_URL!, response, {
@@ -213,7 +223,16 @@ function sanitizeError(errorMessage: string): string {
 
   return errorMessage
     .split("\n")
-    .filter((line) => !line.includes("node_modules") && !line.includes("jest-runtime"))
-    .slice(0, 10)
-    .join("\n");
+    .filter((line) => {
+      return (
+        !line.includes("node_modules") &&
+        !line.includes("jest-runtime") &&
+        !line.includes("at Object.require") &&
+        !line.includes("at new Promise") &&
+        !line.trim().startsWith("at ") // stack trace lines
+      );
+    })
+    .slice(0, 5)
+    .join("\n")
+    .trim();
 }

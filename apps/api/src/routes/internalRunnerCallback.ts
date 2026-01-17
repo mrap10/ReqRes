@@ -13,10 +13,20 @@ router.post("/result", async (req, res) => {
 
   const { submissionId, status, results, durationMs, stdout, stderr } = req.body;
 
+  // there is def. better way to do this, will look into it later.
+  let prismaStatus: "PASSED" | "WRONG_ANSWER" | "RUNTIME_ERROR";
+  if (status === "PASSED") {
+    prismaStatus = "PASSED";
+  } else if (status === "FAILED") {
+    prismaStatus = "WRONG_ANSWER";
+  } else {
+    prismaStatus = "RUNTIME_ERROR";
+  }
+
   await prisma.submission.update({
     where: { id: submissionId },
     data: {
-      status,
+      status: prismaStatus,
       durations: durationMs,
       output: status === "PASSED" ? stdout : stderr || stdout || "Execution failed!",
     },

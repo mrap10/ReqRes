@@ -95,7 +95,8 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
 
           setSubmission((prev) => ({
             ...prev,
-            status: status === "wrong_answer" ? "failed" : status,
+            status:
+              status === "wrong_answer" ? "failed" : status === "runtime_error" ? "error" : status,
             testResults: data.results || [],
             output: data.output,
             durationMs: data.durationMs,
@@ -135,9 +136,9 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
             problemId: problemIdToUse || problemId,
             code: {
               files: {
-                "index.js": code,
+                "app.js": code,
               },
-              entryPoint: "index.js",
+              entryPoint: "app.js",
             },
           }),
         });

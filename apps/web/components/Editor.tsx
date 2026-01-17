@@ -12,9 +12,16 @@ export interface EditorRef {
   getCode: () => string;
 }
 
-function getEditableRange(code: string): { startLineNumber: number; endLineNumber: number } | null {
+function getEditableRange(code: string): { startLineNumber: number; endLineNumber: number } {
   const lines = code.split("\n");
   const markerLine = lines.findIndex((line) => line.includes("// Your code here"));
+
+  if (markerLine === -1) {
+    return {
+      startLineNumber: 1,
+      endLineNumber: lines.length,
+    };
+  }
 
   return {
     startLineNumber: markerLine + 2,
@@ -38,15 +45,16 @@ const Editor = forwardRef<EditorRef, EditorProps>(function Editor({ starterCode 
     editorRef.current = editorInstance;
 
     const model = editorInstance.getModel();
-    if (!model) {
+    if (!model || !starterCode) {
       return;
     }
 
-    const { startLineNumber, endLineNumber } = getEditableRange(starterCode || "") || {};
+    // eslint-disable-next-line
+    const { startLineNumber, endLineNumber } = getEditableRange(starterCode);
 
     const decorations = [
       {
-        range: new monaco.Range(1, 1, startLineNumber! - 1, 1),
+        range: new monaco.Range(1, 1, startLineNumber - 1, 1),
         options: {
           isWholeLine: true,
           className: "read-only-line",
@@ -60,29 +68,29 @@ const Editor = forwardRef<EditorRef, EditorProps>(function Editor({ starterCode 
       const position = e.position;
       if (!position) return;
 
-      if (position.lineNumber < startLineNumber! || position.lineNumber > endLineNumber!) {
-        editorInstance.setPosition({ lineNumber: startLineNumber!, column: 1 });
+      if (position.lineNumber < startLineNumber) {
+        editorInstance.setPosition({ lineNumber: startLineNumber, column: 1 });
       }
     });
 
     editorInstance.onDidAttemptReadOnlyEdit(() => {
-      editorInstance.setPosition({ lineNumber: startLineNumber!, column: 1 });
+      editorInstance.setPosition({ lineNumber: startLineNumber, column: 1 });
     });
 
     editorInstance.onKeyDown((e: IKeyboardEvent) => {
       const position = editorInstance.getPosition();
       if (!position) return;
-      if (position.lineNumber < startLineNumber! || position.lineNumber > endLineNumber!) {
+      if (position.lineNumber < startLineNumber) {
         e.preventDefault();
         e.stopPropagation();
-        editorInstance.setPosition({ lineNumber: startLineNumber!, column: 1 });
+        editorInstance.setPosition({ lineNumber: startLineNumber, column: 1 });
       }
     });
 
     editorInstance.onDidPaste(() => {
       const position = editorInstance.getPosition();
       if (!position) return;
-      if (position.lineNumber < startLineNumber! || position.lineNumber > endLineNumber!) {
+      if (position.lineNumber < startLineNumber) {
         editorInstance.executeEdits("", []);
       }
     });

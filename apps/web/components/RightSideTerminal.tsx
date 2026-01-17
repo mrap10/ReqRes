@@ -136,7 +136,18 @@ function TestResultsView({
     return (
       <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-3">
         <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-        Running tests against your server...
+        Hang tight! Running tests...
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-rose-500 gap-2">
+        <XCircle className="w-8 h-8" />
+        <span className="font-bold">Execution Error</span>
+        <span className="text-sm text-zinc-400">0 test cases passed due to error</span>
+        <span className="text-xs text-zinc-500">Check console for details</span>
       </div>
     );
   }
