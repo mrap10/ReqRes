@@ -1,18 +1,16 @@
 # ReqRes
 
-Somthing like leetcode but modern and more than just DSA practice platform
+Somthing like leetcode but modern and for backend (express for now, will extend as needed)
 
 ## High level architecture
 
+```tree
 Browser (untrusted)
-
-↓
-
+      ↓
 API (trusted)
-
-↓
-
+      ↓
 Runner (isolated & disposable)
+```
 
 ---
 
@@ -210,6 +208,25 @@ curl http://localhost:4000/submissions/<submission-id>
 - Verify PostgreSQL is running
 - Check DATABASE_URL is correct
 - Run migrations: `bunx prisma migrate dev`
+
+---
+
+## some problems identified (will fix them in phase 3)
+
+- uneven problem tracks display in /leaderboard 's user submission history
+- need to test more with seeded users and some more distributed submissions
+- tested with 15 concurrent submissions, ~4 of them failed with docker timeout errors (need to investigate more, prolly happening due to rate-limit problem)
+- will add more bugs here
+
+---
+
+phase 1 completed - MVP achieved! (sort of)
+
+phase 2 completed - ui, editor, leaderboard, stats, BE integration, runner improvements and more
+
+- learned a bit more about using refs
+- "that" express problem came again (route order lmao)
+- handling refs and editor/terminal layout was hard bits here. other were pretty much db queries and some api/runner improvements
 
 ---
 
