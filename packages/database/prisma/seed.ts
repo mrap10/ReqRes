@@ -5,14 +5,60 @@ async function seedUser() {
     where: { email: "dev@reqres.site" },
     update: {},
     create: {
-      id: "cmke8l4hl000304ju6o218tod",
       email: "dev@reqres.site",
       password: "dev-only",
       username: "devuser",
-      xp: 1000,
+      xp: 225,
     },
   });
-  console.log("✓ Seeded dev user");
+
+  await prisma.user.upsert({
+    where: { email: "alice@reqres.site" },
+    update: {},
+    create: {
+      email: "alice@reqres.site",
+      password: "password123",
+      username: "alice_coder",
+      xp: 150,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "bob@reqres.site" },
+    update: {},
+    create: {
+      email: "bob@reqres.site",
+      password: "password123",
+      username: "bob_developer",
+      xp: 200,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "charlie@reqres.site" },
+    update: {},
+    create: {
+      email: "charlie@reqres.site",
+      password: "password123",
+      username: "charlie_engineer",
+      xp: 75,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "diana@reqres.site" },
+    update: {},
+    create: {
+      email: "diana@reqres.site",
+      password: "password123",
+      username: "diana_wizard",
+      xp: 125,
+    },
+  });
+
+  console.log(
+    "✓ Seeded 5 users (devuser, alice_coder, bob_developer, charlie_engineer, diana_wizard)"
+  );
 }
 
 async function seedHealthCheck() {

@@ -2,13 +2,18 @@
 
 import { getLeaderboard } from "@/actions";
 import { LeaderboardDTO } from "@reqres/types";
-import { Search, Trophy, User } from "lucide-react";
+import { Search, Trophy, User, ArrowRight, MessageCircleWarning } from "lucide-react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function LeaderboardTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardDTO[]>([]);
+
+  // TODO: replace with actual user ID from auth context
+  const currentUserId = "cmke8l4hl000304ju6o218tod";
+  const isUserOnLeaderboard = leaderboardData.some((user) => user.userId === currentUserId);
 
   useEffect(() => {
     async function fetchLeaderboard() {
@@ -22,6 +27,33 @@ export default function LeaderboardTable() {
 
   return (
     <div>
+      {!isLoading && leaderboardData.length > 0 && !isUserOnLeaderboard && (
+        <div className="m-4 mb-0 p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <MessageCircleWarning className="w-5 h-5 text-red-400" />
+            </div>
+            <div className="flex-1 flex flex-col sm:flex-row sm:justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  You&apos;re not ranked yet!
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Solve your first problem to gain XP and see your name on the leaderboard.
+                </p>
+              </div>
+              <Link
+                href="/problems"
+                className="inline-flex items-center gap-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Start solving problems
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-6 py-3 border-b border-white/5 flex flex-col sm:flex-row gap-4 justify-between items-center bg-zinc-900/80">
         <div className="flex items-center gap-2 text-yellow-500 font-bold text-lg">
           <Trophy className="w-5 h-5 fill-current" />

@@ -1,27 +1,27 @@
 "use client";
 
-import { getProblems } from "@/actions";
-import { ProblemListDTO } from "@reqres/types";
+import { SubmissionListDTO } from "@reqres/types";
 import { Award, ChevronDown, Clock, Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 import DifficultyTag from "./DifficultyTag";
+import { getUsersSubmission } from "@/actions";
 
 export default function SubmissionHistory() {
-  const [problems, setProblems] = useState<ProblemListDTO>();
+  const [submissions, setSubmissions] = useState<SubmissionListDTO[]>();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchProblems() {
+    async function fetchSubmissions() {
       setIsLoading(true);
-      const data = await getProblems();
-      setProblems(data[0]);
+      const data = await getUsersSubmission({ id: "cmke8l4hl000304ju6o218tod" });
+      setSubmissions(data);
       setIsLoading(false);
     }
-    fetchProblems();
+    fetchSubmissions();
   }, []);
 
-  const trackLabel = problems?.track
-    ? problems.track.charAt(0) + problems.track.slice(1).toLowerCase()
+  const trackLabel = submissions?.[0]?.track
+    ? submissions[0].track.charAt(0) + submissions[0].track.slice(1).toLowerCase()
     : "General";
 
   return (
@@ -61,38 +61,52 @@ export default function SubmissionHistory() {
                   Loading...
                 </td>
               </tr>
-            ) : (
-              <tr className="hover:bg-zinc-800/30 transition-colors group">
-                <td className="p-5">
-                  <div className="font-medium text-white group-hover:text-indigo-400 transition-colors">
-                    {problems?.title}
-                  </div>
-                  <DifficultyTag level={problems?.difficulty || "EASY"} />
-                </td>
-                <td className="p-5">
-                  <span className="text-zinc-400 bg-zinc-900 px-2 py-1 rounded text-xs border border-zinc-800">
-                    {trackLabel}
-                  </span>
-                </td>
-                <td className="p-5 text-zinc-400 font-mono text-sm">18-01-2026</td>
-                <td className="p-5 text-zinc-400 font-mono text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-500 rounded-full"
-                        style={{ width: "40%" }}
-                      ></div>
+            ) : submissions && submissions.length > 0 ? (
+              submissions.map((submission) => (
+                <tr key={submission.id} className="hover:bg-zinc-800/30 transition-colors group">
+                  <td className="p-5">
+                    <div className="font-medium text-white group-hover:text-indigo-400 transition-colors">
+                      {submission.problemTitle}
                     </div>
-                    120 ms
-                  </div>
-                </td>
-                <td className="p-5">
-                  <div className="flex flex-col">
-                    <span className="text-indigo-400 font-bold font-mono">+50 XP</span>
-                    <span className="text-[10px] text-emerald-500 flex items-center gap-1 mt-0.5">
-                      <Award className="w-3 h-3" /> First Try Bonus
+                    <DifficultyTag level={submission.difficulty} />
+                  </td>
+                  <td className="p-5">
+                    <span className="text-zinc-400 bg-zinc-900 px-2 py-1 rounded text-xs border border-zinc-800">
+                      {trackLabel}
                     </span>
-                  </div>
+                  </td>
+                  <td className="p-5 text-zinc-400 font-mono text-sm">
+                    {new Date(submission.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="p-5 text-zinc-400 font-mono text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full"
+                          style={{ width: "40%" }}
+                        ></div>
+                      </div>
+                      {submission.durationMs} ms
+                    </div>
+                  </td>
+                  <td className="p-5">
+                    <div className="flex flex-col">
+                      <span className="text-indigo-400 font-bold font-mono">
+                        +{submission.xpEarned} XP
+                      </span>
+                      {submission.isFirstTryBonus && (
+                        <span className="text-[10px] text-emerald-500 flex items-center gap-1 mt-0.5">
+                          <Award className="w-3 h-3" /> First Try Bonus
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="p-5 text-center text-zinc-500">
+                  No submissions found.
                 </td>
               </tr>
             )}

@@ -71,3 +71,26 @@ export async function getLeaderboard() {
     return [];
   }
 }
+
+export async function getUsersSubmission({ id }: { id: string }) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions/user/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch user's submissions");
+      return [];
+    }
+
+    const data = await response.json();
+    return data.submissions;
+  } catch (error) {
+    console.error("Error fetching user's submissions:", error);
+    return [];
+  }
+}

@@ -104,6 +104,47 @@ router.post("/", async (req, res) => {
   });
 });
 
+router.get("/user/:userId", async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const submissions = await prisma.submission.findMany({
+      where: {
+        userId,
+        status: "PASSED",
+      },
+      include: {
+        problem: {
+          select: {
+            title: true,
+            track: true,
+            difficulty: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const submissionList = submissions.map((submission) => ({
+      id: submission.id,
+      problemTitle: submission.problem.title,
+      track: submission.problem.track,
+      difficulty: submission.problem.difficulty,
+      durationMs: submission.durations || 0,
+      xpEarned: submission.score || 0,
+      isFirstTryBonus: submission.isFirstTryBonus,
+      createdAt: submission.createdAt,
+    }));
+
+    res.json({ submissions: submissionList });
+  } catch (error) {
+    console.error("Failed to fetch user submissions:", error);
+    res.status(500).json({ error: "Failed to fetch user submissions" });
+  }
+});
+
 router.get("/leaderboard", async (_, res) => {
   try {
     const leaderboardData = await prisma.submission.groupBy({

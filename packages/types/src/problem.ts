@@ -42,6 +42,15 @@ export interface Submission {
 // API DTOs
 export type ProblemDifficulty = "EASY" | "MEDIUM" | "HARD";
 export type ProblemTrack = "ROUTING" | "MIDDLEWARE" | "SECURITY" | "DATABASE";
+export type SubmissionStatus =
+  | "PENDING"
+  | "RUNNING"
+  | "PASSED"
+  | "WRONG_ANSWER"
+  | "TIME_LIMIT"
+  | "MEMORY_LIMIT"
+  | "RUNTIME_ERROR"
+  | "COMPILE_ERROR";
 
 export type ProblemListDTO = {
   id: string;
@@ -74,4 +83,18 @@ export type LeaderboardDTO = {
   globalRank: number;
   totalScore: number;
   problemsSolved: number;
+};
+
+export type SubmissionListDTO = {
+  id: string;
+  problemId: string;
+  problemTitle: string;
+  userId: string;
+  status: SubmissionStatus;
+  track: ProblemTrack;
+  difficulty: ProblemDifficulty;
+  isFirstTryBonus: boolean;
+  durationMs: number;
+  xpEarned: number;
+  createdAt: string;
 };

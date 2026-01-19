@@ -47,6 +47,7 @@ router.post("/result", async (req, res) => {
 
   await prisma.$transaction(async (tx) => {
     let xpToAward = 0;
+    let isFirstTryBonus = false;
 
     if (prismaStatus === "PASSED") {
       const previousPassedSubmission = await tx.submission.findFirst({
@@ -69,7 +70,12 @@ router.post("/result", async (req, res) => {
           },
         });
 
-        xpToAward = isFirstSubmission === 0 ? baseXP + FIRST_SUBMISSION_BONUS : baseXP;
+        if (isFirstSubmission === 0) {
+          isFirstTryBonus = true;
+          xpToAward = baseXP + FIRST_SUBMISSION_BONUS;
+        } else {
+          xpToAward = baseXP;
+        }
 
         await tx.user.update({
           where: { id: userId },
@@ -89,6 +95,7 @@ router.post("/result", async (req, res) => {
         durations: durationMs,
         output: status === "PASSED" ? stdout : stderr || stdout || "Execution failed!",
         score: xpToAward,
+        isFirstTryBonus,
       },
     });
 
