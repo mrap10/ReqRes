@@ -67,3 +67,11 @@ export type ProblemDetailDTO = {
   track: ProblemTrack;
   tags: string[];
 };
+
+export type LeaderboardDTO = {
+  userId: string;
+  username: string;
+  globalRank: number;
+  totalScore: number;
+  problemsSolved: number;
+};

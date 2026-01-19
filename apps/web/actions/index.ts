@@ -45,3 +45,29 @@ export async function getProblemDetail(slug: string): Promise<ProblemDetailDTO |
     return null;
   }
 }
+
+export async function getLeaderboard() {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions/leaderboard`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Failed to fetch leaderboard data");
+      return [];
+    }
+
+    const data = await response.json();
+    return data.leaderboard;
+  } catch (error) {
+    console.error("Error fetching leaderboard data:", error);
+    return [];
+  }
+}

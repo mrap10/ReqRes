@@ -1,17 +1,25 @@
 "use client";
 
+import { getLeaderboard } from "@/actions";
+import { LeaderboardDTO } from "@reqres/types";
 import { Search, Trophy, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function LeaderboardTable() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardDTO[]>([]);
 
-  // const rankColor =
-  //     user.rank === 1 ? 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20' :
-  //     user.rank === 2 ? 'text-zinc-300 bg-zinc-300/10 border-zinc-300/20' :
-  //     user.rank === 3 ? 'text-amber-600 bg-amber-600/10 border-amber-600/20' :
-  //     'text-zinc-500 bg-zinc-800/50 border-zinc-800';
-  const rankColor = "text-zinc-500 bg-zinc-800/50 border-zinc-800";
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      setIsLoading(true);
+      const data = await getLeaderboard();
+      setLeaderboardData(data);
+      setIsLoading(false);
+    }
+    fetchLeaderboard();
+  }, []);
+
   return (
     <div>
       <div className="px-6 py-3 border-b border-white/5 flex flex-col sm:flex-row gap-4 justify-between items-center bg-zinc-900/80">
@@ -41,27 +49,63 @@ export default function LeaderboardTable() {
             </tr>
           </thead>
           <tbody className="text-sm">
-            <tr className="border-b border-white/5 hover:bg-zinc-800/30 transition-colors group">
-              <td className="p-4">
-                <span
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg border font-bold ${rankColor}`}
-                >
-                  1
-                </span>
-              </td>
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-lg shadow-inner">
-                    <User className="w-5 h-5 text-indigo-500" />
-                  </div>
-                  <span className="font-medium text-zinc-300">Peter Parker</span>
-                </div>
-              </td>
-              <td className="p-4 text-right font-mono text-zinc-400">5</td>
-              <td className="p-4 text-right">
-                <span className="font-mono font-bold text-zinc-400">123 XP</span>
-              </td>
-            </tr>
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="p-6 text-center">
+                  <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto animate-spin" />
+                  <p className="mt-2 text-zinc-400">Loading leaderboard...</p>
+                </td>
+              </tr>
+            ) : leaderboardData.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-zinc-400">
+                  No leaderboard data available.
+                </td>
+              </tr>
+            ) : (
+              leaderboardData
+                .filter((user) => user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((user, index) => {
+                  const rankColor =
+                    user.globalRank === 1
+                      ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
+                      : user.globalRank === 2
+                        ? "text-zinc-300 bg-zinc-300/10 border-zinc-300/20"
+                        : user.globalRank === 3
+                          ? "text-amber-600 bg-amber-600/10 border-amber-600/20"
+                          : "text-zinc-500 bg-zinc-800/50 border-zinc-800";
+                  return (
+                    <tr
+                      key={index}
+                      className="border-b border-white/5 hover:bg-zinc-800/30 transition-colors group"
+                    >
+                      <td className="p-4">
+                        <span
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg border font-bold ${rankColor}`}
+                        >
+                          {user.globalRank}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-lg shadow-inner">
+                            <User className="w-5 h-5 text-indigo-500" />
+                          </div>
+                          <span className="font-medium text-zinc-300">{user.username}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-right font-mono text-zinc-400">
+                        {user.problemsSolved}
+                      </td>
+                      <td className="p-4 text-right">
+                        <span className="font-mono font-bold text-zinc-400">
+                          {user.totalScore} XP
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+            )}
           </tbody>
         </table>
       </div>

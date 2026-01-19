@@ -104,6 +104,61 @@ router.post("/", async (req, res) => {
   });
 });
 
+router.get("/leaderboard", async (_, res) => {
+  try {
+    const leaderboardData = await prisma.submission.groupBy({
+      by: ["userId"],
+      where: {
+        status: "PASSED",
+      },
+      _sum: {
+        score: true,
+      },
+    });
+
+    const uniqueProblems = await Promise.all(
+      leaderboardData.map(async (entry) => {
+        const count = await prisma.submission.findMany({
+          where: {
+            userId: entry.userId,
+            status: "PASSED",
+          },
+          distinct: ["problemId"],
+          select: { problemId: true },
+        });
+        return { userId: entry.userId, count: count.length };
+      })
+    );
+
+    const userIds = leaderboardData.map((entry) => entry.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, username: true },
+    });
+
+    const userMap = new Map(users.map((user) => [user.id, user.username]));
+    const problemCountMap = new Map(uniqueProblems.map((p) => [p.userId, p.count]));
+
+    const sortedLeaderboard = leaderboardData
+      .map((entry) => ({
+        username: userMap.get(entry.userId) || "Unknown",
+        totalScore: entry._sum.score || 0,
+        problemsSolved: problemCountMap.get(entry.userId) || 0,
+      }))
+      .sort((a, b) => b.totalScore - a.totalScore);
+
+    const leaderboard = sortedLeaderboard.map((entry, index) => ({
+      globalRank: index + 1,
+      ...entry,
+    }));
+
+    res.json({ leaderboard });
+  } catch (error) {
+    console.error("Failed to fetch leaderboard:", error);
+    res.status(500).json({ error: "Failed to fetch leaderboard" });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   const submissionId = req.params.id;
 
