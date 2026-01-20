@@ -23,6 +23,7 @@
     "@reqres/utils": "*",
     "@types/cors": "^2.8.19",
     "axios": "^1.13.2",
+    "better-auth": "^1.4.16",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",

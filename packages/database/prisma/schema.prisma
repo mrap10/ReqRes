@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output = "../src/generated/prisma-client"
+  output   = "../src/generated/prisma-client"
 }
 
 datasource db {
@@ -8,17 +8,147 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String   @unique
-  password  String
-  xp        Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String       @id @default(cuid())
+  email         String       @unique
+  emailVerified Boolean?     @default(false)
+  username      String       @unique
+  image         String?
+  xp            Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  submissions Submission[]
+  submissions   Submission[]
+  sessions      Session[]
+  accounts      Account[]
 
   @@map("users")
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  userId      String
+  token       String   @unique
+  expiresAt   DateTime
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("sessions")
+}
+
+model Account {
+  id                      String   @id @default(cuid())
+  userId                  String
+  accountId               String
+  providerId              String
+  accessToken             String?
+  refreshToken            String?
+  accessTokenExpiresAt    DateTime?
+  refreshTokenExpiresAt   DateTime?
+  scope                   String?
+  idToken                 String?
+  password                String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
+}
+
+model Problem {
+  id               String         @id @default(cuid())
+  slug             String         @unique
+  title            String
+  description      String
+  shortDescription String
+  difficulty       Difficulty
+  track            ProblemTrack
+  instructions     String
+  examples         Json?
+  starterCode      String?
+  submissionType   SubmissionType
+  isPublished      Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  testConfig       TestConfig?
+  submissions      Submission[]
+  tags             String[]       @default([])
+  constraints      String[]       @default([])
+
+  @@map("problems")
+}
+
+model TestConfig {
+  id        String   @id @default(cuid())
+  problemId String   @unique
+  timeoutMs Int      @default(2000)
+  memoryMb  Int      @default(256)
+  createdAt DateTime @default(now())
+
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@map("test_cases")
+}
+
+model Submission {
+  id              String           @id @default(cuid())
+  userId          String
+  problemId       String
+  codeBundle      String
+  status          SubmissionStatus @default(PENDING)
+  output          String?
+  durations       Int?
+  score           Int?
+  isFirstTryBonus Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  logs            ExecutionLog[]
+  problem         Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  result          ExecutionResult?
+
+  @@index([userId])
+  @@index([problemId])
+  @@map("submissions")
+}
+
+model ExecutionResult {
+  id           String     @id @default(cuid())
+  submissionId String     @unique
+  rawResult    String
+  createdAt    DateTime   @default(now())
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@map("test_results")
+}
+
+model ExecutionLog {
+  id           String     @id @default(cuid())
+  submissionId String
+  level        String
+  message      String
+  createdAt    DateTime   @default(now())
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@map("execution_logs")
 }
 
 enum Difficulty {
@@ -38,43 +168,6 @@ enum ProblemTrack {
   DATABASE
 }
 
-model Problem {
-  id                 String     @id @default(cuid())
-  slug               String     @unique
-  title              String
-  description        String     @db.Text
-  shortDescription   String     @db.Text
-  difficulty         Difficulty
-  track              ProblemTrack
-  instructions       String     @db.Text
-  constraints        String[]   @default([])
-  examples           Json?
-  starterCode        String?    @db.Text
-  submissionType     SubmissionType
-  tags               String[]   @default([])
-  isPublished        Boolean    @default(false)
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-
-  testConfig   TestConfig?
-  submissions  Submission[]
-
-  @@map("problems")
-}
-
-// only metadata, not exact test cases' code
-model TestConfig {
-  id             String   @id @default(cuid())
-  problemId      String   @unique
-  timeoutMs      Int      @default(2000)
-  memoryMb       Int      @default(256)
-  createdAt      DateTime @default(now())
-
-  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
-
-  @@map("test_cases")
-}
-
 enum SubmissionStatus {
   PENDING
   RUNNING
@@ -84,50 +177,4 @@ enum SubmissionStatus {
   MEMORY_LIMIT
   RUNTIME_ERROR
   COMPILE_ERROR
-}
-
-model Submission {
-  id                String           @id @default(cuid())
-  userId            String
-  problemId         String
-  codeBundle        String
-  status            SubmissionStatus @default(PENDING)
-  output            String?
-  durations         Int?
-  score             Int?
-  isFirstTryBonus   Boolean          @default(false)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
-  result  ExecutionResult?
-  logs    ExecutionLog[]
-
-  @@index([userId])
-  @@index([problemId])
-  @@map("submissions")
-}
-
-model ExecutionResult {
-  id           String   @id @default(cuid())
-  submissionId String   @unique
-  rawResult    String
-  createdAt    DateTime @default(now())
-
-  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
-  @@map("test_results")
-}
-
-model ExecutionLog {
-  id            String   @id @default(cuid())
-  submissionId  String
-  level         String
-  message       String   @db.Text
-  createdAt     DateTime @default(now())
-
-  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
-  @@map("execution_logs")
 }
