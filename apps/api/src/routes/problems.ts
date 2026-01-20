@@ -54,4 +54,6 @@ router.get("/:slug", async (req, res) => {
   res.json({ problem: problem as ProblemDetailDTO });
 });
 
+// will add admin only routes here.
+
 export default router;

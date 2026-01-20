@@ -9,7 +9,9 @@
     "RUNNER_SHARED_SECRET",
     "API_CALLBACK_URL",
     "JWT_SECRET",
-    "WEB_BASE_URL"
+    "WEB_BASE_URL",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET"
   ],
   "tasks": {
     "build": {
