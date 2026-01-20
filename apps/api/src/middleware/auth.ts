@@ -2,7 +2,7 @@ import { prisma, UserRole } from "@reqres/database";
 import { NextFunction, Request, Response } from "express";
 import { auth } from "../lib/auth.js";
 
-interface ExtendedUser {
+export interface ExtendedUser {
   id: string;
   email: string;
   username: string;

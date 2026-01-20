@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prisma } from "@reqres/database";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { ExtendedUser } from "../middleware/auth.js";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -8,6 +9,14 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    async onSignUp({ user }: { user: ExtendedUser }) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          username: user.username || user.email?.split("@")[0],
+        },
+      });
+    },
   },
   socialProviders: {
     github: {
@@ -30,6 +39,20 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: "USER",
       },
+    },
+  },
+  callbacks: {
+    async onOAuthAccountLinked({ user }: { user: ExtendedUser }) {
+      if (!user.username) {
+        const baseUsername = user.email.split("@")[0];
+        const username = baseUsername + Math.random().toString(36).substring(2, 6);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            username,
+          },
+        });
+      }
     },
   },
 });
