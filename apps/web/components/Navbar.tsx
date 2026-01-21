@@ -61,7 +61,7 @@ export default function Navbar() {
 
           <div>
             <Link
-              href="/"
+              href="/signin"
               className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer"
             >
               Sign In
