@@ -23,6 +23,28 @@ export interface SubmissionState {
   output: string | null;
   durationMs: number | null;
   score: number | null;
+  xpEarned?: number;
+}
+
+interface SubmissionResponse {
+  submissionId: string;
+}
+
+interface SubmissionStatusResponse {
+  status: string;
+  results?: TestResult[];
+  output?: string;
+  durationMs?: number;
+  xpEarned?: number;
+}
+
+interface LogsResponse {
+  logs: ExecutionLog[];
+}
+
+interface ErrorResponse {
+  error?: string;
+  message?: string;
 }
 
 interface SubmissionContextType {
@@ -59,71 +81,94 @@ interface SubmissionProviderProps {
 export function SubmissionProvider({ children, problemId }: SubmissionProviderProps) {
   const [submission, setSubmission] = useState<SubmissionState>(initialState);
 
-  const pollSubmission = useCallback(async (submissionId: string) => {
-    const maxAttempts = 60;
-    let attempts = 0;
+  const mapStatusToSubmissionStatus = useCallback(
+    (apiStatus: string): SubmissionState["status"] => {
+      const lowerStatus = apiStatus.toLowerCase();
+      if (lowerStatus === "wrong_answer") return "failed";
+      if (lowerStatus === "runtime_error") return "error";
+      if (lowerStatus === "pending") return "pending";
+      if (lowerStatus === "running") return "running";
+      if (lowerStatus === "passed") return "passed";
+      if (lowerStatus === "failed") return "failed";
+      if (lowerStatus === "error") return "error";
+      return "idle";
+    },
+    []
+  );
 
-    const poll = async () => {
-      if (attempts >= maxAttempts) {
-        setSubmission((prev) => ({
-          ...prev,
-          status: "error",
-          logs: [...prev.logs, { type: "error", message: "Polling timeout reached" }],
-        }));
-        return;
-      }
+  const pollSubmission = useCallback(
+    async (submissionId: string) => {
+      const maxAttempts = 60;
+      let attempts = 0;
 
-      attempts++;
-
-      try {
-        const logsRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions/${submissionId}/logs`
-        );
-
-        if (logsRes.ok) {
-          const logsData = await logsRes.json();
+      const poll = async () => {
+        if (attempts >= maxAttempts) {
           setSubmission((prev) => ({
             ...prev,
-            logs: logsData.logs,
+            status: "error",
+            logs: [...prev.logs, { type: "error", message: "Polling timeout reached" }],
           }));
+          return;
         }
 
-        const statusRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions/${submissionId}`
-        );
+        attempts++;
 
-        if (statusRes.ok) {
-          const data = await statusRes.json();
-          const status = data.status.toLowerCase();
+        try {
+          const logsRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions/${submissionId}/logs`,
+            {
+              credentials: "include",
+            }
+          );
 
-          setSubmission((prev) => ({
-            ...prev,
-            status:
-              status === "wrong_answer" ? "failed" : status === "runtime_error" ? "error" : status,
-            testResults: data.results || [],
-            output: data.output,
-            durationMs: data.durationMs,
-            xpEarned: data.xpEarned || 0,
-          }));
-
-          if (status === "passed" && data.xpEarned && data.xpEarned > 0) {
-            toast.success(`${data.xpEarned} XP gained! 🎉`, {
-              duration: 3000,
-            });
+          if (logsRes.ok) {
+            const logsData: LogsResponse = await logsRes.json();
+            setSubmission((prev) => ({
+              ...prev,
+              logs: logsData.logs,
+            }));
           }
 
-          if (status === "pending" || status === "running") {
-            setTimeout(poll, 1000);
+          const statusRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions/${submissionId}`,
+            {
+              credentials: "include",
+            }
+          );
+
+          if (statusRes.ok) {
+            const data: SubmissionStatusResponse = await statusRes.json();
+            const mappedStatus = mapStatusToSubmissionStatus(data.status);
+
+            setSubmission((prev) => ({
+              ...prev,
+              status: mappedStatus,
+              testResults: data.results || [],
+              output: data.output ?? null,
+              durationMs: data.durationMs ?? null,
+              xpEarned: data.xpEarned,
+            }));
+
+            if (mappedStatus === "passed" && data.xpEarned && data.xpEarned > 0) {
+              toast.success(`${data.xpEarned} XP gained! 🎉`, {
+                duration: 3000,
+              });
+            }
+
+            if (mappedStatus === "pending" || mappedStatus === "running") {
+              setTimeout(poll, 1000);
+            }
           }
+        } catch (error) {
+          console.error("Polling error:", error);
+          setTimeout(poll, 2000);
         }
-      } catch (error) {
-        console.error("Polling error:", error);
-        setTimeout(poll, 2000);
-      }
-    };
+      };
 
-    poll();
-  }, []);
+      poll();
+    },
+    [mapStatusToSubmissionStatus]
+  );
 
   const submitCode = useCallback(
     async (problemIdToUse: string, code: string) => {
@@ -153,11 +198,12 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
-          const error = await res.json();
+          const error: ErrorResponse = await res.json();
           setSubmission((prev) => ({
             ...prev,
             status: "error",
@@ -166,7 +212,7 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
           return;
         }
 
-        const data = await res.json();
+        const data: SubmissionResponse = await res.json();
 
         setSubmission((prev) => ({
           ...prev,

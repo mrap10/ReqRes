@@ -3,10 +3,62 @@
 import AuthLeftSide from "@/components/AuthLeftSide";
 import InputField from "@/components/InputField";
 import SocialButton from "@/components/SocialButton";
+import { signIn, signUp } from "@/lib/auth-client";
 import { Github, Lock, Mail, Terminal } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function SignupPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const router = useRouter();
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    if (!email || !password || !username) {
+      setError("All fields are required");
+      setIsLoading(false);
+      return;
+    }
+
+    await signUp.email(
+      { email, password, name: username, username } as Parameters<typeof signUp.email>[0],
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: (ctx) => {
+          setError(ctx.error.message || "An unexpected error occurred while signing up.");
+          setIsLoading(false);
+        },
+      }
+    );
+  };
+
+  const handleSocialLogin = async (provider: "github") => {
+    setIsLoading(true);
+    await signIn.social(
+      {
+        provider,
+        callbackURL: "http://localhost:3000/problems",
+        errorCallbackURL: "http://localhost:3000/signup",
+      },
+      {
+        onError: (ctx) => {
+          setError(ctx.error.message || "An unexpected error occurred.");
+          setIsLoading(false);
+        },
+      }
+    );
+  };
   return (
     <div className="h-screen bg-zinc-950 text-slate-200 font-sans selection:bg-indigo-500/30 selection:text-indigo-200 flex">
       <AuthLeftSide />
@@ -14,7 +66,7 @@ export default function SignupPage() {
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 relative">
         <Link
           href={"/"}
-          className="absolute top-8 left-8 lg:left-12 gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <div className="text-xl font-bold text-white tracking-tight">
             Req<span className="text-indigo-400">Res</span>
@@ -28,7 +80,12 @@ export default function SignupPage() {
           </div>
 
           <div className="space-y-4">
-            <SocialButton icon={Github} label="Continue with Github" />
+            <SocialButton
+              onclick={() => handleSocialLogin("github")}
+              disabled={isLoading}
+              icon={Github}
+              label="Continue with Github"
+            />
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-zinc-800"></div>
@@ -41,21 +98,39 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <form action="" className="space-y-4">
-            <InputField label="Username" type="text" placeholder="andrew45" icon={Terminal} />
+          <form action="" onSubmit={handleSignup} className="space-y-4">
             <InputField
-              label="Email Address"
-              type="email"
-              placeholder="youremail@example.com"
-              icon={Mail}
+              type="text"
+              label="Username"
+              inputValue={username}
+              onchange={(e) => setUsername(e.target.value)}
+              icon={Terminal}
+              placeholder="andrew45"
             />
-            <InputField label="Password" type="password" placeholder="********" icon={Lock} />
+            <InputField
+              type="email"
+              label="Email Address"
+              inputValue={email}
+              onchange={(e) => setEmail(e.target.value)}
+              icon={Mail}
+              placeholder="youremail@example.com"
+            />
+            <InputField
+              type="password"
+              label="Password"
+              inputValue={password}
+              onchange={(e) => setPassword(e.target.value)}
+              icon={Lock}
+              placeholder="********"
+            />
+            {error && <p className="text-xs text-red-500 text-center">{error}</p>}
 
             <button
               type="submit"
-              className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02]"
+              disabled={isLoading}
+              className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 

@@ -5,6 +5,8 @@ import Editor, { EditorRef } from "./Editor";
 import RightSideHeader from "./RightSideHeader";
 import RightSideTerminal from "./RightSideTerminal";
 import { SubmissionProvider, useSubmission } from "./SubmissionContext";
+import { useAuth } from "@/lib/providers/AuthProvider";
+import { useRouter } from "next/navigation";
 
 interface ProblemWorkspaceProps {
   problemId: string;
@@ -14,20 +16,32 @@ interface ProblemWorkspaceProps {
 function WorkspaceContent({ problemId, starterCode }: ProblemWorkspaceProps) {
   const editorRef = useRef<EditorRef>(null);
   const { submitCode } = useSubmission();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const handleRun = useCallback(() => {
+    if (!isAuthenticated) {
+      router.push(`/signin?redirectTo=/problems/${problemId}`);
+      return;
+    }
+
     const code = editorRef.current?.getCode();
     if (code) {
       submitCode(problemId, code);
     }
-  }, [problemId, submitCode]);
+  }, [problemId, submitCode, isAuthenticated, router]);
 
   const handleSubmit = useCallback(() => {
+    if (!isAuthenticated) {
+      router.push(`/signin?redirectTo=/problems/${problemId}`);
+      return;
+    }
+
     const code = editorRef.current?.getCode();
     if (code) {
       submitCode(problemId, code);
     }
-  }, [problemId, submitCode]);
+  }, [problemId, submitCode, isAuthenticated, router]);
 
   return (
     <div className="w-1/2 flex flex-col bg-zinc-950">

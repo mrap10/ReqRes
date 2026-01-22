@@ -15,6 +15,28 @@ interface User {
   updatedAt: Date;
 }
 
+interface BetterAuthSession {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    image?: string | null;
+    emailVerified?: boolean | null;
+    createdAt: Date;
+    updatedAt: Date;
+    username?: string;
+    role?: string;
+    xp?: number;
+  };
+  session: {
+    id: string;
+    userId: string;
+    expiresAt: Date;
+    token: string;
+    [key: string]: unknown;
+  };
+}
+
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
@@ -24,10 +46,26 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function mapSessionToUser(session: BetterAuthSession | null): User | null {
+  if (!session?.user) return null;
+
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    username: session.user.username!,
+    role: (session.user.role || "USER") as "USER" | "ADMIN",
+    xp: session.user.xp || 0,
+    image: session.user.image,
+    emailVerified: session.user.emailVerified,
+    createdAt: session.user.createdAt,
+    updatedAt: session.user.updatedAt,
+  };
+}
+
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, isPending } = useSession();
 
-  const user = session?.user as unknown as User | null;
+  const user = mapSessionToUser(session as BetterAuthSession | null);
 
   return (
     <AuthContext.Provider

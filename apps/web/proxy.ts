@@ -14,13 +14,13 @@ export function proxy(request: NextRequest) {
   //   const isPublicPage = pathname === "/" || pathname === "/problems" || pathname === "/leaderboard";
 
   if (isProtectedPage && !hasSession) {
-    const loginUrl = new URL("/auth/login", request.url);
+    const loginUrl = new URL("/signin", request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (isAuthPage && hasSession) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/problems", request.url));
   }
 
   return NextResponse.next();

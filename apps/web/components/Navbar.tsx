@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { X, Menu } from "lucide-react";
+import { useAuth } from "@/lib/providers/AuthProvider";
+import { signOut } from "@/lib/auth-client";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -18,12 +20,20 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push("/signin");
+  };
+
   return (
     <div
       className={clsx(
@@ -60,12 +70,21 @@ export default function Navbar() {
           </div>
 
           <div>
-            <Link
-              href="/signin"
-              className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer"
-            >
-              Sign In
-            </Link>
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                href="/signin"
+                className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
 
           <button className="md:hidden flex flex-col gap-1.5" onClick={() => setIsOpen(!isOpen)}>
@@ -91,6 +110,21 @@ export default function Navbar() {
           <Link href="/feedback" className="text-zinc-400 hover:text-cyan-400">
             Feedback
           </Link>
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors text-left"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <Link
+              href="/signin"
+              className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       )}
     </div>

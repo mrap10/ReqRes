@@ -1,27 +1,29 @@
 import { betterAuth } from "better-auth";
 import { prisma } from "@reqres/database";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { ExtendedUser } from "../middleware/auth.js";
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
+  basePath: "/api/auth",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
   emailAndPassword: {
     enabled: true,
-    async onSignUp({ user }: { user: ExtendedUser }) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          username: user.username || user.email?.split("@")[0],
-        },
-      });
-    },
+    minPasswordLength: 8,
   },
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      mapProfileToUser: (profile) => {
+        return {
+          email: profile.email || `${profile.login}@users.noreply.github.com`,
+          image: profile.avatar_url,
+          emailVerified: true,
+          username: profile.login || `github_${Date.now()}`,
+        };
+      },
     },
   },
   user: {
@@ -41,18 +43,26 @@ export const auth = betterAuth({
       },
     },
   },
-  callbacks: {
-    async onOAuthAccountLinked({ user }: { user: ExtendedUser }) {
-      if (!user.username) {
-        const baseUsername = user.email.split("@")[0];
-        const username = baseUsername + Math.random().toString(36).substring(2, 6);
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            username,
-          },
-        });
-      }
+  trustedOrigins: ["http://localhost:3000"],
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
     },
+  },
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: false,
+    },
+    cookiePrefix: "reqres",
+    useSecureCookies: process.env.NODE_ENV === "production",
+  },
+  // todo: additional rate limiting at API gateway/reverse proxy level
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
   },
 });
