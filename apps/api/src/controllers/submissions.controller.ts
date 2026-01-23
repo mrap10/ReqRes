@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "@reqres/database";
-import { submissionQueue } from "../queues/submission.queue.js";
+import { submissionQueue, submissionQueueEvents } from "../queues/submission.queue.js";
+import type { JobProgress } from "bullmq";
 
 const CreateSubmissionSchema = z.object({
   problemId: z.cuid(),
@@ -255,5 +256,119 @@ export async function getSubmissionLogs(req: Request, res: Response) {
   } catch (error) {
     console.error("Failed to fetch submission logs:", error);
     res.status(500).json({ error: "Failed to fetch submission logs" });
+  }
+}
+
+export async function streamSubmissionStatus(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "Submission ID is required" });
+    }
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no"); // nginx buffering disabled
+
+    const job = await submissionQueue.getJob(id);
+
+    if (!job) {
+      res.write(`data: ${JSON.stringify({ error: "Job not found" })}\n\n`);
+      return res.end();
+    }
+
+    const initialState = await job.getState();
+    res.write(
+      `data: ${JSON.stringify({
+        state: initialState,
+        progress: job.progress,
+        submissionId: id,
+      })}\n\n`
+    );
+
+    if (initialState === "completed" || initialState === "failed") {
+      if (initialState === "completed") {
+        res.write(
+          `data: ${JSON.stringify({
+            state: "completed",
+            result: job.returnvalue,
+          })}\n\n`
+        );
+      } else {
+        res.write(
+          `data: ${JSON.stringify({
+            state: "failed",
+            error: job.failedReason,
+          })}\n\n`
+        );
+      }
+      return res.end();
+    }
+
+    const onProgress = async (data: { jobId: string; data: JobProgress }) => {
+      if (data.jobId === id) {
+        res.write(
+          `data: ${JSON.stringify({
+            state: "active",
+            progress: data.data,
+          })}\n\n`
+        );
+      }
+    };
+
+    const onCompleted = async (data: { jobId: string; returnvalue: unknown }) => {
+      if (data.jobId === id) {
+        res.write(
+          `data: ${JSON.stringify({
+            state: "completed",
+            result: data.returnvalue,
+          })}\n\n`
+        );
+        cleanup();
+        res.end();
+      }
+    };
+
+    const onFailed = async (data: { jobId: string; failedReason: string }) => {
+      if (data.jobId === id) {
+        res.write(
+          `data: ${JSON.stringify({
+            state: "failed",
+            error: data.failedReason,
+          })}\n\n`
+        );
+        cleanup();
+        res.end();
+      }
+    };
+
+    const cleanup = () => {
+      submissionQueueEvents.off("progress", onProgress);
+      submissionQueueEvents.off("completed", onCompleted);
+      submissionQueueEvents.off("failed", onFailed);
+    };
+
+    submissionQueueEvents.on("progress", onProgress);
+    submissionQueueEvents.on("completed", onCompleted);
+    submissionQueueEvents.on("failed", onFailed);
+
+    req.on("close", () => {
+      cleanup();
+    });
+
+    const keepAliveInterval = setInterval(() => {
+      res.write(`: keepalive\n\n`);
+    }, 15000);
+
+    req.on("close", () => {
+      clearInterval(keepAliveInterval);
+    });
+  } catch (error) {
+    console.error("Failed to stream submission status:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Failed to stream submission status" });
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Queue } from "bullmq";
+import { Queue, QueueEvents } from "bullmq";
 import { queueConfig } from "./config.js";
 
 export interface SubmissionJobData {
@@ -19,6 +19,10 @@ export interface SubmissionJobData {
 }
 
 export const submissionQueue = new Queue<SubmissionJobData>("submissionQueue", queueConfig);
+
+export const submissionQueueEvents = new QueueEvents("submissionQueue", {
+  connection: queueConfig.connection,
+});
 
 export async function queueSubmission(data: SubmissionJobData) {
   const job = await submissionQueue.add("processSubmission", data, {

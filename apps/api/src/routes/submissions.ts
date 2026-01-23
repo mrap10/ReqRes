@@ -29,4 +29,11 @@ router.get(
   submissionsController.getSubmissionLogs
 );
 
+router.get(
+  "/:id/stream",
+  requireAuth,
+  requireSubmissionOwnership,
+  submissionsController.streamSubmissionStatus
+);
+
 export default router;
