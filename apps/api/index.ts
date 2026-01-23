@@ -6,6 +6,8 @@ import problemsRouter from "./src/routes/problems.js";
 import userRouter from "./src/routes/user.js";
 import { auth } from "./src/lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
+import { submissionWorker } from "./src/workers/submission.worker.js";
+import { closeQueueConnections } from "./src/queues/config.js";
 
 const PORT = process.env.PORT;
 
@@ -33,4 +35,19 @@ app.get("/", (_, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}: http://localhost:${PORT}`);
+  console.log(`Submission worker started with concurrency: ${process.env.WORKER_CONCURRENCY}`);
 });
+
+const gracefulShutdown = async (signal: string) => {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+
+  await submissionWorker.close();
+  console.log("Worker closed");
+
+  await closeQueueConnections();
+
+  process.exit(0);
+};
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "@reqres/database";
-import axios from "axios";
+import { submissionQueue } from "../queues/submission.queue.js";
 
 const CreateSubmissionSchema = z.object({
   problemId: z.cuid(),
@@ -47,51 +47,33 @@ export async function createSubmission(req: Request, res: Response) {
       },
     });
 
-    const codeBundleToSend = {
-      files: code.files,
-      entryPoint: code.entryPoint || "index.js",
-    };
-
-    // fire-and-forget request to runner
-    axios
-      .post(
-        `${process.env.RUNNER_BASE_URL}/internal/execute`,
-        {
-          submissionId: submission.id,
-          problem: {
-            id: problem.id,
-            slug: problem.slug,
-            submissionType: problem.submissionType,
-          },
-          codeBundle: codeBundleToSend,
-          testConfig: {
-            timeoutMs: problem.testConfig.timeoutMs,
-            memoryMb: problem.testConfig.memoryMb,
-          },
+    await submissionQueue.add(
+      "processSubmission",
+      {
+        submissionId: submission.id,
+        problem: {
+          id: problem.id,
+          slug: problem.slug,
+          submissionType: problem.submissionType,
         },
-        {
-          headers: {
-            "x-runner-secret": process.env.RUNNER_SHARED_SECRET,
-          },
-          timeout: 60000,
-        }
-      )
-      .catch((err) => {
-        console.error("Failed to send execution request to runner:", {
-          message: err.message,
-          status: err.response?.status,
-          data: err.response?.data,
-        });
-      });
-
-    await prisma.submission.update({
-      where: { id: submission.id },
-      data: { status: "RUNNING" },
-    });
+        codeBundle: {
+          files: code.files,
+          entryPoint: code.entryPoint || "index.js",
+        },
+        testConfig: {
+          timeoutMs: problem.testConfig.timeoutMs,
+          memoryMb: problem.testConfig.memoryMb,
+        },
+      },
+      {
+        jobId: submission.id,
+        priority: 1,
+      }
+    );
 
     res.json({
       submissionId: submission.id,
-      status: "RUNNING",
+      status: "PENDING",
     });
   } catch (error) {
     console.error("Failed to create submission:", error);

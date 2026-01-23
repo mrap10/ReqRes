@@ -12,7 +12,11 @@
     "WEB_BASE_URL",
     "GITHUB_CLIENT_ID",
     "GITHUB_CLIENT_SECRET",
-    "BETTER_AUTH_URL"
+    "BETTER_AUTH_URL",
+    "WORKER_CONCURRENCY",
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_PASSWORD"
   ],
   "tasks": {
     "build": {
