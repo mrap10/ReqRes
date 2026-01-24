@@ -2,15 +2,28 @@
 
 Somthing like leetcode but modern and for backend (express for now, will extend as needed)
 
-## High level architecture
+## Architecture overview
 
 ```tree
-Browser (untrusted)
-      ↓
-API (trusted)
-      ↓
-Runner (isolated & disposable)
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Frontend  │────▶│   API       │────▶│   Redis     │────▶│   Worker    │
+│   (Next.js) │◀────│   (Express) │◀────│   (Queue)   │◀────│   (BullMQ)  │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+      │                   │                                        │
+      │                   │                                        ▼
+      │                   │                                  ┌─────────────┐
+      │◀──────────────────│◀───────────────────────────────▶│   Runner    │
+      │       SSE         │                                  │   (Docker)  │
+      │                   │                                  └─────────────┘
 ```
+
+Flow:
+
+1. **User submits code** → Frontend sends POST to `/submissions`
+2. **API queues job** → Creates submission in DB, adds job to Redis queue
+3. **Worker picks up job** → Processes submission, calls Runner service
+4. **Real-time updates** → Frontend receives updates via SSE (Server-Sent Events)
+5. **Completion** → Worker updates DB, SSE sends final result
 
 ---
 
@@ -42,7 +55,27 @@ User fetches submission → Gets detailed test results
 
 ## Current Architecture Overview (docker x runner explanation)
 
-- will prob. create a new architecture md file and update these later, there
+### Queue-Based Execution (Phase 3 Update!)
+
+We now use **BullMQ + Redis** for handling submission spikes without overloading the runner:
+
+**Old Flow:** User → API → Runner (direct) → Response (could crash under load)  
+**New Flow:** User → API → Queue → Worker → Runner → Response (via SSE)
+
+**Why queues?**
+
+- Handles submission spikes gracefully (100 concurrent users? no problem)
+- Workers scale independently (add more workers = more throughput)
+- Real-time updates via SSE (watch your code execute live!)
+- Submissions never get lost (Redis persistence)
+
+**Architecture:**
+
+- **Redis:** Job queue storage, persisted to disk
+- **Worker:** Picks jobs from queue, calls runner, updates DB
+- **SSE:** Real-time streaming of submission status to frontend
+
+For detailed setup, testing, and production deployment → (will add later)
 
 ### dockerRun.ts - Code Execution Engine
 
@@ -140,15 +173,86 @@ sudo usermod -aG docker $USER
 
 ### Prerequisites
 
-- Docker must be running (for code execution in containers)
+- **Docker Desktop** running (for Redis + code execution in containers)
 - Node.js/Bun installed
 - PostgreSQL running
 
 ### Environment Setup
 
+1. **Start Redis** (required for queue system)
+
+   ```bash
+   # From project root
+   docker-compose up -d
+
+   # Verify it's running
+   docker-compose ps
+   ```
+
+2. **Configure API environment**
+
+   ```bash
+   cd apps/api
+   cp .env.example .env
+   # Edit .env and set:
+   # - REDIS_HOST=localhost
+   # - REDIS_PORT=6379
+   # - RUNNER_SHARED_SECRET=your-secret
+   # - Other values as needed
+   ```
+
+3. **Configure Runner environment**
+
+   ```bash
+   cd apps/runner
+   cp .env.example .env
+   # Make sure RUNNER_SHARED_SECRET matches API's secret
+   ```
+
 ### Running the Application
 
-- build the optimized runner base image:
+**You need 4 terminals:**
+
+```bash
+# Terminal 1: Redis (already started via docker-compose)
+docker-compose ps  # Just verify it's running
+
+# Terminal 2: API Server (includes embedded worker for dev)
+cd apps/api
+bun run dev
+
+# Terminal 3: Runner Service
+cd apps/runner
+bun run dev
+
+# Terminal 4: Frontend
+cd apps/web
+bun run dev
+```
+
+**For production-like setup** (separate worker process):
+
+```bash
+# Terminal 2: API only (no embedded worker)
+cd apps/api
+bun run dev:api-only
+
+# Terminal 3: Dedicated Worker
+cd apps/api
+bun run worker:dev
+
+# Terminal 4: Runner
+cd apps/runner
+bun run dev
+
+# Terminal 5: Frontend
+cd apps/web
+bun run dev
+```
+
+Open `http://localhost:3000` and start solving problems!
+
+### Build the optimized runner base image (one-time setup)
 
 ```bash
 # From the project root directory
@@ -166,32 +270,70 @@ docker run --rm reqres-runner:latest node --version
 docker run --rm reqres-runner:latest npm list --depth=0
 ```
 
-- run /apps/api and /apps/runner in separate terminals, simulateously
+### Quick Testing
 
-### Testing Submissions
+Submit code via the frontend at `http://localhost:3000` or use curl:
 
 ```bash
+# Create a submission (you'll need a valid auth cookie and problem ID)
 curl -X POST http://localhost:4000/submissions \
   -H "Content-Type: application/json" \
+  -H "Cookie: your-auth-cookie" \
   -d '{
-    "problemId": "<your-problem-id>",
+    "problemId": "<problem-id>",
     "code": {
-      "files": {
-        "index.ts": "your code here"
-      }
+      "files": {"index.js": "your code here"},
+      "entryPoint": "index.js"
     }
   }'
+
+# Watch real-time updates via SSE
+curl -N http://localhost:4000/submissions/<submission-id>/stream \
+  -H "Cookie: your-auth-cookie"
+
+# Get final results
+curl http://localhost:4000/submissions/<submission-id> \
+  -H "Cookie: your-auth-cookie"
 ```
 
-- Check submission status
+### Monitoring the Queue
 
 ```bash
-curl http://localhost:4000/submissions/<submission-id>
+# Check Redis queue status
+docker exec -it reqres-redis redis-cli
+
+# In Redis CLI:
+> KEYS bull:*  # View all queues
+> LLEN bull:submissionQueue:wait  # Check waiting jobs
+> LLEN bull:submissionQueue:active  # Check processing jobs
+
+# Optional: Start Redis Commander UI for visual monitoring
+docker-compose --profile debug up -d
+# Open http://localhost:8081
 ```
 
 ## Troubleshooting
 
-### Submission stuck in RUNNING
+### Submission stuck in PENDING
+
+**Possible causes:**
+
+- Worker not running (check terminal 2/3)
+- Redis connection failed (check `docker-compose ps`)
+- Runner not running (terminal 3/4)
+
+**Debug:**
+
+```bash
+# Check if worker is processing
+# Look for "[Worker] Processing job..." in API logs
+
+# Check queue depth
+docker exec -it reqres-redis redis-cli
+> LLEN bull:submissionQueue:wait
+```
+
+### Runner not responding (ECONNREFUSED)
 
 - Check if both API and Runner services are running
 - Check if Docker is running
