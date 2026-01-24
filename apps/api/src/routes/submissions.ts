@@ -37,3 +37,4 @@ router.get(
 );
 
 export default router;
+// todo: add bull board for queue monitoring by admin only (will do after initiating admin workflows) with grafana, datadog, etc

@@ -5,10 +5,15 @@ import { prisma, SubmissionStatus } from "@reqres/database";
 import { workerConfig } from "../queues/config.js";
 
 interface RunnerResponse {
-  status: SubmissionStatus;
-  result?: TestResult;
+  status: string;
+  results?: Array<{
+    name: string;
+    passed: boolean;
+    error?: string;
+  }>;
   durationMs?: number;
-  output?: string;
+  stdout?: string;
+  stderr?: string;
 }
 
 interface TestResult {
@@ -20,6 +25,36 @@ interface TestResult {
     passed: boolean;
     message?: string;
   }>;
+}
+
+// Runner may return: PASSED, FAILED, ERROR, TIMEOUT, etc.
+// Prisma expects: PENDING, RUNNING, PASSED, WRONG_ANSWER, TIME_LIMIT, MEMORY_LIMIT, RUNTIME_ERROR, COMPILE_ERROR
+// will try to make this status thing simpler directly in the schema, so that mapping all this will not be necessary.
+function mapRunnerStatusToSubmissionStatus(runnerStatus: string): SubmissionStatus {
+  const status = runnerStatus.toUpperCase();
+
+  switch (status) {
+    case "PASSED":
+      return SubmissionStatus.PASSED;
+    case "FAILED":
+    case "WRONG_ANSWER":
+      return SubmissionStatus.WRONG_ANSWER;
+    case "TIMEOUT":
+    case "TIME_LIMIT":
+    case "TLE":
+      return SubmissionStatus.TIME_LIMIT;
+    case "MEMORY_LIMIT":
+    case "MLE":
+    case "OOM":
+      return SubmissionStatus.MEMORY_LIMIT;
+    case "COMPILE_ERROR":
+    case "COMPILATION_ERROR":
+      return SubmissionStatus.COMPILE_ERROR;
+    case "RUNTIME_ERROR":
+    case "ERROR":
+    default:
+      return SubmissionStatus.RUNTIME_ERROR;
+  }
 }
 
 const RUNNER_URL = process.env.RUNNER_BASE_URL;
@@ -58,18 +93,12 @@ async function processSubmission(job: Job<SubmissionJobData>) {
 
     await job.updateProgress(50);
 
-    const { status, result, durationMs, output } = response.data as RunnerResponse;
-
-    await updateSubmissionInDb(submissionId, {
-      status,
-      result,
-      durationMs,
-      output,
-    });
+    const runnerResponse = response.data as RunnerResponse;
+    const mappedStatus = mapRunnerStatusToSubmissionStatus(runnerResponse.status);
 
     await job.updateProgress(100);
 
-    return { submissionId, status, durationMs };
+    return { submissionId, status: mappedStatus, durationMs: runnerResponse.durationMs };
   } catch (error: unknown) {
     const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
     const errorMessage = axiosError.message || "Unknown error";

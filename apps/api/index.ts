@@ -6,8 +6,16 @@ import problemsRouter from "./src/routes/problems.js";
 import userRouter from "./src/routes/user.js";
 import { auth } from "./src/lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
-import { submissionWorker } from "./src/workers/submission.worker.js";
 import { closeQueueConnections } from "./src/queues/config.js";
+
+// importing worker conditionally via embedded for dev mode only, will run separately in prod
+const WORKER_ENABLED = process.env.WORKER_ENABLED !== "false";
+let submissionWorker: { close: () => Promise<void> } | null = null;
+
+if (WORKER_ENABLED) {
+  const workerModule = await import("./src/workers/submission.worker.js");
+  submissionWorker = workerModule.submissionWorker;
+}
 
 const PORT = process.env.PORT;
 
@@ -35,14 +43,20 @@ app.get("/", (_, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}: http://localhost:${PORT}`);
-  console.log(`Submission worker started with concurrency: ${process.env.WORKER_CONCURRENCY}`);
+  if (WORKER_ENABLED) {
+    console.log(`Embedded worker started with concurrency: ${process.env.WORKER_CONCURRENCY || 5}`);
+  } else {
+    console.log("Worker disabled - run separately with: bun run worker:start");
+  }
 });
 
 const gracefulShutdown = async (signal: string) => {
   console.log(`\n${signal} received. Shutting down gracefully...`);
 
-  await submissionWorker.close();
-  console.log("Worker closed");
+  if (submissionWorker) {
+    await submissionWorker.close();
+    console.log("Worker closed");
+  }
 
   await closeQueueConnections();
 

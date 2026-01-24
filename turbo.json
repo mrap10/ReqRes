@@ -16,7 +16,8 @@
     "WORKER_CONCURRENCY",
     "REDIS_HOST",
     "REDIS_PORT",
-    "REDIS_PASSWORD"
+    "REDIS_PASSWORD",
+    "WORKER_ENABLED"
   ],
   "tasks": {
     "build": {

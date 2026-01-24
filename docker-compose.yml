@@ -1,0 +1,59 @@
+services:
+  # for BullMQ queue
+  redis:
+    image: redis:7-alpine
+    container_name: reqres-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # for debugging
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: reqres-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    restart: unless-stopped
+    profiles:
+      - debug
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    container_name: reqres-worker
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WORKER_CONCURRENCY=5
+      - RUNNER_BASE_URL=${RUNNER_BASE_URL:-http://host.docker.internal:5000}
+      - RUNNER_SHARED_SECRET=${RUNNER_SHARED_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - worker
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+volumes:
+  redis_data:
+    driver: local

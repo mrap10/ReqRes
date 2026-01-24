@@ -7,10 +7,7 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthPage = pathname.startsWith("/auth");
-  const isProtectedPage =
-    (pathname.startsWith("/problems") && pathname !== "/problems") ||
-    pathname.startsWith("/submissions") ||
-    pathname.startsWith("/profile");
+  const isProtectedPage = pathname.startsWith("/submissions") || pathname.startsWith("/profile");
   //   const isPublicPage = pathname === "/" || pathname === "/problems" || pathname === "/leaderboard";
 
   if (isProtectedPage && !hasSession) {
@@ -27,5 +24,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/problems/:slug", "/submissions/:path*", "/profile/:path*", "/auth/:path*"],
+  matcher: ["/submissions/:path*", "/profile/:path*", "/auth/:path*"],
 };
