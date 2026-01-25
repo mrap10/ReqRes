@@ -1,46 +1,48 @@
 import { submissionWorker } from "./src/workers/submission.worker.js";
 import { closeQueueConnections } from "./src/queues/config.js";
+import { workerLogger } from "./src/lib/logger.js";
 
-console.log("╔════════════════════════════════════════════╗");
-console.log("║     ReqRes Submission Worker Started       ║");
-console.log("╠════════════════════════════════════════════╣");
-console.log(`║ Concurrency: ${(process.env.WORKER_CONCURRENCY || "5").padEnd(29)}║`);
-console.log(`║ Redis Host:  ${(process.env.REDIS_HOST || "localhost").padEnd(29)}║`);
-console.log(`║ Redis Port:  ${(process.env.REDIS_PORT || "6379").padEnd(29)}║`);
-console.log("╚════════════════════════════════════════════╝");
+workerLogger.info(
+  {
+    concurrency: process.env.WORKER_CONCURRENCY || "5",
+    redisHost: process.env.REDIS_HOST || "localhost",
+    redisPort: process.env.REDIS_PORT || "6379",
+  },
+  "ReqRes Submission Worker Started"
+);
 
 submissionWorker.on("ready", () => {
-  console.log("[Worker] Ready and waiting for jobs...");
+  workerLogger.info("Worker ready and waiting for jobs");
 });
 
 submissionWorker.on("active", (job) => {
-  console.log(`[Worker] Processing job ${job.id} - Submission: ${job.data.submissionId}`);
+  workerLogger.info({ jobId: job.id, submissionId: job.data.submissionId }, "Processing job");
 });
 
 submissionWorker.on("completed", (job, result) => {
-  console.log(`[Worker] Job ${job.id} completed:`, result);
+  workerLogger.info({ jobId: job.id, result }, "Job completed");
 });
 
 submissionWorker.on("failed", (job, err) => {
-  console.error(`[Worker] Job ${job?.id} failed:`, err.message);
+  workerLogger.error({ jobId: job?.id, error: err.message }, "Job failed");
 });
 
 submissionWorker.on("error", (err) => {
-  console.error("[Worker] Error:", err.message);
+  workerLogger.error({ error: err.message }, "Worker error");
 });
 
 submissionWorker.on("stalled", (jobId) => {
-  console.warn(`[Worker] Job ${jobId} stalled - will be retried`);
+  workerLogger.warn({ jobId }, "Job stalled - will be retried");
 });
 
 const gracefulShutdown = async (signal: string) => {
-  console.log(`\n[Worker] ${signal} received. Shutting down gracefully...`);
+  workerLogger.info({ signal }, "Shutdown signal received - shutting down gracefully");
 
   await submissionWorker.close();
-  console.log("[Worker] Worker closed");
+  workerLogger.info("Worker closed successfully");
 
   await closeQueueConnections();
-  console.log("[Worker] Redis connections closed");
+  workerLogger.info("Redis connections closed");
 
   process.exit(0);
 };
@@ -49,10 +51,10 @@ process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 process.on("uncaughtException", (err) => {
-  console.error("[Worker] Uncaught exception:", err);
+  workerLogger.error({ error: err }, "Uncaught exception");
   gracefulShutdown("UNCAUGHT_EXCEPTION");
 });
 
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("[Worker] Unhandled rejection at:", promise, "reason:", reason);
+  workerLogger.error({ reason, promise }, "Unhandled rejection");
 });

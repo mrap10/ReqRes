@@ -3,6 +3,7 @@ import { SubmissionJobData } from "../queues/submission.queue.js";
 import axios from "axios";
 import { prisma, SubmissionStatus } from "@reqres/database";
 import { workerConfig } from "../queues/config.js";
+import { workerLogger } from "../lib/logger.js";
 
 interface RunnerResponse {
   status: string;
@@ -60,15 +61,21 @@ function mapRunnerStatusToSubmissionStatus(runnerStatus: string): SubmissionStat
 const RUNNER_URL = process.env.RUNNER_BASE_URL;
 
 async function processSubmission(job: Job<SubmissionJobData>) {
-  const { submissionId, problem, codeBundle, testConfig } = job.data;
+  const { submissionId, problem, codeBundle, testConfig, correlationId } = job.data;
+
+  const jobLogger = workerLogger.child({ submissionId, correlationId });
 
   try {
+    jobLogger.info("Starting submission processing");
+
     await prisma.submission.update({
       where: { id: submissionId },
       data: { status: "RUNNING" },
     });
 
     await job.updateProgress(10);
+
+    jobLogger.debug("Sending submission to runner service");
 
     const response = await axios.post(
       `${RUNNER_URL}/internal/execute`,
@@ -81,6 +88,7 @@ async function processSubmission(job: Job<SubmissionJobData>) {
         },
         codeBundle,
         testConfig,
+        correlationId,
       },
       {
         headers: {
@@ -94,16 +102,21 @@ async function processSubmission(job: Job<SubmissionJobData>) {
     await job.updateProgress(50);
 
     const runnerResponse = response.data as RunnerResponse;
+
+    jobLogger.info({ runnerResponse }, "Received response from runner service");
+
     const mappedStatus = mapRunnerStatusToSubmissionStatus(runnerResponse.status);
 
     await job.updateProgress(100);
+
+    jobLogger.info(`Submission processed with status: ${mappedStatus}`);
 
     return { submissionId, status: mappedStatus, durationMs: runnerResponse.durationMs };
   } catch (error: unknown) {
     const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
     const errorMessage = axiosError.message || "Unknown error";
 
-    console.error(`Error processing submission ${submissionId}:`, errorMessage);
+    jobLogger.error({ error: errorMessage }, "Submission processing failed");
 
     await updateSubmissionInDb(submissionId, {
       status: SubmissionStatus.RUNTIME_ERROR,
@@ -120,20 +133,39 @@ export const submissionWorker = new Worker<SubmissionJobData>(
   workerConfig
 );
 
-submissionWorker.on("completed", (job, returnvalue) => {
-  console.log(`Submission job ${job.id} completed with result:`, returnvalue);
+submissionWorker.on("completed", (job) => {
+  workerLogger.info(
+    {
+      correlationId: job.data.correlationId,
+      jobId: job.id,
+    },
+    "Submission job completed successfully"
+  );
 });
 
 submissionWorker.on("active", (job) => {
-  console.log(`Processing submission job ${job.id}...`);
+  workerLogger.info(
+    {
+      correlationId: job.data.correlationId,
+      jobId: job.id,
+    },
+    "Processing submission job"
+  );
 });
 
 submissionWorker.on("failed", (job, err) => {
-  console.error(`Submission job ${job?.id} failed with error:`, err);
+  workerLogger.error(
+    {
+      correlationId: job?.data.correlationId,
+      jobId: job?.id,
+      error: err.message,
+    },
+    "Submission job failed"
+  );
 });
 
 submissionWorker.on("error", (err) => {
-  console.error("Worker encountered an error:", err);
+  workerLogger.error({ error: err.message }, "Worker encountered an error");
 });
 
 interface SubmissionUpdateData {
@@ -181,9 +213,9 @@ async function updateSubmissionInDb(submissionId: string, data: SubmissionUpdate
       });
     }
 
-    console.log(`Updated submission ${submissionId} with status: ${data.status}`);
+    workerLogger.info({ submissionId, status: data.status }, "Updated submission in database");
   } catch (error) {
-    console.error(`Failed to update submission ${submissionId}:`, error);
+    workerLogger.error({ submissionId, error }, "Failed to update submission in database");
     throw error;
   }
 }

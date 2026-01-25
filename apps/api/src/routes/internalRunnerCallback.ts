@@ -1,5 +1,6 @@
 import { prisma } from "@reqres/database";
 import { Router } from "express";
+import { apiLogger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const FIRST_SUBMISSION_BONUS = 25;
 
 // hope i dont need explicit middleware here
 router.post("/result", async (req, res) => {
-  console.log("runner callback raw body:", JSON.stringify(req.body, null, 2));
+  apiLogger.debug({ body: req.body }, "Runner callback received");
 
   const secret = req.headers["x-runner-secret"];
   if (secret !== process.env.RUNNER_SHARED_SECRET) {

@@ -1,5 +1,6 @@
 import { QueueOptions, WorkerOptions } from "bullmq";
 import { Redis } from "ioredis";
+import { queueLogger } from "../lib/logger.js";
 
 const createRedisConnection = () => {
   const redis = new Redis({
@@ -10,7 +11,7 @@ const createRedisConnection = () => {
     enableReadyCheck: false,
     retryStrategy: (times: number) => {
       if (times > 10) {
-        console.error("Redis connection failed after 10 retries");
+        queueLogger.error("Redis connection failed after 10 retries");
         return null;
       }
       return Math.min(times * 200, 2000); // exponential backoff
@@ -18,15 +19,15 @@ const createRedisConnection = () => {
   });
 
   redis.on("connect", () => {
-    console.log("Redis connected successfully");
+    queueLogger.info("Redis connected successfully");
   });
 
   redis.on("error", (err) => {
-    console.error("Redis connection error:", err.message);
+    queueLogger.error({ error: err.message }, "Redis connection error");
   });
 
   redis.on("close", () => {
-    console.log("Redis connection closed");
+    queueLogger.info("Redis connection closed");
   });
 
   return redis;
@@ -63,5 +64,5 @@ export const workerConfig: WorkerOptions = {
 
 export async function closeQueueConnections() {
   await connection.quit();
-  console.log("Queue connections closed");
+  queueLogger.info("Queue connections closed");
 }

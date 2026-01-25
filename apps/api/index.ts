@@ -7,6 +7,11 @@ import userRouter from "./src/routes/user.js";
 import { auth } from "./src/lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import { closeQueueConnections } from "./src/queues/config.js";
+import {
+  correlationMiddleware,
+  requestLoggingMiddleware,
+} from "./src/middleware/logging.middleware.js";
+import { apiLogger } from "./src/lib/logger.js";
 
 // importing worker conditionally via embedded for dev mode only, will run separately in prod
 const WORKER_ENABLED = process.env.WORKER_ENABLED !== "false";
@@ -30,6 +35,9 @@ app.use(
 
 app.use(express.json());
 
+app.use(correlationMiddleware);
+app.use(requestLoggingMiddleware);
+
 app.use("/api/auth", toNodeHandler(auth));
 
 app.use("/submissions", submissionsRouter);
@@ -42,20 +50,20 @@ app.get("/", (_, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}: http://localhost:${PORT}`);
+  apiLogger.info({ port: PORT }, `API server started`);
   if (WORKER_ENABLED) {
-    console.log(`Embedded worker started with concurrency: ${process.env.WORKER_CONCURRENCY || 5}`);
+    apiLogger.info({ concurrency: process.env.WORKER_CONCURRENCY || 5 }, "Embedded worker started");
   } else {
-    console.log("Worker disabled - run separately with: bun run worker:start");
+    apiLogger.info("Worker disabled - run separately with: bun run worker:start");
   }
 });
 
 const gracefulShutdown = async (signal: string) => {
-  console.log(`\n${signal} received. Shutting down gracefully...`);
+  apiLogger.info({ signal }, "Shutdown signal received - shutting down gracefully");
 
   if (submissionWorker) {
     await submissionWorker.close();
-    console.log("Worker closed");
+    apiLogger.info("Worker closed successfully");
   }
 
   await closeQueueConnections();

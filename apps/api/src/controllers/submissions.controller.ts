@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@reqres/database";
 import { submissionQueue, submissionQueueEvents } from "../queues/submission.queue.js";
 import type { JobProgress } from "bullmq";
+import { apiLogger } from "../lib/logger.js";
 
 const CreateSubmissionSchema = z.object({
   problemId: z.cuid(),
@@ -65,6 +66,7 @@ export async function createSubmission(req: Request, res: Response) {
           timeoutMs: problem.testConfig.timeoutMs,
           memoryMb: problem.testConfig.memoryMb,
         },
+        correlationId: (req.headers["x-correlation-id"] as string) || "",
       },
       {
         jobId: submission.id,
@@ -77,7 +79,7 @@ export async function createSubmission(req: Request, res: Response) {
       status: "PENDING",
     });
   } catch (error) {
-    console.error("Failed to create submission:", error);
+    apiLogger.error({ correlationId: req.correlationId, error }, "Failed to create submission");
     res.status(500).json({ error: "Failed to create submission" });
   }
 }
@@ -118,7 +120,7 @@ export async function getUserSubmissions(req: Request, res: Response) {
 
     res.json({ submissions: submissionList });
   } catch (error) {
-    console.error("Failed to fetch user submissions:", error);
+    apiLogger.error({ userId: req.params.userId, error }, "Failed to fetch user submissions");
     res.status(500).json({ error: "Failed to fetch user submissions" });
   }
 }
@@ -173,7 +175,7 @@ export async function getLeaderboard(_: Request, res: Response) {
 
     res.json({ leaderboard });
   } catch (error) {
-    console.error("Failed to fetch leaderboard:", error);
+    apiLogger.error({ error }, "Failed to fetch leaderboard");
     res.status(500).json({ error: "Failed to fetch leaderboard" });
   }
 }
@@ -215,7 +217,7 @@ export async function getSubmissionById(req: Request, res: Response) {
       updatedAt: submission.updatedAt,
     });
   } catch (error) {
-    console.error("Failed to fetch submission:", error);
+    apiLogger.error({ submissionId: req.params.id, error }, "Failed to fetch submission");
     res.status(500).json({ error: "Failed to fetch submission" });
   }
 }
@@ -254,7 +256,7 @@ export async function getSubmissionLogs(req: Request, res: Response) {
       })),
     });
   } catch (error) {
-    console.error("Failed to fetch submission logs:", error);
+    apiLogger.error({ submissionId: req.params.id, error }, "Failed to fetch submission logs");
     res.status(500).json({ error: "Failed to fetch submission logs" });
   }
 }
@@ -366,7 +368,7 @@ export async function streamSubmissionStatus(req: Request, res: Response) {
       clearInterval(keepAliveInterval);
     });
   } catch (error) {
-    console.error("Failed to stream submission status:", error);
+    apiLogger.error({ submissionId: req.params.id, error }, "Failed to stream submission status");
     if (!res.headersSent) {
       res.status(500).json({ error: "Failed to stream submission status" });
     }

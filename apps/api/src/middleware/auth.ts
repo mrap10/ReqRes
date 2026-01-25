@@ -1,6 +1,7 @@
 import { prisma, UserRole } from "@reqres/database";
 import { NextFunction, Request, Response } from "express";
 import { auth } from "../lib/auth.js";
+import { apiLogger } from "../lib/logger.js";
 
 export interface ExtendedUser {
   id: string;
@@ -17,6 +18,7 @@ export interface ExtendedUser {
 declare module "express-serve-static-core" {
   interface Request {
     user?: ExtendedUser;
+    correlationId?: string;
   }
 }
 
@@ -33,7 +35,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     req.user = session.user as ExtendedUser;
     next();
   } catch (error) {
-    console.error("Authentication error:", error);
+    apiLogger.error({ correlationId: req.correlationId, error }, "Authentication error");
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }
@@ -50,7 +52,7 @@ export async function optionalAuth(req: Request, next: NextFunction) {
 
     next();
   } catch (error) {
-    console.error("Authentication error:", error);
+    apiLogger.error({ error }, "Optional authentication error");
     next();
   }
 }
@@ -116,7 +118,10 @@ export async function requireSubmissionOwnership(req: Request, res: Response, ne
 
     next();
   } catch (error) {
-    console.error("Error checking submission ownership:", error);
+    apiLogger.error(
+      { submissionId, userId: req.user?.id, error },
+      "Error checking submission ownership"
+    );
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }
