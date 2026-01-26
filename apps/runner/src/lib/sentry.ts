@@ -5,7 +5,6 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 
 export function initializeSentry() {
   if (!process.env.SENTRY_DSN) {
-    console.warn("[Runner] SENTRY_DSN not set. Sentry will not be initialized.");
     return;
   }
 
@@ -39,8 +38,6 @@ export function initializeSentry() {
       return event;
     },
   });
-
-  console.log("[Runner] Sentry initialized successfully");
 }
 
 export function setupSentryErrorHandler(app: Express) {

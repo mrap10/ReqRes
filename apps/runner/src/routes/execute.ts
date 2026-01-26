@@ -3,6 +3,7 @@ import { z } from "zod";
 import { runExecution } from "../services/executor.js";
 import { requireRunnerSecret } from "../middleware/auth.js";
 import { captureException, addBreadcrumb, setTags } from "../lib/sentry.js";
+import { runnerLogger } from "../lib/logger.js";
 
 export const executeRouter = Router();
 
@@ -53,7 +54,14 @@ executeRouter.post("/", requireRunnerSecret, async (req, res) => {
   });
 
   try {
+    runnerLogger.info({ submissionId, problemSlug: problem.slug }, "Starting execution");
+
     const result = await runExecution(parseResult.data);
+
+    runnerLogger.info(
+      { submissionId, status: result.status, durationMs: result.durationMs },
+      "Execution completed"
+    );
 
     addBreadcrumb("Execution completed", "execution", {
       submissionId,
@@ -63,7 +71,14 @@ executeRouter.post("/", requireRunnerSecret, async (req, res) => {
 
     return res.json(result);
   } catch (error) {
-    console.error("Execution error:", error);
+    runnerLogger.error(
+      {
+        submissionId,
+        problemId: problem.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Execution failed"
+    );
 
     addBreadcrumb("Execution failed", "error", { submissionId }, "error");
 

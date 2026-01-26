@@ -1,6 +1,7 @@
 import { Request, Response, Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { Prisma, prisma } from "@reqres/database";
+import { apiLogger } from "../lib/logger.js";
 
 const router = Router();
 
@@ -12,7 +13,9 @@ router.patch("/username", requireAuth, async (req: Request, res: Response) => {
   const { username } = req.body;
 
   if (!username || username.length < 3) {
-    return res.status(400).json({ error: "Username must be at least 3 characters." });
+    return res
+      .status(400)
+      .json({ error: "Username must be at least 3 characters.", correlationId: req.correlationId });
   }
 
   try {
@@ -21,12 +24,26 @@ router.patch("/username", requireAuth, async (req: Request, res: Response) => {
       data: { username },
     });
 
+    apiLogger.info(
+      { correlationId: req.correlationId, userId: req.user!.id },
+      "Username updated successfully"
+    );
     res.json({ username: updated.username });
   } catch (error: unknown) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      res.status(400).json({ error: "Username is already taken." });
+      res
+        .status(400)
+        .json({ error: "Username is already taken.", correlationId: req.correlationId });
     } else {
-      res.status(500).json({ error: "Internal server error." });
+      apiLogger.error(
+        {
+          correlationId: req.correlationId,
+          userId: req.user?.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "Failed to update username"
+      );
+      res.status(500).json({ error: "Internal server error.", correlationId: req.correlationId });
     }
   }
 });

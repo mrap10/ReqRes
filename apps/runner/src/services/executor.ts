@@ -6,6 +6,7 @@ import fs from "fs/promises";
 import { cleanupDir } from "../utils/cleanup.js";
 import axios from "axios";
 import { runDocker } from "./dockerRun.js";
+import { executorLogger } from "../lib/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,6 +80,12 @@ async function copyTestFiles(problemSlug: string, workspace: string): Promise<bo
 export async function runExecution(payload: ExecutionRequest): Promise<ExecuteResponse> {
   const start = Date.now();
   const workspace = await createTempDir();
+  const execLogger = executorLogger.child({
+    submissionId: payload.submissionId,
+    problemSlug: payload.problem.slug,
+  });
+
+  execLogger.debug({ workspace }, "Created temporary workspace");
 
   try {
     await emitLog(payload.submissionId, "info", "Preparing execution environment");
@@ -134,7 +141,18 @@ module.exports = {
       );
     }
 
+    execLogger.info("Starting container execution");
+
     const jestResults = await runDocker(workspace, payload.testConfig.timeoutMs);
+
+    execLogger.info(
+      {
+        passed: jestResults.numPassedTests,
+        failed: jestResults.numFailedTests,
+        total: jestResults.numTotalTests,
+      },
+      "Docker execution completed"
+    );
 
     await emitLog(payload.submissionId, "info", "Running tests");
 
@@ -167,9 +185,15 @@ module.exports = {
       },
     });
 
+    execLogger.info(
+      { status: response.status, durationMs: response.durationMs },
+      "Execution result sent to API"
+    );
+
     return response;
   } catch (error) {
-    const errorMessage = String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    execLogger.error({ error: errorMessage }, "Execution failed");
     await emitLog(payload.submissionId, "error", `Execution failed: ${errorMessage}`);
     await emitLog(payload.submissionId, "error", "0 test cases passed due to error");
 

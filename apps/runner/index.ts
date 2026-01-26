@@ -4,6 +4,7 @@ initializeSentry();
 
 import express, { Request, Response, NextFunction } from "express";
 import { executeRouter } from "./src/routes/execute.js";
+import { runnerLogger } from "./src/lib/logger.js";
 
 const PORT = process.env.PORT;
 
@@ -26,12 +27,11 @@ app.get("/debug/error", (_req: Request, _res: Response) => {
 
 setupSentryErrorHandler(app);
 
-// xustom error handler
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("[Runner] Unhandled error:", err.message);
+  runnerLogger.error({ error: err.message, stack: err.stack }, "Unhandled error occurred");
   res.status(500).json({ error: "Internal server error" });
 });
 
 app.listen(PORT, () => {
-  console.log(`Runner server is running on port ${PORT}: http://localhost:${PORT}`);
+  runnerLogger.info({ port: PORT }, "Runner server started");
 });
