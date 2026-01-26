@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { runExecution } from "../services/executor.js";
 import { requireRunnerSecret } from "../middleware/auth.js";
+import { captureException, addBreadcrumb, setTags } from "../lib/sentry.js";
 
 export const executeRouter = Router();
 
@@ -24,6 +25,7 @@ const ExecuteSchema = z.object({
     timeoutMs: z.number().min(100).max(60000),
     memoryMb: z.number().min(16).max(2048),
   }),
+  correlationId: z.string().optional(),
 });
 
 executeRouter.post("/", requireRunnerSecret, async (req, res) => {
@@ -35,11 +37,44 @@ executeRouter.post("/", requireRunnerSecret, async (req, res) => {
       .json({ error: "Invalid exec request payload", details: parseResult.error.flatten() });
   }
 
+  const { submissionId, problem, correlationId } = parseResult.data;
+
+  setTags({
+    submissionId,
+    problemId: problem.id,
+    problemSlug: problem.slug,
+    correlationId: correlationId || "unknown",
+  });
+
+  addBreadcrumb("Starting code execution", "execution", {
+    submissionId,
+    problemSlug: problem.slug,
+    timeoutMs: parseResult.data.testConfig.timeoutMs,
+  });
+
   try {
     const result = await runExecution(parseResult.data);
+
+    addBreadcrumb("Execution completed", "execution", {
+      submissionId,
+      status: result.status,
+      durationMs: result.durationMs,
+    });
+
     return res.json(result);
   } catch (error) {
     console.error("Execution error:", error);
+
+    addBreadcrumb("Execution failed", "error", { submissionId }, "error");
+
+    captureException(error as Error, {
+      submissionId,
+      problemId: problem.id,
+      problemSlug: problem.slug,
+      correlationId,
+      action: "runExecution",
+    });
+
     return res.status(500).json({
       submissionId: parseResult.data.submissionId,
       status: "ERROR",
