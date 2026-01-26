@@ -4,6 +4,7 @@ import { prisma } from "@reqres/database";
 import { submissionQueue, submissionQueueEvents } from "../queues/submission.queue.js";
 import type { JobProgress } from "bullmq";
 import { apiLogger } from "../lib/logger.js";
+import { captureException, setUserContext, addBreadcrumb } from "../lib/sentry.js";
 
 const CreateSubmissionSchema = z.object({
   problemId: z.cuid(),
@@ -14,22 +15,44 @@ const CreateSubmissionSchema = z.object({
 });
 
 export async function createSubmission(req: Request, res: Response) {
+  const correlationId = req.correlationId;
+
   try {
+    if (req.user) {
+      setUserContext({
+        id: req.user.id,
+        email: req.user.email,
+        username: req.user.username,
+      });
+    }
+
+    addBreadcrumb("Parsing submission payload", "submission", {
+      correlationId,
+      hasProblemId: !!req.body?.problemId,
+    });
+
     const parseResult = CreateSubmissionSchema.safeParse(req.body);
 
     if (!parseResult.success) {
-      return res
-        .status(400)
-        .json({ error: "Invalid submission payload", details: parseResult.error.flatten() });
+      return res.status(400).json({
+        error: "Invalid submission payload",
+        details: parseResult.error.flatten(),
+        correlationId,
+      });
     }
 
     const { problemId, code } = parseResult.data;
 
     if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized", correlationId });
     }
 
     const userId = req.user.id;
+
+    addBreadcrumb("Fetching problem from database", "database", {
+      problemId,
+      correlationId,
+    });
 
     const problem = await prisma.problem.findUnique({
       where: { id: problemId, isPublished: true },
@@ -37,8 +60,14 @@ export async function createSubmission(req: Request, res: Response) {
     });
 
     if (!problem || !problem.testConfig) {
-      return res.status(404).json({ error: "Problem not found" });
+      return res.status(404).json({ error: "Problem not found", correlationId });
     }
+
+    addBreadcrumb("Creating submission record", "database", {
+      problemId,
+      userId,
+      correlationId,
+    });
 
     const submission = await prisma.submission.create({
       data: {
@@ -47,6 +76,11 @@ export async function createSubmission(req: Request, res: Response) {
         codeBundle: JSON.stringify(code),
         status: "PENDING",
       },
+    });
+
+    addBreadcrumb("Adding job to submission queue", "queue", {
+      submissionId: submission.id,
+      correlationId,
     });
 
     await submissionQueue.add(
@@ -66,7 +100,7 @@ export async function createSubmission(req: Request, res: Response) {
           timeoutMs: problem.testConfig.timeoutMs,
           memoryMb: problem.testConfig.memoryMb,
         },
-        correlationId: (req.headers["x-correlation-id"] as string) || "",
+        correlationId: correlationId || "",
       },
       {
         jobId: submission.id,
@@ -77,16 +111,32 @@ export async function createSubmission(req: Request, res: Response) {
     res.json({
       submissionId: submission.id,
       status: "PENDING",
+      correlationId,
     });
   } catch (error) {
-    apiLogger.error({ correlationId: req.correlationId, error }, "Failed to create submission");
-    res.status(500).json({ error: "Failed to create submission" });
+    apiLogger.error({ correlationId, error }, "Failed to create submission");
+
+    captureException(error as Error, {
+      correlationId,
+      userId: req.user?.id,
+      problemId: req.body?.problemId,
+      action: "createSubmission",
+    });
+
+    res.status(500).json({
+      error: "Failed to create submission",
+      correlationId,
+    });
   }
 }
 
 export async function getUserSubmissions(req: Request, res: Response) {
+  const correlationId = req.correlationId;
+
   try {
     const { userId } = req.params;
+
+    addBreadcrumb("Fetching user submissions", "database", { userId, correlationId });
 
     const submissions = await prisma.submission.findMany({
       where: {
@@ -121,12 +171,21 @@ export async function getUserSubmissions(req: Request, res: Response) {
     res.json({ submissions: submissionList });
   } catch (error) {
     apiLogger.error({ userId: req.params.userId, error }, "Failed to fetch user submissions");
-    res.status(500).json({ error: "Failed to fetch user submissions" });
+    captureException(error as Error, {
+      correlationId,
+      userId: req.params.userId,
+      action: "getUserSubmissions",
+    });
+    res.status(500).json({ error: "Failed to fetch user submissions", correlationId });
   }
 }
 
-export async function getLeaderboard(_: Request, res: Response) {
+export async function getLeaderboard(req: Request, res: Response) {
+  const correlationId = req.correlationId;
+
   try {
+    addBreadcrumb("Fetching leaderboard data", "database", { correlationId });
+
     const leaderboardData = await prisma.submission.groupBy({
       by: ["userId"],
       where: {
@@ -176,13 +235,18 @@ export async function getLeaderboard(_: Request, res: Response) {
     res.json({ leaderboard });
   } catch (error) {
     apiLogger.error({ error }, "Failed to fetch leaderboard");
-    res.status(500).json({ error: "Failed to fetch leaderboard" });
+    captureException(error as Error, { correlationId, action: "getLeaderboard" });
+    res.status(500).json({ error: "Failed to fetch leaderboard", correlationId });
   }
 }
 
 export async function getSubmissionById(req: Request, res: Response) {
+  const correlationId = req.correlationId;
+
   try {
     const submissionId = req.params.id;
+
+    addBreadcrumb("Fetching submission by ID", "database", { submissionId, correlationId });
 
     const submission = await prisma.submission.findUnique({
       where: { id: submissionId },
@@ -192,7 +256,7 @@ export async function getSubmissionById(req: Request, res: Response) {
     });
 
     if (!submission) {
-      return res.status(404).json({ error: "Submission not found" });
+      return res.status(404).json({ error: "Submission not found", correlationId });
     }
 
     let testResults = null;
@@ -218,13 +282,22 @@ export async function getSubmissionById(req: Request, res: Response) {
     });
   } catch (error) {
     apiLogger.error({ submissionId: req.params.id, error }, "Failed to fetch submission");
-    res.status(500).json({ error: "Failed to fetch submission" });
+    captureException(error as Error, {
+      correlationId,
+      submissionId: req.params.id,
+      action: "getSubmissionById",
+    });
+    res.status(500).json({ error: "Failed to fetch submission", correlationId });
   }
 }
 
 export async function getSubmissionLogs(req: Request, res: Response) {
+  const correlationId = req.correlationId;
+
   try {
     const submissionId = req.params.id;
+
+    addBreadcrumb("Fetching submission logs", "database", { submissionId, correlationId });
 
     const submission = await prisma.submission.findUnique({
       where: { id: submissionId },
@@ -232,7 +305,7 @@ export async function getSubmissionLogs(req: Request, res: Response) {
     });
 
     if (!submission) {
-      return res.status(404).json({ error: "Submission not found" });
+      return res.status(404).json({ error: "Submission not found", correlationId });
     }
 
     const logs = await prisma.executionLog.findMany({
@@ -257,17 +330,26 @@ export async function getSubmissionLogs(req: Request, res: Response) {
     });
   } catch (error) {
     apiLogger.error({ submissionId: req.params.id, error }, "Failed to fetch submission logs");
-    res.status(500).json({ error: "Failed to fetch submission logs" });
+    captureException(error as Error, {
+      correlationId,
+      submissionId: req.params.id,
+      action: "getSubmissionLogs",
+    });
+    res.status(500).json({ error: "Failed to fetch submission logs", correlationId });
   }
 }
 
 export async function streamSubmissionStatus(req: Request, res: Response) {
+  const correlationId = req.correlationId;
+
   try {
     const { id } = req.params;
 
     if (!id) {
-      return res.status(400).json({ error: "Submission ID is required" });
+      return res.status(400).json({ error: "Submission ID is required", correlationId });
     }
+
+    addBreadcrumb("Starting submission status stream", "sse", { submissionId: id, correlationId });
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -277,7 +359,7 @@ export async function streamSubmissionStatus(req: Request, res: Response) {
     const job = await submissionQueue.getJob(id);
 
     if (!job) {
-      res.write(`data: ${JSON.stringify({ error: "Job not found" })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: "Job not found", correlationId })}\n\n`);
       return res.end();
     }
 
@@ -287,6 +369,7 @@ export async function streamSubmissionStatus(req: Request, res: Response) {
         state: initialState,
         progress: job.progress,
         submissionId: id,
+        correlationId,
       })}\n\n`
     );
 
@@ -369,8 +452,13 @@ export async function streamSubmissionStatus(req: Request, res: Response) {
     });
   } catch (error) {
     apiLogger.error({ submissionId: req.params.id, error }, "Failed to stream submission status");
+    captureException(error as Error, {
+      correlationId,
+      submissionId: req.params.id,
+      action: "streamSubmissionStatus",
+    });
     if (!res.headersSent) {
-      res.status(500).json({ error: "Failed to stream submission status" });
+      res.status(500).json({ error: "Failed to stream submission status", correlationId });
     }
   }
 }

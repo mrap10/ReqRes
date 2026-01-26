@@ -4,6 +4,7 @@ import axios from "axios";
 import { prisma, SubmissionStatus } from "@reqres/database";
 import { workerConfig } from "../queues/config.js";
 import { workerLogger } from "../lib/logger.js";
+import { captureException, addBreadcrumb, setTags, withSentry } from "../lib/sentry.js";
 
 interface RunnerResponse {
   status: string;
@@ -65,7 +66,20 @@ async function processSubmission(job: Job<SubmissionJobData>) {
 
   const jobLogger = workerLogger.child({ submissionId, correlationId });
 
+  setTags({
+    submissionId,
+    correlationId: correlationId || "unknown",
+    problemId: problem.id,
+    problemSlug: problem.slug,
+  });
+
   try {
+    addBreadcrumb("Starting submission processing", "worker", {
+      submissionId,
+      correlationId,
+      problemId: problem.id,
+    });
+
     jobLogger.info("Starting submission processing");
 
     await prisma.submission.update({
@@ -75,39 +89,59 @@ async function processSubmission(job: Job<SubmissionJobData>) {
 
     await job.updateProgress(10);
 
+    addBreadcrumb("Sending submission to runner service", "http", {
+      submissionId,
+      runnerUrl: RUNNER_URL,
+    });
+
     jobLogger.debug("Sending submission to runner service");
 
-    const response = await axios.post(
-      `${RUNNER_URL}/internal/execute`,
-      {
-        submissionId,
-        problem: {
-          id: problem.id,
-          slug: problem.slug,
-          submissionType: problem.submissionType,
-        },
-        codeBundle,
-        testConfig,
-        correlationId,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-runner-secret": process.env.RUNNER_SHARED_SECRET!,
-        },
-        timeout: testConfig.timeoutMs + 30000,
-      }
+    const response = await withSentry(
+      async () =>
+        axios.post(
+          `${RUNNER_URL}/internal/execute`,
+          {
+            submissionId,
+            problem: {
+              id: problem.id,
+              slug: problem.slug,
+              submissionType: problem.submissionType,
+            },
+            codeBundle,
+            testConfig,
+            correlationId,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "x-runner-secret": process.env.RUNNER_SHARED_SECRET!,
+            },
+            timeout: testConfig.timeoutMs + 30000,
+          }
+        ),
+      { name: "runner.execute", data: { submissionId, problemId: problem.id } }
     );
 
     await job.updateProgress(50);
 
     const runnerResponse = response.data as RunnerResponse;
 
+    addBreadcrumb("Received response from runner", "http", {
+      submissionId,
+      status: runnerResponse.status,
+      durationMs: runnerResponse.durationMs,
+    });
+
     jobLogger.info({ runnerResponse }, "Received response from runner service");
 
     const mappedStatus = mapRunnerStatusToSubmissionStatus(runnerResponse.status);
 
     await job.updateProgress(100);
+
+    addBreadcrumb("Submission processing completed", "worker", {
+      submissionId,
+      status: mappedStatus,
+    });
 
     jobLogger.info(`Submission processed with status: ${mappedStatus}`);
 
@@ -116,7 +150,29 @@ async function processSubmission(job: Job<SubmissionJobData>) {
     const axiosError = error as { response?: { data?: { error?: string } }; message?: string };
     const errorMessage = axiosError.message || "Unknown error";
 
+    addBreadcrumb(
+      "Submission processing failed",
+      "error",
+      {
+        submissionId,
+        error: errorMessage,
+      },
+      "error"
+    );
+
     jobLogger.error({ error: errorMessage }, "Submission processing failed");
+
+    captureException(error as Error, {
+      submissionId,
+      correlationId,
+      problemId: problem.id,
+      problemSlug: problem.slug,
+      action: "processSubmission",
+      runnerUrl: RUNNER_URL,
+      responseError: axiosError.response?.data?.error,
+      jobId: job.id,
+      jobAttempts: job.attemptsMade,
+    });
 
     await updateSubmissionInDb(submissionId, {
       status: SubmissionStatus.RUNTIME_ERROR,
@@ -162,10 +218,22 @@ submissionWorker.on("failed", (job, err) => {
     },
     "Submission job failed"
   );
+
+  if (job) {
+    captureException(err, {
+      jobId: job.id,
+      correlationId: job.data.correlationId,
+      submissionId: job.data.submissionId,
+      problemId: job.data.problem?.id,
+      attemptsMade: job.attemptsMade,
+      action: "submissionWorker.failed",
+    });
+  }
 });
 
 submissionWorker.on("error", (err) => {
   workerLogger.error({ error: err.message }, "Worker encountered an error");
+  captureException(err, { action: "submissionWorker.error" });
 });
 
 interface SubmissionUpdateData {

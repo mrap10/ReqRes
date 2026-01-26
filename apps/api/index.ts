@@ -1,9 +1,13 @@
-import express from "express";
+import { initializeSentry, setupSentryErrorHandler } from "./src/lib/sentry.js";
+initializeSentry();
+
+import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import submissionsRouter from "./src/routes/submissions.js";
 import callbackRouter from "./src/routes/internalRunnerCallback.js";
 import problemsRouter from "./src/routes/problems.js";
 import userRouter from "./src/routes/user.js";
+import debugRouter from "./src/routes/debug.js";
 import { auth } from "./src/lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import { closeQueueConnections } from "./src/queues/config.js";
@@ -44,9 +48,29 @@ app.use("/submissions", submissionsRouter);
 app.use("/internal/runner", callbackRouter);
 app.use("/problems", problemsRouter);
 app.use("/user", userRouter);
+app.use("/debug", debugRouter);
 
 app.get("/", (_, res) => {
   res.json({ status: "ok" });
+});
+
+setupSentryErrorHandler(app);
+
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+  apiLogger.error(
+    {
+      correlationId: req.correlationId,
+      error: err.message,
+      stack: err.stack,
+    },
+    "Unhandled error occurred"
+  );
+
+  res.status(500).json({
+    error: "Internal Server Error",
+    correlationId: req.correlationId,
+    message: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
 });
 
 app.listen(PORT, () => {

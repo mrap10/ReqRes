@@ -18,7 +18,10 @@
     "REDIS_PORT",
     "REDIS_PASSWORD",
     "WORKER_ENABLED",
-    "LOG_LEVEL"
+    "LOG_LEVEL",
+    "SENTRY_DSN",
+    "package_version",
+    "SENTRY_ENABLED"
   ],
   "tasks": {
     "build": {
