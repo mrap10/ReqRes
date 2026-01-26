@@ -1,6 +1,7 @@
 import { Queue, QueueEvents } from "bullmq";
 import { queueConfig } from "./config.js";
 import { queueLogger } from "../lib/logger.js";
+import { metricsService, MetricType } from "../services/metrics.service.js";
 
 export interface SubmissionJobData {
   submissionId: string;
@@ -41,10 +42,14 @@ export async function queueSubmission(data: SubmissionJobData) {
     priority: 1,
   });
 
+  const waitingCount = await submissionQueue.getWaitingCount();
+  await metricsService.setGauge(MetricType.QUEUE_DEPTH, waitingCount);
+
   queueLogger.info(
     {
       correlationId: data.correlationId,
       jobId: job.id,
+      queueDepth: waitingCount,
     },
     "Submission queued successfully!"
   );

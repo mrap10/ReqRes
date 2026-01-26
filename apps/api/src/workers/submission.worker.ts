@@ -1,10 +1,11 @@
 import { Worker, Job } from "bullmq";
-import { SubmissionJobData } from "../queues/submission.queue.js";
+import { SubmissionJobData, submissionQueue } from "../queues/submission.queue.js";
 import axios from "axios";
 import { prisma, SubmissionStatus } from "@reqres/database";
 import { workerConfig } from "../queues/config.js";
 import { workerLogger } from "../lib/logger.js";
 import { captureException, addBreadcrumb, setTags, withSentry } from "../lib/sentry.js";
+import { metricsService, MetricType } from "../services/metrics.service.js";
 
 interface RunnerResponse {
   status: string;
@@ -73,6 +74,10 @@ async function processSubmission(job: Job<SubmissionJobData>) {
     problemSlug: problem.slug,
   });
 
+  await metricsService.incrementCounter(MetricType.SUBMISSION_PROCESSING);
+
+  const startTime = Date.now();
+
   try {
     addBreadcrumb("Starting submission processing", "worker", {
       submissionId,
@@ -138,6 +143,15 @@ async function processSubmission(job: Job<SubmissionJobData>) {
 
     await job.updateProgress(100);
 
+    const totalTime = Date.now() - startTime;
+    await metricsService.recordTiming(MetricType.EXECUTION_TIME, totalTime);
+
+    if (SubmissionStatus.PASSED === mappedStatus) {
+      await metricsService.incrementCounter(MetricType.SUBMISSION_COMPLETED);
+    } else {
+      await metricsService.incrementCounter(MetricType.SUBMISSION_FAILED);
+    }
+
     addBreadcrumb("Submission processing completed", "worker", {
       submissionId,
       status: mappedStatus,
@@ -174,6 +188,8 @@ async function processSubmission(job: Job<SubmissionJobData>) {
       jobAttempts: job.attemptsMade,
     });
 
+    await metricsService.incrementCounter(MetricType.SUBMISSION_ERROR);
+
     await updateSubmissionInDb(submissionId, {
       status: SubmissionStatus.RUNTIME_ERROR,
       output: axiosError.response?.data?.error || errorMessage || "Execution failed",
@@ -189,7 +205,7 @@ export const submissionWorker = new Worker<SubmissionJobData>(
   workerConfig
 );
 
-submissionWorker.on("completed", (job) => {
+submissionWorker.on("completed", async (job) => {
   workerLogger.info(
     {
       correlationId: job.data.correlationId,
@@ -197,6 +213,9 @@ submissionWorker.on("completed", (job) => {
     },
     "Submission job completed successfully"
   );
+
+  const waitingCount = await submissionQueue.getWaitingCount();
+  await metricsService.setGauge(MetricType.QUEUE_DEPTH, waitingCount);
 });
 
 submissionWorker.on("active", (job) => {
@@ -209,7 +228,7 @@ submissionWorker.on("active", (job) => {
   );
 });
 
-submissionWorker.on("failed", (job, err) => {
+submissionWorker.on("failed", async (job, err) => {
   workerLogger.error(
     {
       correlationId: job?.data.correlationId,
@@ -229,6 +248,9 @@ submissionWorker.on("failed", (job, err) => {
       action: "submissionWorker.failed",
     });
   }
+
+  const waitingCount = await submissionQueue.getWaitingCount();
+  await metricsService.setGauge(MetricType.QUEUE_DEPTH, waitingCount);
 });
 
 submissionWorker.on("error", (err) => {

@@ -5,6 +5,7 @@ import { submissionQueue, submissionQueueEvents } from "../queues/submission.que
 import type { JobProgress } from "bullmq";
 import { apiLogger } from "../lib/logger.js";
 import { captureException, setUserContext, addBreadcrumb } from "../lib/sentry.js";
+import { metricsService, MetricType } from "../services/metrics.service.js";
 
 const CreateSubmissionSchema = z.object({
   problemId: z.cuid(),
@@ -30,6 +31,9 @@ export async function createSubmission(req: Request, res: Response) {
       correlationId,
       hasProblemId: !!req.body?.problemId,
     });
+
+    await metricsService.trackUniqueUser(req.user!.id);
+    await metricsService.incrementCounter(MetricType.SUBMISSION_CREATED);
 
     const parseResult = CreateSubmissionSchema.safeParse(req.body);
 
@@ -108,6 +112,8 @@ export async function createSubmission(req: Request, res: Response) {
       }
     );
 
+    await metricsService.incrementCounter(MetricType.SUBMISSION_QUEUED);
+
     res.json({
       submissionId: submission.id,
       status: "PENDING",
@@ -122,6 +128,8 @@ export async function createSubmission(req: Request, res: Response) {
       problemId: req.body?.problemId,
       action: "createSubmission",
     });
+
+    await metricsService.incrementCounter(MetricType.SUBMISSION_ERROR);
 
     res.status(500).json({
       error: "Failed to create submission",

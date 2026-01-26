@@ -8,6 +8,7 @@ import callbackRouter from "./src/routes/internalRunnerCallback.js";
 import problemsRouter from "./src/routes/problems.js";
 import userRouter from "./src/routes/user.js";
 import debugRouter from "./src/routes/debug.js";
+import metricsRouter from "./src/routes/metrics.js";
 import { auth } from "./src/lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import { closeQueueConnections } from "./src/queues/config.js";
@@ -49,6 +50,7 @@ app.use("/internal/runner", callbackRouter);
 app.use("/problems", problemsRouter);
 app.use("/user", userRouter);
 app.use("/debug", debugRouter);
+app.use("/metrics", metricsRouter);
 
 app.get("/", (_, res) => {
   res.json({ status: "ok" });
