@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, Menu } from "lucide-react";
 import { useAuth } from "@/lib/providers/AuthProvider";
 import { signOut } from "@/lib/auth-client";
@@ -19,8 +19,10 @@ const navItems = [
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -28,6 +30,22 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  });
 
   const handleLogout = async () => {
     await signOut();
@@ -111,16 +129,35 @@ export default function Navbar() {
             Feedback
           </Link>
           {isAuthenticated ? (
-            <button
-              onClick={handleLogout}
-              className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors text-left"
-            >
-              Sign Out
-            </button>
+            <div className="relative" ref={dropdownRef}>
+              <div
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 flex items-center justify-center text-[10px] font-semibold text-white"
+              >
+                {user?.username?.charAt(0).toUpperCase()}
+              </div>
+
+              {showDropdown && (
+                <div className="absolute right-0 mt-2 w-40 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg py-2 z-10">
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white"
+                  >
+                    Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <Link
               href="/signin"
-              className=" font-medium text-zinc-400 hover:text-cyan-400 transition-colors"
+              className="font-medium text-zinc-400 hover:text-cyan-400 transition-colors"
             >
               Sign In
             </Link>

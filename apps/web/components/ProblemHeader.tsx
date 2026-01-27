@@ -1,8 +1,13 @@
+"use client";
+
 import { ChevronLeft } from "lucide-react";
 import DifficultyTag from "./DifficultyTag";
 import Link from "next/link";
+import { useAuth } from "@/lib/providers/AuthProvider";
 
 export default function ProblemHeader({ title }: { title: string }) {
+  const { user, isAuthenticated } = useAuth();
+
   return (
     <div className="h-14 border-b border-zinc-800 bg-zinc-950 flex items-center justify-between px-4 shrink-0 z-20">
       <div className="flex items-center gap-4">
@@ -26,12 +31,15 @@ export default function ProblemHeader({ title }: { title: string }) {
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           Server Ready
         </div>
-        <button className="p-2 hover:bg-zinc-900 rounded-lg text-zinc-400 transition-colors">
-          {/* <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-[10px] font-bold text-white">
-                        AP
-                    </div> */}
+        {isAuthenticated ? (
+          <Link href="/profile" className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 flex items-center justify-center text-[10px] font-semibold text-white">
+              {user?.username?.charAt(0).toUpperCase()}
+            </div>
+          </Link>
+        ) : (
           <h1 className="hover:text-indigo-400 cursor-pointer">Sign In</h1>
-        </button>
+        )}
       </div>
     </div>
   );
