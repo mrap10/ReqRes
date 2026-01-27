@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { Bar, BarChart, XAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,56 +11,68 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
-
-const chartData = [
-  { month: "Sun", desktop: 342 },
-  { month: "Mon", desktop: 876 },
-  { month: "Tue", desktop: 512 },
-  { month: "Wed", desktop: 629 },
-  { month: "Thu", desktop: 458 },
-  { month: "Fri", desktop: 781 },
-  { month: "Sat", desktop: 394 },
-  { month: "Sun", desktop: 925 },
-];
+import type { DailyActiveUsersData } from "@/lib/types/metrics";
 
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
+  value: {
+    label: "Active Users",
     color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
-export function DefaultBarChart() {
+interface DefaultBarChartProps {
+  data: DailyActiveUsersData[];
+  isLoading?: boolean;
+  trendPercentage?: number;
+}
+
+export function DefaultBarChart({
+  data,
+  isLoading = false,
+  trendPercentage = 0,
+}: DefaultBarChartProps) {
+  const trendUp = trendPercentage >= 0;
+  const trendText = trendUp ? `+${trendPercentage.toFixed(1)}%` : `${trendPercentage.toFixed(1)}%`;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>
           Daily Active Users
-          <Badge variant="outline" className="text-green-500 bg-green-500/10 border-none ml-2">
-            <TrendingUp className="h-4 w-4" />
-            <span>5.2%</span>
+          <Badge
+            variant="outline"
+            className={`${trendUp ? "text-green-500 bg-green-500/10" : "text-red-500 bg-red-500/10"} border-none ml-2`}
+          >
+            {trendUp ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            <span>{trendText}</span>
           </Badge>
         </CardTitle>
         <CardDescription>Last 7 days</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={chartData}>
-            <rect x="0" y="0" width="100%" height="85%" fill="url(#default-pattern-dots)" />
-            <defs>
-              <DottedBackgroundPattern />
-            </defs>
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
-            />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-          </BarChart>
-        </ChartContainer>
+        {isLoading ? (
+          <div className="h-[200px] flex items-center justify-center">
+            <div className="animate-pulse bg-zinc-800 rounded w-full h-full" />
+          </div>
+        ) : (
+          <ChartContainer config={chartConfig}>
+            <BarChart accessibilityLayer data={data}>
+              <rect x="0" y="0" width="100%" height="85%" fill="url(#default-pattern-dots)" />
+              <defs>
+                <DottedBackgroundPattern />
+              </defs>
+              <XAxis
+                dataKey="dayLabel"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                tickFormatter={(value: string) => value.slice(0, 3)}
+              />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+              <Bar dataKey="value" fill="var(--color-value)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

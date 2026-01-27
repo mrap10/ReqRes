@@ -212,6 +212,222 @@ class MetricsService {
     }
   }
 
+  async getDailyCounters(
+    metric: MetricType,
+    days: number = 7
+  ): Promise<Array<{ day: string; dayLabel: string; value: number }>> {
+    try {
+      const data: Array<{ day: string; dayLabel: string; value: number }> = [];
+      const now = new Date();
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dayKey = date.toISOString().slice(0, 10);
+
+        let dayTotal = 0;
+        for (let h = 0; h < 24; h++) {
+          const hourDate = new Date(date);
+          hourDate.setHours(h, 0, 0, 0);
+          const hourKey = `metrics:counter:${metric}:${this.formatHour(hourDate)}`;
+          const value = await redis.get(hourKey);
+          dayTotal += value ? parseInt(value, 10) : 0;
+        }
+
+        data.push({
+          day: dayKey,
+          dayLabel: dayNames[date.getDay()] ?? "Unknown",
+          value: dayTotal,
+        });
+      }
+
+      return data;
+    } catch (error) {
+      apiLogger.error({ metric, error }, "Failed to get daily counters metric");
+      return [];
+    }
+  }
+
+  async getDailyActiveUsersHistory(
+    days: number = 7
+  ): Promise<Array<{ day: string; dayLabel: string; value: number }>> {
+    try {
+      const data: Array<{ day: string; dayLabel: string; value: number }> = [];
+      const now = new Date();
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dayKey = date.toISOString().slice(0, 10);
+        const redisKey = `metrics:unique_users:${dayKey}`;
+        const count = await redis.pfcount(redisKey);
+
+        data.push({
+          day: dayKey,
+          dayLabel: dayNames[date.getDay()] ?? "Unknown",
+          value: count,
+        });
+      }
+
+      return data;
+    } catch (error) {
+      apiLogger.error({ error }, "Failed to get daily active users history metric");
+      return [];
+    }
+  }
+
+  async getYesterdayMetrics(): Promise<{
+    submissions: number;
+    completed: number;
+    failed: number;
+    avgExecutionTime: number;
+    activeUsers: number;
+  }> {
+    try {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const yesterdayKey = yesterday.toISOString().slice(0, 10);
+
+      let submissions = 0;
+      let completed = 0;
+      let failed = 0;
+
+      for (let h = 0; h < 24; h++) {
+        const hourDate = new Date(yesterday);
+        hourDate.setHours(h, 0, 0, 0);
+        const hourStr = this.formatHour(hourDate);
+
+        const createdKey = `metrics:counter:${MetricType.SUBMISSION_CREATED}:${hourStr}`;
+        const completedKey = `metrics:counter:${MetricType.SUBMISSION_COMPLETED}:${hourStr}`;
+        const failedKey = `metrics:counter:${MetricType.SUBMISSION_FAILED}:${hourStr}`;
+
+        const [createdVal, completedVal, failedVal] = await Promise.all([
+          redis.get(createdKey),
+          redis.get(completedKey),
+          redis.get(failedKey),
+        ]);
+
+        submissions += createdVal ? parseInt(createdVal, 10) : 0;
+        completed += completedVal ? parseInt(completedVal, 10) : 0;
+        failed += failedVal ? parseInt(failedVal, 10) : 0;
+      }
+
+      const activeUsersKey = `metrics:unique_users:${yesterdayKey}`;
+      const activeUsers = await redis.pfcount(activeUsersKey);
+
+      let totalTime = 0;
+      let timeCount = 0;
+
+      for (let h = 0; h < 24; h++) {
+        const hourDate = new Date(yesterday);
+        hourDate.setHours(h, 0, 0, 0);
+        const hourStr = this.formatHour(hourDate);
+        const timingKey = `metrics:timing:${MetricType.EXECUTION_TIME}:${hourStr}`;
+        const timings = await redis.lrange(timingKey, 0, -1);
+
+        for (const t of timings) {
+          totalTime += parseFloat(t);
+          timeCount++;
+        }
+      }
+
+      const avgExecutionTime = timeCount > 0 ? Math.round(totalTime / timeCount) : 0;
+
+      return {
+        submissions,
+        completed,
+        failed,
+        avgExecutionTime,
+        activeUsers,
+      };
+    } catch (error) {
+      apiLogger.error({ error }, "Failed to get yesterday metrics");
+      return {
+        submissions: 0,
+        completed: 0,
+        failed: 0,
+        avgExecutionTime: 0,
+        activeUsers: 0,
+      };
+    }
+  }
+
+  async getTodayMetrics(): Promise<{
+    submissions: number;
+    completed: number;
+    failed: number;
+    avgExecutionTime: number;
+    activeUsers: number;
+  }> {
+    try {
+      const today = new Date();
+      const todayKey = today.toISOString().slice(0, 10);
+
+      let submissions = 0;
+      let completed = 0;
+      let failed = 0;
+
+      const currentHour = today.getHours();
+
+      for (let h = 0; h <= currentHour; h++) {
+        const hourDate = new Date(today);
+        hourDate.setHours(h, 0, 0, 0);
+        const hourStr = this.formatHour(hourDate);
+
+        const createdKey = `metrics:counter:${MetricType.SUBMISSION_CREATED}:${hourStr}`;
+        const completedKey = `metrics:counter:${MetricType.SUBMISSION_COMPLETED}:${hourStr}`;
+        const failedKey = `metrics:counter:${MetricType.SUBMISSION_FAILED}:${hourStr}`;
+
+        const [createdVal, completedVal, failedVal] = await Promise.all([
+          redis.get(createdKey),
+          redis.get(completedKey),
+          redis.get(failedKey),
+        ]);
+
+        submissions += createdVal ? parseInt(createdVal, 10) : 0;
+        completed += completedVal ? parseInt(completedVal, 10) : 0;
+        failed += failedVal ? parseInt(failedVal, 10) : 0;
+      }
+
+      const activeUsersKey = `metrics:unique_users:${todayKey}`;
+      const activeUsers = await redis.pfcount(activeUsersKey);
+
+      let totalTime = 0;
+      let timeCount = 0;
+
+      for (let h = 0; h <= currentHour; h++) {
+        const hourDate = new Date(today);
+        hourDate.setHours(h, 0, 0, 0);
+        const hourStr = this.formatHour(hourDate);
+        const timingKey = `metrics:timing:${MetricType.EXECUTION_TIME}:${hourStr}`;
+        const timings = await redis.lrange(timingKey, 0, -1);
+
+        for (const t of timings) {
+          totalTime += parseFloat(t);
+          timeCount++;
+        }
+      }
+
+      const avgExecutionTime = timeCount > 0 ? Math.round(totalTime / timeCount) : 0;
+
+      return {
+        submissions,
+        completed,
+        failed,
+        avgExecutionTime,
+        activeUsers,
+      };
+    } catch (error) {
+      apiLogger.error({ error }, "Failed to get today metrics");
+      return {
+        submissions: 0,
+        completed: 0,
+        failed: 0,
+        avgExecutionTime: 0,
+        activeUsers: 0,
+      };
+    }
+  }
+
   private getCurrentHour(): string {
     return this.formatHour(new Date());
   }
