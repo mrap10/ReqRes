@@ -2,6 +2,9 @@
 
 import AdminSidebar from "@/components/AdminSidebar";
 import DashboardCard from "@/components/DashboardCard";
+import QueueHealth from "@/components/QueueHealth";
+import { AnimatedHighlightedAreaChart } from "@/components/ui/animated-highlighted-chart";
+import { DefaultBarChart } from "@/components/ui/default-bar-chart";
 import { CheckCircle2, Clock, Layers, RefreshCw, Server } from "lucide-react";
 import { useState } from "react";
 
@@ -63,9 +66,33 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          <div>submission volume graph here</div>
+          <div className="lg:col-span-2">
+            <AnimatedHighlightedAreaChart />
+          </div>
+          <QueueHealth />
+        </div>
 
-          <div>queue health status graph here</div>
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div>
+            <h1>recent failures table here</h1>
+            <p>
+              not sure should i implement this or not, as i already have sentry configured for error
+              traces
+            </p>
+          </div>
+          <div>
+            <DefaultBarChart />
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+              <div className="bg-zinc-900/40 border border-white/5 p-4 rounded-xl flex flex-col hover:bg-zinc-900/60 transition-colors">
+                <div className="text-xs text-zinc-500">New Signups</div>
+                <div className="text-xl font-bold text-white">+128</div>
+              </div>
+              <div className="bg-zinc-900/40 border border-white/5 p-4 rounded-xl flex flex-col hover:bg-zinc-900/60 transition-colors">
+                <div className="text-xs text-zinc-500">Retained Users</div>
+                <div className="text-xl font-bold text-white">42%</div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
