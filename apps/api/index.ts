@@ -10,6 +10,7 @@ import userRouter from "./src/routes/user.js";
 import debugRouter from "./src/routes/debug.js";
 import metricsRouter from "./src/routes/metrics.js";
 import adminRateLimitsRouter from "./src/routes/adminRateLimits.js";
+import healthRouter from "./src/routes/health.js";
 import { auth } from "./src/lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
 import { closeQueueConnections } from "./src/queues/config.js";
@@ -47,6 +48,9 @@ app.use(express.json());
 
 app.use(correlationMiddleware);
 app.use(requestLoggingMiddleware);
+
+app.use("/health", healthRouter);
+
 app.use(rateLimitMiddleware());
 
 app.use("/api/auth", toNodeHandler(auth));

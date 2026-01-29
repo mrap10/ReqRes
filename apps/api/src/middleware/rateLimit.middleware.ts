@@ -369,3 +369,36 @@ export async function closeRateLimitConnection(): Promise<void> {
   await redisClient.quit();
   apiLogger.info("Rate limit Redis connection closed");
 }
+
+export async function getRateLimitRedisStatus(): Promise<{
+  connected: boolean;
+  latencyMs?: number;
+}> {
+  if (!redisConnected) {
+    return { connected: false };
+  }
+
+  try {
+    const start = Date.now();
+    await redisClient.ping();
+    const latencyMs = Date.now() - start;
+    return { connected: true, latencyMs };
+  } catch {
+    return { connected: false };
+  }
+}
+
+export async function getRateLimitMetrics(): Promise<{
+  currentWindowRequests: number;
+}> {
+  if (!redisConnected) {
+    return { currentWindowRequests: 0 };
+  }
+
+  try {
+    const keys = await redisClient.keys("ratelimit:*");
+    return { currentWindowRequests: keys.length };
+  } catch {
+    return { currentWindowRequests: 0 };
+  }
+}
