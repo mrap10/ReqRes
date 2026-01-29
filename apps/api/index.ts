@@ -16,6 +16,10 @@ import {
   correlationMiddleware,
   requestLoggingMiddleware,
 } from "./src/middleware/logging.middleware.js";
+import {
+  rateLimitMiddleware,
+  closeRateLimitConnection,
+} from "./src/middleware/rateLimit.middleware.js";
 import { apiLogger } from "./src/lib/logger.js";
 
 // importing worker conditionally via embedded for dev mode only, will run separately in prod
@@ -42,6 +46,7 @@ app.use(express.json());
 
 app.use(correlationMiddleware);
 app.use(requestLoggingMiddleware);
+app.use(rateLimitMiddleware());
 
 app.use("/api/auth", toNodeHandler(auth));
 
@@ -93,6 +98,7 @@ const gracefulShutdown = async (signal: string) => {
   }
 
   await closeQueueConnections();
+  await closeRateLimitConnection();
 
   process.exit(0);
 };
