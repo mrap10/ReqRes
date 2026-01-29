@@ -124,11 +124,35 @@ function setRateLimitHeaders(
 
 export function rateLimitMiddleware(tier?: RateLimitTier) {
   return async (req: Request, res: Response, next: NextFunction) => {
-    // future(after introducing premium tier): could be based on req.user.tier
-    const userTier = tier || (req.user as { tier?: RateLimitTier })?.tier || "default";
-    const config = getRateLimitConfig(req.method, req.path, userTier);
-    const identifier = getClientIdentifier(req);
+    const clientIP = req.ip || req.socket.remoteAddress || "unknown";
 
+    const isBlocked = await rateLimitStore.isIPBlocked(clientIP);
+    if (isBlocked) {
+      await rateLimitStore.incrementStats("blockedRequests");
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Your IP address has been blocked",
+        correlationId: req.correlationId,
+      });
+    }
+
+    await rateLimitStore.incrementStats("totalRequests");
+
+    let config: RateLimitConfig;
+    if (req.user?.id) {
+      const userOverride = await rateLimitStore.getUserOverride(req.user.id);
+      if (userOverride) {
+        config = { maxRequests: userOverride.limit, windowMs: userOverride.windowMs };
+      } else {
+        const userTier = tier || (req.user as { tier?: RateLimitTier })?.tier || "default";
+        config = getRateLimitConfig(req.method, req.path, userTier);
+      }
+    } else {
+      const userTier = tier || "default";
+      config = getRateLimitConfig(req.method, req.path, userTier);
+    }
+
+    const identifier = getClientIdentifier(req);
     const key = generateRateLimitKey(identifier, req.method, req.path, config.windowMs);
 
     const { allowed, remaining, resetTime } = await checkRateLimit(key, config);
@@ -136,6 +160,7 @@ export function rateLimitMiddleware(tier?: RateLimitTier) {
     setRateLimitHeaders(res, config.maxRequests, remaining, resetTime);
 
     if (!allowed) {
+      await rateLimitStore.incrementStats("blockedRequests");
       apiLogger.warn(
         {
           correlationId: req.correlationId,
@@ -161,6 +186,184 @@ export function rateLimitMiddleware(tier?: RateLimitTier) {
 }
 
 export const strictRateLimit = rateLimitMiddleware();
+
+interface UserOverride {
+  userId: string;
+  limit: number;
+  windowMs: number;
+  reason?: string;
+  createdAt: string;
+}
+
+interface BlockedIP {
+  ip: string;
+  reason: string;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+interface RateLimitStats {
+  totalRequests: number;
+  blockedRequests: number;
+  activeOverrides: number;
+  blockedIPs: number;
+}
+
+const KEYS = {
+  userOverrides: "ratelimit:overrides:users",
+  blockedIPs: "ratelimit:blocked:ips",
+  stats: "ratelimit:stats",
+};
+
+// for admin stats and management
+export const rateLimitStore = {
+  async getUserOverrides(): Promise<UserOverride[]> {
+    if (!redisConnected) return [];
+
+    try {
+      const data = await redisClient.hgetall(KEYS.userOverrides);
+      return Object.entries(data).map(([userId, json]) => {
+        const parsed = JSON.parse(json) as Omit<UserOverride, "userId">;
+        return { userId, ...parsed };
+      });
+    } catch (error) {
+      apiLogger.error({ error }, "Failed to get user overrides");
+      return [];
+    }
+  },
+
+  async setUserOverride(
+    userId: string,
+    config: { limit: number; windowMs: number; reason?: string }
+  ): Promise<void> {
+    if (!redisConnected) throw new Error("Redis not connected");
+
+    const override: Omit<UserOverride, "userId"> = {
+      limit: config.limit,
+      windowMs: config.windowMs,
+      reason: config.reason,
+      createdAt: new Date().toISOString(),
+    };
+
+    await redisClient.hset(KEYS.userOverrides, userId, JSON.stringify(override));
+  },
+
+  async removeUserOverride(userId: string): Promise<void> {
+    if (!redisConnected) throw new Error("Redis not connected");
+    await redisClient.hdel(KEYS.userOverrides, userId);
+  },
+
+  // user specific override
+  async getUserOverride(userId: string): Promise<UserOverride | null> {
+    if (!redisConnected) return null;
+
+    try {
+      const data = await redisClient.hget(KEYS.userOverrides, userId);
+      if (!data) return null;
+
+      const parsed = JSON.parse(data) as Omit<UserOverride, "userId">;
+      return { userId, ...parsed };
+    } catch {
+      return null;
+    }
+  },
+
+  async getBlockedIPs(): Promise<BlockedIP[]> {
+    if (!redisConnected) return [];
+
+    try {
+      const data = await redisClient.hgetall(KEYS.blockedIPs);
+      const now = new Date();
+      const blocked: BlockedIP[] = [];
+
+      for (const [ip, json] of Object.entries(data)) {
+        const parsed = JSON.parse(json) as Omit<BlockedIP, "ip">;
+        if (parsed.expiresAt && new Date(parsed.expiresAt) < now) {
+          await redisClient.hdel(KEYS.blockedIPs, ip);
+          continue;
+        }
+        blocked.push({ ip, ...parsed });
+      }
+
+      return blocked;
+    } catch (error) {
+      apiLogger.error({ error }, "Failed to get blocked IPs");
+      return [];
+    }
+  },
+
+  async blockIP(ip: string, reason: string, expiresInMinutes: number | null): Promise<void> {
+    if (!redisConnected) throw new Error("Redis not connected");
+
+    const blocked: Omit<BlockedIP, "ip"> = {
+      reason,
+      expiresAt: expiresInMinutes
+        ? new Date(Date.now() + expiresInMinutes * 60 * 1000).toISOString()
+        : null,
+      createdAt: new Date().toISOString(),
+    };
+
+    await redisClient.hset(KEYS.blockedIPs, ip, JSON.stringify(blocked));
+  },
+
+  async unblockIP(ip: string): Promise<void> {
+    if (!redisConnected) throw new Error("Redis not connected");
+    await redisClient.hdel(KEYS.blockedIPs, ip);
+  },
+
+  async isIPBlocked(ip: string): Promise<boolean> {
+    if (!redisConnected) return false;
+
+    try {
+      const data = await redisClient.hget(KEYS.blockedIPs, ip);
+      if (!data) return false;
+
+      const parsed = JSON.parse(data) as Omit<BlockedIP, "ip">;
+      if (parsed.expiresAt && new Date(parsed.expiresAt) < new Date()) {
+        await redisClient.hdel(KEYS.blockedIPs, ip);
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  async getStats(): Promise<RateLimitStats> {
+    if (!redisConnected) {
+      return { totalRequests: 0, blockedRequests: 0, activeOverrides: 0, blockedIPs: 0 };
+    }
+
+    try {
+      const [overridesCount, blockedCount] = await Promise.all([
+        redisClient.hlen(KEYS.userOverrides),
+        redisClient.hlen(KEYS.blockedIPs),
+      ]);
+
+      const statsData = await redisClient.hgetall(KEYS.stats);
+
+      return {
+        totalRequests: parseInt(statsData.totalRequests || "0", 10),
+        blockedRequests: parseInt(statsData.blockedRequests || "0", 10),
+        activeOverrides: overridesCount,
+        blockedIPs: blockedCount,
+      };
+    } catch (error) {
+      apiLogger.error({ error }, "Failed to get rate limit stats");
+      return { totalRequests: 0, blockedRequests: 0, activeOverrides: 0, blockedIPs: 0 };
+    }
+  },
+
+  async incrementStats(field: "totalRequests" | "blockedRequests"): Promise<void> {
+    if (!redisConnected) return;
+    try {
+      await redisClient.hincrby(KEYS.stats, field, 1);
+    } catch {
+      // ignore
+    }
+  },
+};
 
 export async function closeRateLimitConnection(): Promise<void> {
   await redisClient.quit();

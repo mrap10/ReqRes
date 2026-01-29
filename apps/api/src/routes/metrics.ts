@@ -1,8 +1,11 @@
 import { Request, Response, Router } from "express";
 import { metricsService, MetricType } from "../services/metrics.service.js";
 import { submissionQueue } from "../queues/submission.queue.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
+
+router.use(requireAuth, requireAdmin);
 
 router.get("/", async (_, res: Response) => {
   try {
