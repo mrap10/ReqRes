@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prisma } from "@reqres/database";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -11,6 +12,28 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    requireEmailVerification: true,
+    sendResetPassword: async ({ user, url }, _request) => {
+      void sendPasswordResetEmail({
+        email: user.email,
+        resetUrl: url,
+        username: user.name || "user",
+      });
+    },
+    onPasswordReset: async ({ user }, _request) => {
+      console.log(`Password reset for user ID: ${user.id}`);
+    },
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }, _request) => {
+      void sendVerificationEmail({
+        email: user.email,
+        verificationUrl: url,
+        username: user.name || "user",
+      });
+    },
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
   },
   socialProviders: {
     github: {

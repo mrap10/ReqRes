@@ -18,11 +18,17 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "@prisma/adapter-neon": "^7.3.0",
     "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0"
+    "@prisma/client": "^7.2.0",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "@reqres/typescript-config": "*",
+    "@types/pg": "^8.16.0",
+    "@types/ws": "^8.18.1",
+    "pg": "^8.17.2",
     "prisma": "^7.2.0",
     "typescript": "^5.9.2"
   }

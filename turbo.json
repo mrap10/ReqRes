@@ -22,7 +22,8 @@
     "LOG_LEVEL",
     "SENTRY_DSN",
     "package_version",
-    "SENTRY_ENABLED"
+    "SENTRY_ENABLED",
+    "RESEND_API_KEY"
   ],
   "tasks": {
     "build": {
