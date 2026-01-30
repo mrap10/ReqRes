@@ -3,13 +3,17 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, KeyRound, Lock, ChevronLeft } from "lucide-react";
+import { Mail, KeyRound, Lock, ChevronLeft, CheckCircle, AlertCircle } from "lucide-react";
 import AuthLeftSide from "@/components/AuthLeftSide";
 import InputField from "@/components/InputField";
 import { requestPasswordReset, resetPassword } from "@/lib/auth-client";
 
 export default function PasswordReset() {
-  const [step, setStep] = useState<"email" | "password">("email");
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+  const errorParam = searchParams.get("error");
+
+  const [step, setStep] = useState<"email" | "password" | "success">(token ? "password" : "email");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -17,20 +21,13 @@ export default function PasswordReset() {
   const [error, setError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // Check for token in URL (user clicked link in email)
   useEffect(() => {
-    const token = searchParams.get("token");
-    const errorParam = searchParams.get("error");
-
     if (errorParam === "INVALID_TOKEN") {
       setError("The reset link is invalid or has expired. Please request a new one.");
       setStep("email");
-    } else if (token) {
-      setStep("password");
     }
-  }, [searchParams]);
+  }, [errorParam]);
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +41,7 @@ export default function PasswordReset() {
     }
 
     await requestPasswordReset(
-      { email, redirectTo: `${window.location.origin}/reset-password` },
+      { email, redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password` },
       {
         onSuccess: () => {
           setEmailSent(true);
@@ -72,9 +69,8 @@ export default function PasswordReset() {
       return;
     }
 
-    const token = searchParams.get("token");
     if (!token) {
-      setError("Invalid reset token. Please request a new password reset.");
+      setError("Invalid reset token. Please request a new reset link.");
       return;
     }
 
@@ -84,10 +80,11 @@ export default function PasswordReset() {
       { newPassword, token },
       {
         onSuccess: () => {
-          router.push("/signin");
+          setStep("success");
+          setIsLoading(false);
         },
         onError: (ctx: { error: { message?: string } }) => {
-          setError(ctx.error.message || "Password reset failed. Please try again.");
+          setError(ctx.error.message || "Password reset failed. The link may have expired.");
           setIsLoading(false);
         },
       }
@@ -137,7 +134,12 @@ export default function PasswordReset() {
                   placeholder="name@example.com"
                 />
 
-                {error && <p className="text-xs text-red-500 text-center">{error}</p>}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 px-4 py-3 rounded-lg">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -151,35 +153,34 @@ export default function PasswordReset() {
           )}
 
           {step === "email" && emailSent && (
-            <>
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 mx-auto bg-indigo-500/20 rounded-full flex items-center justify-center">
-                  <Mail className="w-8 h-8 text-indigo-400" />
-                </div>
-                <h2 className="text-2xl font-bold text-white">Check your inbox</h2>
+            <div className="text-center space-y-6">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
+                <Mail className="w-8 h-8 text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Check your inbox</h2>
                 <p className="text-zinc-400 text-sm">
                   We sent a password reset link to{" "}
                   <span className="text-indigo-400 font-medium">{email}</span>
                 </p>
-                <p className="text-zinc-500 text-xs">
-                  Click the link in the email to reset your password. If you don&apos;t see it,
-                  check your spam folder.
-                </p>
               </div>
-
-              <div className="text-center pt-4">
+              <p className="text-zinc-500 text-sm">
+                Click the link in the email to reset your password. The link will expire in 1 hour.
+              </p>
+              <div className="pt-4">
                 <button
                   type="button"
                   onClick={() => {
                     setEmailSent(false);
                     setError(null);
                   }}
-                  className="text-xs text-zinc-500 hover:text-indigo-400 transition-colors"
+                  className="text-sm text-zinc-400 transition-colors"
                 >
-                  Didn&apos;t receive email? <span className="text-indigo-400">Try again</span>
+                  Didn&apos;t receive email?{" "}
+                  <span className="text-indigo-400 cursor-pointer">Try again</span>
                 </button>
               </div>
-            </>
+            </div>
           )}
 
           {step === "password" && (
@@ -199,7 +200,7 @@ export default function PasswordReset() {
                   onchange={(e) => setNewPassword(e.target.value)}
                   icon={KeyRound}
                   disabled={isLoading}
-                  placeholder="••••••••"
+                  placeholder="********"
                 />
 
                 <InputField
@@ -212,7 +213,12 @@ export default function PasswordReset() {
                   placeholder="********"
                 />
 
-                {error && <p className="text-xs text-red-500 text-center">{error}</p>}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 px-4 py-3 rounded-lg">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -223,6 +229,26 @@ export default function PasswordReset() {
                 </button>
               </form>
             </>
+          )}
+
+          {step === "success" && (
+            <div className="text-center space-y-6">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8 text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2">Password reset successful!</h2>
+                <p className="text-zinc-400 text-sm">
+                  Your password has been updated. You can now sign in with your new password.
+                </p>
+              </div>
+              <button
+                onClick={() => router.push("/signin")}
+                className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02]"
+              >
+                Continue to Sign In
+              </button>
+            </div>
           )}
         </div>
       </div>

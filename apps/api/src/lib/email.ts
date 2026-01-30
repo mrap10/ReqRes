@@ -113,11 +113,11 @@ export async function sendPasswordResetEmail({
                             </p>
                             
                             <p style="font-size: 16px; margin-bottom: 25px;">
-                                We received a request to reset your password. Click the button below to create a new password:
+                                We received a request to reset your password. Click the button below to continue:
                             </p>
                             
                             <div style="text-align: center; margin: 30px 0;">
-                                <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                                <a href="${resetUrl}" style="display: inline-block; padding: 15px 35px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
                                     Reset Password
                                 </a>
                             </div>
@@ -126,7 +126,7 @@ export async function sendPasswordResetEmail({
                                 This link will expire in <strong>1 hour</strong>.
                             </p>
                             
-                            <p style="font-size: 12px; color: #999; margin-top: 20px;">
+                            <p style="font-size: 12px; color: #999; margin-top: 15px;">
                                 If the button doesn't work, copy and paste this link into your browser:<br>
                                 <a href="${resetUrl}" style="color: #667eea; word-break: break-all;">${resetUrl}</a>
                             </p>

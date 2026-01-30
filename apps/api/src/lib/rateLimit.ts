@@ -31,7 +31,6 @@ export const ENDPOINT_OVERRIDES: Record<string, RateLimitConfig> = {
     maxRequests: 3,
   },
   "POST:/api/auth/forgot-password": {
-    // left to be implemented
     windowMs: 60 * 1000,
     maxRequests: 3,
   },
