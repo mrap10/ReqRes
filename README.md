@@ -353,23 +353,29 @@ docker exec -it reqres-redis redis-cli
 
 ---
 
-## some problems identified (will fix them in phase 3)
-
-- uneven problem tracks display in /leaderboard 's user submission history
-- need to test more with seeded users and some more distributed submissions
-- tested with 15 concurrent submissions, ~4 of them failed with docker timeout errors (need to investigate more, prolly happening due to rate-limit problem)
-- will add more bugs here
-
----
-
 phase 1 completed - MVP achieved! (sort of)
 
-phase 2 completed - ui, editor, leaderboard, stats, BE integration, runner improvements and more
+phase 2 completed - working ui, editor, leaderboard, stats, BE integration, runner improvements and more
 
 - learned a bit more about using refs
 - "that" express problem came again (route order lmao)
 - handling refs and editor/terminal layout was hard bits here. other were pretty much db queries and some api/runner improvements
 
+phase 3 completed - queue system, bullmq, redis, sse for real-time updates, worker process, better runner with docker security
+
+- authentication done with better-auth+postgres/prisma setup, github oauth for now, will add google oauth later
+- learned a lot about queues, bullmq, redis, sse, docker security, process management (will explore about it more later)
+- setting up queue system was hard bit here. other were pretty much api/runner improvements and some docker configs
+- overall architecture improved a lot with queues and worker process
+- real-time updates via sse is cool af (haha)
+- sentry integration for error tracking was easy and useful
+- pino logging was also done in this phase
+- also added admin thingys like monitoring ui, rate-limit ui and more.
+- rate limiting was challenging, encountered weird neon connection pool bug cause due to some fkups, better-auth and my schema/ was not synced (yeah weird lol). some real good strategies learned here about rate limiting with redis, better-auth also provides help, will deep dive into it later after prolly a month later
+- overall this phase was challenging but learned a lot of new stuff
+
+now onto phase 4 - more problems, better ui/ux, code editor improvements, testing, ci/cd, docs etc.
+
 ---
 
-Will update this README as the project evolves.
+Will update this README as the project evolves. Now that i realize where this project has reached, will write a complete blog from scratch about the entire journey, architecture, learnings and more.
