@@ -1,7 +1,9 @@
 import { betterAuth } from "better-auth";
 import { prisma } from "@reqres/database";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { createAuthMiddleware } from "better-auth/api";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js";
+import { logAuditEvent, getClientIp, getUserAgent } from "./auditLogger.js";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -13,15 +15,29 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     requireEmailVerification: true,
-    sendResetPassword: async ({ user, url }, _request) => {
+    sendResetPassword: async ({ user, url }, request) => {
+      logAuditEvent({
+        event: "PASSWORD_RESET_REQUESTED",
+        userId: user.id,
+        email: user.email,
+        ip: getClientIp(request),
+        userAgent: getUserAgent(request),
+      });
+
       void sendPasswordResetEmail({
         email: user.email,
         resetUrl: url,
         username: user.name || "user",
       });
     },
-    onPasswordReset: async ({ user }, _request) => {
-      console.log(`Password reset for user ID: ${user.id}`);
+    onPasswordReset: async ({ user }, request) => {
+      logAuditEvent({
+        event: "PASSWORD_RESET_COMPLETED",
+        userId: user.id,
+        email: user.email,
+        ip: getClientIp(request),
+        userAgent: getUserAgent(request),
+      });
     },
   },
   emailVerification: {
@@ -82,10 +98,71 @@ export const auth = betterAuth({
     cookiePrefix: "reqres",
     useSecureCookies: process.env.NODE_ENV === "production",
   },
-  // todo: additional rate limiting at API gateway/reverse proxy level
   rateLimit: {
     enabled: true,
     window: 60,
     max: 100,
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const { path, request } = ctx;
+      const newSession = ctx.context.newSession;
+
+      if (path === "/sign-up/email" && newSession) {
+        logAuditEvent({
+          event: "USER_SIGNUP",
+          userId: newSession.user.id,
+          email: newSession.user.email,
+          ip: getClientIp(request),
+          userAgent: getUserAgent(request),
+          metadata: { provider: "email" },
+        });
+      }
+
+      if (path === "/sign-in/email" && newSession) {
+        logAuditEvent({
+          event: "USER_SIGNIN",
+          userId: newSession.user.id,
+          email: newSession.user.email,
+          ip: getClientIp(request),
+          userAgent: getUserAgent(request),
+          metadata: { provider: "email" },
+        });
+      }
+
+      if (path.startsWith("/callback/github") && newSession) {
+        logAuditEvent({
+          event: "OAUTH_SIGNIN",
+          userId: newSession.user.id,
+          email: newSession.user.email,
+          ip: getClientIp(request),
+          userAgent: getUserAgent(request),
+          metadata: { provider: "github" },
+        });
+      }
+
+      if (path === "/sign-out") {
+        const session = ctx.context.session;
+        if (session) {
+          logAuditEvent({
+            event: "USER_SIGNOUT",
+            userId: session.user.id,
+            email: session.user.email,
+            ip: getClientIp(request),
+            userAgent: getUserAgent(request),
+          });
+        }
+      }
+
+      if (path === "/verify-email" && newSession) {
+        logAuditEvent({
+          event: "EMAIL_VERIFIED",
+          userId: newSession.user.id,
+          email: newSession.user.email,
+          ip: getClientIp(request),
+          userAgent: getUserAgent(request),
+        });
+      }
+    }),
   },
 });
