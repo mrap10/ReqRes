@@ -1,10 +1,13 @@
 {
-  "name": "@reqres/types",
+  "name": "@reqres/utils",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./string": "./src/string.ts",
+    "./validation": "./src/validation.ts",
+    "./date": "./src/date.ts"
   },
   "devDependencies": {
     "@reqres/typescript-config": "*",

@@ -1,45 +1,3 @@
-import type { Language, TestCase } from "./runner.js";
-
-export type Difficulty = "easy" | "medium" | "hard";
-
-export interface Problem {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  difficulty: Difficulty;
-  tags: string[];
-  supportedLanguages: Language[];
-  testCases: TestCase[];
-  starterCode: Record<Language, string>;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface ProblemSummary {
-  id: string;
-  slug: string;
-  title: string;
-  difficulty: Difficulty;
-  tags: string[];
-  acceptanceRate: number;
-  totalSubmissions: number;
-}
-
-export interface Submission {
-  id: string;
-  problemId: string;
-  userId: string;
-  code: string;
-  language: Language;
-  status: "pending" | "accepted" | "rejected";
-  score: number;
-  executionTime: number;
-  memoryUsed: number;
-  createdAt: Date;
-}
-
-// API DTOs
 export type ProblemDifficulty = "EASY" | "MEDIUM" | "HARD";
 export type ProblemTrack = "ROUTING" | "MIDDLEWARE" | "SECURITY" | "DATABASE";
 export type SubmissionStatus =
@@ -52,7 +10,7 @@ export type SubmissionStatus =
   | "RUNTIME_ERROR"
   | "COMPILE_ERROR";
 
-export type ProblemListDTO = {
+export interface ProblemListDTO {
   id: string;
   title: string;
   slug: string;
@@ -60,9 +18,9 @@ export type ProblemListDTO = {
   difficulty: ProblemDifficulty;
   tags: string[];
   track: ProblemTrack;
-};
+}
 
-export type ProblemDetailDTO = {
+export interface ProblemDetailDTO {
   id: string;
   title: string;
   slug: string;
@@ -75,17 +33,17 @@ export type ProblemDetailDTO = {
   difficulty: ProblemDifficulty;
   track: ProblemTrack;
   tags: string[];
-};
+}
 
-export type LeaderboardDTO = {
+export interface LeaderboardDTO {
   userId: string;
   username: string;
   globalRank: number;
   totalScore: number;
   problemsSolved: number;
-};
+}
 
-export type SubmissionListDTO = {
+export interface SubmissionListDTO {
   id: string;
   problemId: string;
   problemTitle: string;
@@ -97,4 +55,4 @@ export type SubmissionListDTO = {
   durationMs: number;
   xpEarned: number;
   createdAt: string;
-};
+}
