@@ -1,13 +1,13 @@
 "use client";
 
 import clsx from "clsx";
-import { LayoutDashboard, LogOut, Settings, ShieldAlert, Users } from "lucide-react";
+import { CodeXml, LayoutDashboard, LogOut, Settings, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const sidebarItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/users", label: "Users", icon: Users },
+  { href: "/add-problems", label: "Problems", icon: CodeXml },
   { href: "/rate-limit", label: "Rate Limit", icon: ShieldAlert },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
