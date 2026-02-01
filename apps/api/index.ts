@@ -7,7 +7,7 @@ import submissionsRouter from "./src/routes/submissions.js";
 import callbackRouter from "./src/routes/internalRunnerCallback.js";
 import problemsRouter from "./src/routes/problems.js";
 import userRouter from "./src/routes/user.js";
-import debugRouter from "./src/routes/debug.js";
+// import debugRouter from "./src/routes/debug.js";
 import metricsRouter from "./src/routes/metrics.js";
 import adminRateLimitsRouter from "./src/routes/adminRateLimits.js";
 import healthRouter from "./src/routes/health.js";
@@ -59,7 +59,7 @@ app.use("/submissions", submissionsRouter);
 app.use("/internal/runner", callbackRouter);
 app.use("/problems", problemsRouter);
 app.use("/user", userRouter);
-app.use("/debug", debugRouter);
+// app.use("/debug", debugRouter);
 app.use("/metrics", metricsRouter);
 app.use("/admin/rate-limits", adminRateLimitsRouter);
 
