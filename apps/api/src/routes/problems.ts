@@ -112,6 +112,15 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
     }
 
     const problem = await prisma.$transaction(async (tx) => {
+      let parsedExamples = null;
+      if (body.examples) {
+        try {
+          parsedExamples = JSON.parse(body.examples);
+        } catch {
+          parsedExamples = null;
+        }
+      }
+
       const newProblem = await tx.problem.create({
         data: {
           title: body.title,
@@ -124,6 +133,7 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
           starterCode: JSON.stringify(body.starterCode),
           constraints: body.constraints,
           tags: body.tags,
+          examples: parsedExamples,
           isPublished: body.isPublished,
           submissionType: "EXPRESS_API",
         },

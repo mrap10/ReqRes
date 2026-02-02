@@ -73,6 +73,7 @@ export interface CreateProblemDTO {
   starterCode: StarterCodeFile[];
   constraints: string[];
   tags: string[];
+  examples?: string;
   testConfig: {
     timeoutMs: number;
     memoryMb: number;

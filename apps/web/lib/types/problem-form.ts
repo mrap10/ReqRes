@@ -17,6 +17,7 @@ export interface ProblemFormData {
     timeoutMs: number;
     memoryMb: number;
   };
+  examples?: string;
   isPublished: boolean;
 }
 
@@ -35,6 +36,7 @@ export const DEFAULT_PROBLEM_FORM: ProblemFormData = {
     timeoutMs: 3000,
     memoryMb: 256,
   },
+  examples: "",
   isPublished: false,
 };
 

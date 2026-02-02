@@ -4,6 +4,7 @@ import AdminSidebar from "@/components/admin-components/AdminSidebar";
 import ConfigurationSection from "@/components/admin-components/ConfigurationSection";
 import ContentSection from "@/components/admin-components/ContentSection";
 import DetailsSection from "@/components/admin-components/DetailsSection";
+import ExamplesSection from "@/components/admin-components/ExamplesSection";
 import JsonPreviewModal from "@/components/admin-components/JsonPreviewModal";
 import MetadataSection from "@/components/admin-components/MetaDataSection";
 import PageHeader from "@/components/admin-components/PageHeader";
@@ -109,6 +110,7 @@ export default function AddProblemsPage() {
               testConfig={formData.testConfig}
               onTestConfigChange={updateTestConfig}
             />
+            <ExamplesSection formData={formData} onFieldChange={updateField} />
           </div>
         </div>
 
