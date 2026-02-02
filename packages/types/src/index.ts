@@ -6,4 +6,6 @@ export type {
   ProblemDetailDTO,
   LeaderboardDTO,
   SubmissionListDTO,
+  StarterCodeFile,
+  CreateProblemDTO,
 } from "./problem.js";

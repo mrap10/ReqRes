@@ -56,3 +56,26 @@ export interface SubmissionListDTO {
   xpEarned: number;
   createdAt: string;
 }
+
+export interface StarterCodeFile {
+  filename: string;
+  content: string;
+}
+
+export interface CreateProblemDTO {
+  title: string;
+  slug: string;
+  difficulty: ProblemDifficulty;
+  track: ProblemTrack;
+  shortDescription: string;
+  description: string;
+  instructions: string;
+  starterCode: StarterCodeFile[];
+  constraints: string[];
+  tags: string[];
+  testConfig: {
+    timeoutMs: number;
+    memoryMb: number;
+  };
+  isPublished: boolean;
+}

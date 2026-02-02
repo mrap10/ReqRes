@@ -1,7 +1,8 @@
 import { prisma } from "@reqres/database";
 import { Router } from "express";
-import { ProblemListDTO, ProblemDetailDTO } from "@reqres/types";
+import { ProblemListDTO, ProblemDetailDTO, CreateProblemDTO } from "@reqres/types";
 import { apiLogger } from "../lib/logger.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -82,6 +83,94 @@ router.get("/:slug", async (req, res) => {
   }
 });
 
-// will add admin only routes here.
+router.post("/", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const body = req.body as CreateProblemDTO;
+
+    if (
+      !body.title ||
+      !body.slug ||
+      !body.description ||
+      !body.shortDescription ||
+      !body.instructions
+    ) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        correlationId: req.correlationId,
+      });
+    }
+
+    const existingProblem = await prisma.problem.findUnique({
+      where: { slug: body.slug },
+    });
+
+    if (existingProblem) {
+      return res.status(409).json({
+        error: "A problem with this slug already exists",
+        correlationId: req.correlationId,
+      });
+    }
+
+    const problem = await prisma.$transaction(async (tx) => {
+      const newProblem = await tx.problem.create({
+        data: {
+          title: body.title,
+          slug: body.slug,
+          description: body.description,
+          shortDescription: body.shortDescription,
+          instructions: body.instructions,
+          difficulty: body.difficulty,
+          track: body.track,
+          starterCode: JSON.stringify(body.starterCode),
+          constraints: body.constraints,
+          tags: body.tags,
+          isPublished: body.isPublished,
+          submissionType: "EXPRESS_API",
+        },
+      });
+
+      await tx.testConfig.create({
+        data: {
+          problemId: newProblem.id,
+          timeoutMs: body.testConfig?.timeoutMs || 3000,
+          memoryMb: body.testConfig?.memoryMb || 256,
+        },
+      });
+
+      return newProblem;
+    });
+
+    apiLogger.info(
+      {
+        correlationId: req.correlationId,
+        problemId: problem.id,
+        slug: problem.slug,
+        adminId: req.user?.id,
+      },
+      "Problem created successfully"
+    );
+
+    res.status(201).json({
+      message: "Problem created successfully",
+      problem: {
+        id: problem.id,
+        slug: problem.slug,
+        title: problem.title,
+      },
+    });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to create problem"
+    );
+    res.status(500).json({
+      error: "Failed to create problem",
+      correlationId: req.correlationId,
+    });
+  }
+});
 
 export default router;
