@@ -1,8 +1,8 @@
 "use client";
 
-import AdminSidebar from "@/components/AdminSidebar";
-import DashboardCard from "@/components/DashboardCard";
-import QueueHealth from "@/components/QueueHealth";
+import AdminSidebar from "@/components/admin-components/AdminSidebar";
+import DashboardCard from "@/components/admin-components/DashboardCard";
+import QueueHealth from "@/components/admin-components/QueueHealth";
 import { AnimatedHighlightedAreaChart } from "@/components/ui/animated-highlighted-chart";
 import { DefaultBarChart } from "@/components/ui/default-bar-chart";
 import {

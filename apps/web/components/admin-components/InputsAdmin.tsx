@@ -41,7 +41,7 @@ export function InputGroup({
     <div className="space-y-1.5">
       <label
         htmlFor={htmlFor}
-        className="text-sm font-bold text-zinc-400 tracking-wider flex items-center gap-1"
+        className="text-sm font-semibold text-zinc-400 tracking-wider flex items-center gap-1"
       >
         {label} {required && <span className="text-rose-500">*</span>}
       </label>
