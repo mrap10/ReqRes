@@ -2,105 +2,73 @@
 
 import MonacoEditor from "@monaco-editor/react";
 import { useRef, useImperativeHandle, forwardRef } from "react";
-import type { editor, IKeyboardEvent } from "monaco-editor";
+import type { editor } from "monaco-editor";
 
 interface EditorProps {
-  starterCode?: string;
+  starterCode?: string | StarterCodeFormat;
 }
 
 export interface EditorRef {
   getCode: () => string;
+  resetCode: () => void;
 }
 
-function getEditableRange(code: string): { startLineNumber: number; endLineNumber: number } {
-  const lines = code.split("\n");
-  const markerLine = lines.findIndex((line) => line.includes("// Your code here"));
+interface CodeFile {
+  filename: string;
+  content: string;
+}
 
-  if (markerLine === -1) {
-    return {
-      startLineNumber: 1,
-      endLineNumber: lines.length,
-    };
+type StarterCodeFormat = CodeFile[] | CodeFile | { content: string };
+
+function extractCode(data: string | StarterCodeFormat | undefined): string {
+  if (!data) return "";
+
+  if (typeof data === "string") {
+    try {
+      const parsed: unknown = JSON.parse(data);
+      return extractCode(parsed as StarterCodeFormat);
+    } catch {
+      return data.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+    }
   }
 
-  return {
-    startLineNumber: markerLine + 2,
-    endLineNumber: lines.length,
-  };
+  if (Array.isArray(data) && data.length > 0 && data[0] && "content" in data[0]) {
+    // unescaping the newlines and tabs
+    return data[0].content.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+  }
+
+  if (typeof data === "object" && "content" in data && data !== null) {
+    return data.content.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+  }
+
+  return "";
 }
 
 const Editor = forwardRef<EditorRef, EditorProps>(function Editor({ starterCode }, ref) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const initialCode = extractCode(starterCode);
 
   useImperativeHandle(ref, () => ({
     getCode: () => {
-      return editorRef.current?.getValue() || starterCode || "";
+      return editorRef.current?.getValue() || "";
+    },
+    resetCode: () => {
+      if (editorRef.current && initialCode) {
+        editorRef.current.setValue(initialCode);
+      }
     },
   }));
 
-  function handleEditorDidMount(
-    editorInstance: editor.IStandaloneCodeEditor,
-    monaco: typeof import("monaco-editor")
-  ): void {
+  function handleEditorDidMount(editorInstance: editor.IStandaloneCodeEditor): void {
     editorRef.current = editorInstance;
-
-    const model = editorInstance.getModel();
-    if (!model || !starterCode) {
-      return;
-    }
-
-    // eslint-disable-next-line
-    const { startLineNumber, endLineNumber } = getEditableRange(starterCode);
-
-    const decorations = [
-      {
-        range: new monaco.Range(1, 1, startLineNumber - 1, 1),
-        options: {
-          isWholeLine: true,
-          className: "read-only-line",
-        },
-      },
-    ];
-
-    model.deltaDecorations([], decorations);
-
-    editorInstance.onDidChangeCursorPosition((e: editor.ICursorPositionChangedEvent) => {
-      const position = e.position;
-      if (!position) return;
-
-      if (position.lineNumber < startLineNumber) {
-        editorInstance.setPosition({ lineNumber: startLineNumber, column: 1 });
-      }
-    });
-
-    editorInstance.onDidAttemptReadOnlyEdit(() => {
-      editorInstance.setPosition({ lineNumber: startLineNumber, column: 1 });
-    });
-
-    editorInstance.onKeyDown((e: IKeyboardEvent) => {
-      const position = editorInstance.getPosition();
-      if (!position) return;
-      if (position.lineNumber < startLineNumber) {
-        e.preventDefault();
-        e.stopPropagation();
-        editorInstance.setPosition({ lineNumber: startLineNumber, column: 1 });
-      }
-    });
-
-    editorInstance.onDidPaste(() => {
-      const position = editorInstance.getPosition();
-      if (!position) return;
-      if (position.lineNumber < startLineNumber) {
-        editorInstance.executeEdits("", []);
-      }
-    });
+    editorInstance.focus();
   }
 
   return (
     <MonacoEditor
       height="100%"
       defaultLanguage="javascript"
-      value={starterCode}
+      value={initialCode}
       onMount={handleEditorDidMount}
       theme="vs-dark"
       options={{
@@ -108,6 +76,27 @@ const Editor = forwardRef<EditorRef, EditorProps>(function Editor({ starterCode 
         minimap: { enabled: false },
         automaticLayout: true,
         scrollBeyondLastLine: false,
+        lineNumbers: "on",
+        roundedSelection: false,
+        cursorStyle: "line",
+        wordWrap: "on",
+        wrappingIndent: "indent",
+        formatOnPaste: true,
+        formatOnType: true,
+        autoClosingBrackets: "always",
+        autoClosingQuotes: "always",
+        suggestOnTriggerCharacters: true,
+        quickSuggestions: {
+          other: true,
+          comments: false,
+          strings: false,
+        },
+        tabSize: 2,
+        insertSpaces: true,
+        folding: true,
+        renderLineHighlight: "all",
+        selectOnLineNumbers: true,
+        matchBrackets: "always",
       }}
     />
   );

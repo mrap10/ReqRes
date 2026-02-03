@@ -39,12 +39,14 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:",
+              "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
               "img-src 'self' data: https: blob:",
-              "font-src 'self' data:",
-              "connect-src 'self' " +
+              "font-src 'self' data: https://cdn.jsdelivr.net",
+              "connect-src 'self' https://cdn.jsdelivr.net " +
                 (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"),
+              "worker-src 'self' blob:",
+              "child-src 'self' blob:",
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self'",
