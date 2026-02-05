@@ -20,6 +20,10 @@ const ALLOWED_PROBLEM_SLUGS = new Set([
   "request-body-parser",
   "custom-error-handler",
   "path-parameters",
+  "request-logger-middleware",
+  "in-memory-crud-api",
+  "jwt-authentication-middleware",
+  "input-validation-middleware",
 ]);
 
 async function emitLog(
