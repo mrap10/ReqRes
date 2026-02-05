@@ -15,12 +15,11 @@ const TESTS_BASE_DIR = path.join(__dirname, "../../tests");
 
 // whitelisting for now (will replace it with dynamic check later in v1)
 const ALLOWED_PROBLEM_SLUGS = new Set([
-  "health-check",
-  "jwt-authentication-express",
-  "health-check-api",
-  "crud-in-memory-store",
-  "zod-validation",
-  "rate-limiting-middleware",
+  "hello-express-api",
+  "query-parameter-parser",
+  "request-body-parser",
+  "custom-error-handler",
+  "path-parameters",
 ]);
 
 async function emitLog(
