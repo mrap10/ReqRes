@@ -35,7 +35,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
     <div className="flex flex-col h-screen bg-zinc-950 text-slate-200 font-sans overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
       <ProblemHeader title={problemDetail.title} />
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/2 min-w-[400px] border-r border-zinc-800 flex flex-col bg-zinc-950/50">
+        <div className="w-1/2 min-w-100 border-r border-zinc-800 flex flex-col bg-zinc-950/50">
           <LeftSideProblemsPage problemDetails={problemDetail} />
         </div>
 
