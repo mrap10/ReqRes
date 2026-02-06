@@ -24,6 +24,11 @@ const ALLOWED_PROBLEM_SLUGS = new Set([
   "in-memory-crud-api",
   "jwt-authentication-middleware",
   "input-validation-middleware",
+  "file-upload-handler",
+  "api-versioning",
+  "cors-configuration",
+  "jwt-with-refresh-tokens",
+  "graphql-like-query-api",
 ]);
 
 async function emitLog(

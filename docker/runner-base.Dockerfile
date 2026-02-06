@@ -9,7 +9,8 @@ RUN echo '{ \
     "jest": "^30.0.0", \
     "supertest": "^7.2.2", \
     "jsonwebtoken": "^9.0.2", \
-    "zod": "^4.3.5" \
+    "zod": "^4.3.5", \
+    "multer": "^2.0.2" \
   } \
 }' > package.json
 
