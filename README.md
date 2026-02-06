@@ -376,6 +376,18 @@ phase 3 completed - queue system, bullmq, redis, sse for real-time updates, work
 
 now onto phase 4 - more problems, better ui/ux, code editor improvements, testing, ci/cd, docs etc.
 
+phase 4.1 checkpoint:
+
+- added more problems (14 for now, 5E 5M 4H, will add more just before/after beta release)
+- fixed some monaco editor issues (arised due to stricter headers in next.config, which was blocking monaco cdn)
+- added tests and verified (all good for now)
+- didnt need to tweak even a bit inside /runner (yay! lol, happy that runner was mature enough to handle new problems but still not much mature enough for quicker execution and other perf.)
+- eliminated some console warnings, some are/should-be ignorable/ignored.
+- overall this checkpoint was pretty smooth, just some minor tweaks and fixes, no major architectural changes or anything.
+- now focusing on better ui/ux and other improvements for the next checkpoint.
+
+haha feel so much nicer to move into ui phase lol, maybe a sense of happiness to be entering to work inside own's niche and confidence to do it quicker enough haha.
+
 ---
 
 Will update this README as the project evolves. Now that i realize where this project has reached, will write a complete blog from scratch about the entire journey, architecture, learnings and more.

@@ -13,7 +13,8 @@ export function initializeSentry() {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     sendDefaultPii: true,
-    // integrations: [nodeProfilingIntegration()], - seems like profiling integration causes issues with Bun
+    // instrumentation warnings - Bun runtime doesn't support Node.js-style auto-instrumentation
+    disableInstrumentationWarnings: true,
     sampleRate: isDevelopment ? 1.0 : 0.1,
     tracesSampleRate: isDevelopment ? 1.0 : 0.1,
     profileSessionSampleRate: isDevelopment ? 1.0 : 0.1,

@@ -11,6 +11,7 @@ export function initializeSentry() {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     sendDefaultPii: false,
+    disableInstrumentationWarnings: true,
     sampleRate: isDevelopment ? 1.0 : 0.1,
     tracesSampleRate: isDevelopment ? 1.0 : 0.05,
     environment: process.env.NODE_ENV || "development",
