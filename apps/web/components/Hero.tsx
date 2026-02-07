@@ -1,4 +1,5 @@
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, CheckCircle2, Play } from "lucide-react";
+import TerminalCode from "./TerminalCode";
 
 export default function Hero() {
   return (
@@ -44,9 +45,40 @@ export default function Hero() {
         <div className="relative">
           <div className="absolute -inset-1 bg-linear-to-r from-indigo-500 to-cyan-600 rounded-2xl blur opacity-20"></div>
           <div className="relative bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-            <div>window controls</div>
-            <div>code area</div>
-            <div>terminal area</div>
+            <div className="flex items-center justify-between px-4 py-3 bg-zinc-950 border-b border-zinc-800">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-rose-500/20 border border-rose-500/50" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/20 border border-amber-500/50" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+              </div>
+              <div className="text-xs font-mono text-zinc-400">index.js</div>
+              <div className="w-10" />
+            </div>
+
+            <div className="p-6 bg-zinc-950/50 min-h-90">
+              <TerminalCode />
+            </div>
+
+            <div className="border-t border-zinc-800 bg-zinc-950 p-4 font-mono text-xs">
+              <div className="flex items-center gap-2 text-emerald-400 mb-2">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Tests Passed (4/4)</span>
+              </div>
+              <div className="space-y-1 text-zinc-400">
+                <div className="flex justify-between">
+                  <span>✓ should handle missing credentials</span>
+                  <span className="text-zinc-500">12ms</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>✓ should validate email format</span>
+                  <span className="text-zinc-500">6ms</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>✓ should prevent SQL injection</span>
+                  <span className="text-zinc-500">8ms</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

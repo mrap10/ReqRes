@@ -99,7 +99,7 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="w-8 h-8 rounded-full cursor-pointer bg-gradient-to-tr from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 flex items-center justify-center text-sm font-semibold text-white transition-all"
+                  className="w-8 h-8 rounded-full cursor-pointer bg-linear-to-tr from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 flex items-center justify-center text-sm font-semibold text-white transition-all"
                 >
                   {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                 </button>
@@ -163,7 +163,7 @@ export default function Navbar() {
           ) : isAuthenticated ? (
             <div className="flex flex-col gap-2 pt-2 border-t border-zinc-800">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-sm font-semibold text-white">
+                <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-sm font-semibold text-white">
                   {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                 </div>
                 <div>
