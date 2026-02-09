@@ -35,16 +35,16 @@ export default function Features() {
     },
   ];
   return (
-    <div className="py-24 bg-zinc-950 border-t border-white/5">
-      <div className="absolute right-0 top-0 w-1/2 h-full bg-linear-to-l from-zinc-800/20 to-transparent pointer-events-none" />
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="mt-24 mx-auto w-full max-w-6xl px-4">
+      {/* <div className="absolute right-0 top-0 w-1/2 h-full bg-linear-to-l from-zinc-800/20 to-transparent pointer-events-none" /> */}
+      <div className="mb-10 flex items-end justify-between gap-6">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
             Not just syntax. <br />
             <span className="text-indigo-400">Architecture.</span>
           </h2>
           <p className="text-zinc-400 text-lg">
-            ReqRes focuses on the hard parts of backend development. Leave the &quot;Hello
+            ReqRes focuses on the hard parts of backend development. <br /> Leave the &quot;Hello
             World&quot; tutorials behind.
           </p>
         </div>

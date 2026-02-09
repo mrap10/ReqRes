@@ -1,12 +1,33 @@
 "use client";
 
-import { CheckCircle2 } from "lucide-react";
 import TerminalCode from "./TerminalCode";
 import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+
+const testCases = [
+  { name: "GET /orders/42 > returns 200", status: "PASSED" },
+  { name: "Missing token > returns 401", status: "PASSED" },
+  { name: "Invalid id format > returns 400", status: "PASSED" },
+];
 
 export default function Hero() {
+  const [typingComplete, setTypingComplete] = useState(false);
+  const [visibleTests, setVisibleTests] = useState(0);
+
+  useEffect(() => {
+    if (!typingComplete || visibleTests >= testCases.length) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setVisibleTests((prev) => prev + 1);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [typingComplete, visibleTests]);
+
   return (
-    <section className="relative mx-auto mt-16 grid w-full max-w-6xl gap-12 px-4 pb-10 md:grid-cols-[1.04fr_0.96fr] md:items-center">
+    <section className="relative mx-auto mt-20 grid w-full max-w-6xl gap-12 px-4 pb-10 md:grid-cols-[1.04fr_0.96fr] md:items-center">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
         <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-10 w-125 h-125 bg-cyan-500/10 rounded-full blur-3xl" />
@@ -29,7 +50,7 @@ export default function Hero() {
           <span className="bg-linear-to-r from-indigo-300 to-cyan-200 bg-clip-text text-transparent">
             real-life
           </span>{" "}
-          Express.js scenarios, not toy snippets.
+          Express.js scenarios
         </h1>
         <p className="text-base leading-7 text-white/65 sm:text-lg">
           Stop building todo-lists. Solve real-world architectural challenges using Express.js. Fix
@@ -62,39 +83,59 @@ export default function Hero() {
         <div className="pointer-events-none absolute -left-6 -top-8 h-24 w-24 rounded-full bg-indigo-400/18 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-8 -right-5 h-24 w-24 rounded-full bg-cyan-400/14 blur-2xl" />
 
-        <motion.div className="relative bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-zinc-950 border-b border-zinc-800">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-rose-500/20 border border-rose-500/50" />
-              <div className="w-3 h-3 rounded-full bg-amber-500/20 border border-amber-500/50" />
-              <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
+        <motion.div
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 240, damping: 18 }}
+          className="relative border border-white/10 bg-[#09090d] shadow-[0_20px_40px_rgba(0,0,0,0.4)] rounded-2xl overflow-hidden"
+        >
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 w-24 bg-linear-to-r from-transparent via-white/5 to-transparent"
+            animate={{ x: ["-120%", "500%"] }}
+            transition={{
+              duration: 4.8,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatDelay: 1.6,
+              ease: "easeInOut",
+            }}
+          />
+
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-xs">
+            <div className="inline-flex items-center gap-2 text-white/60">
+              <span className="h-2 w-2 rounded-full bg-emerald-300/70" />
+              index.js
             </div>
-            <div className="text-xs font-mono text-zinc-400">index.js</div>
-            <div className="w-10" />
+            <span className="rounded-md border border-white/10 bg-amber-400/80 px-2 py-0.5 text-[10px] text-white">
+              Medium
+            </span>
           </div>
 
-          <div className="p-6 bg-zinc-950/50 min-h-90">
-            <TerminalCode />
+          <div className="w-130 space-y-1 p-4 font-mono text-xs text-white/75">
+            <TerminalCode typingComplete={typingComplete} setTypingComplete={setTypingComplete} />
           </div>
 
-          <div className="border-t border-zinc-800 bg-zinc-950 p-4 font-mono text-xs">
-            <div className="flex items-center gap-2 text-emerald-400 mb-2">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Tests Passed (4/4)</span>
+          <div className="border-t border-white/10 bg-black/30 p-4">
+            <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-white/45">
+              Test Cases
             </div>
-            <div className="space-y-1 text-zinc-400">
-              <div className="flex justify-between">
-                <span>✓ should handle missing credentials</span>
-                <span className="text-zinc-500">12ms</span>
-              </div>
-              <div className="flex justify-between">
-                <span>✓ should validate email format</span>
-                <span className="text-zinc-500">6ms</span>
-              </div>
-              <div className="flex justify-between">
-                <span>✓ should prevent SQL injection</span>
-                <span className="text-zinc-500">8ms</span>
-              </div>
+            <div className="space-y-2">
+              {testCases.slice(0, visibleTests).map((test) => (
+                <motion.div
+                  key={test.name}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex items-center justify-between rounded-lg border border-white/10 bg-white/2 px-3 py-2 text-xs"
+                >
+                  <span className="text-white/70">{test.name}</span>
+                  <span className="rounded-md bg-emerald-400/15 px-2 py-1 text-[10px] tracking-[0.08em] text-emerald-200">
+                    {test.status}
+                  </span>
+                </motion.div>
+              ))}
+              {!typingComplete && (
+                <p className="text-xs text-white/40">Waiting for code execution...</p>
+              )}
             </div>
           </div>
         </motion.div>
