@@ -1,5 +1,5 @@
 import { Play } from "lucide-react";
-import WorkflowStep from "./WorkflowStep";
+import WorkflowStep from "../WorkflowStep";
 
 export default function HowItWorks() {
   const steps = [
@@ -23,12 +23,15 @@ export default function HowItWorks() {
     },
   ];
   return (
-    <div className="py-24 bg-zinc-900 relative overflow-hidden">
-      <div className="absolute right-0 top-0 w-1/2 h-full bg-linear-to-l from-zinc-800/20 to-transparent pointer-events-none" />
-      <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+    <div className="mx-auto mt-24 w-full max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(170deg,#0d0d13_0%,#09090d_48%,#0b0b0f_100%)] px-4 py-10 sm:px-8 sm:py-12">
+      {/* <div className="absolute right-0 top-0 w-1/2 h-full bg-linear-to-l from-zinc-800/20 to-transparent pointer-events-none" /> */}
+      <div className="grid gap-10 md:grid-cols-[1.08fr_0.92fr] md:items-center">
         <div>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-12">
-            The Flow is <span className="text-indigo-400">Simple</span>.
+          <h2 className="mb-8 text-3xl sm:text-4xl font-semibold tracking-tight text-white">
+            The Flow is{" "}
+            <span className="bg-linear-to-r from-indigo-300 to-cyan-200 bg-clip-text text-transparent">
+              Simple.
+            </span>
           </h2>
           <div className="space-y-2">
             {steps.map((step) => (
@@ -89,4 +92,3 @@ export default function HowItWorks() {
     </div>
   );
 }
-// TODO: add animation for request to response flow
