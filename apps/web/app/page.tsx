@@ -1,9 +1,7 @@
-import Features from "@/components/landing-page/Features";
 import Navbar from "../components/Navbar";
-import Hero from "@/components/landing-page/Hero";
-import HowItWorks from "@/components/landing-page/HowItWorks";
-import CTA from "@/components/landing-page/CTA";
 import Footer from "@/components/Footer";
+import { Hero, Features, HowItWorks, CTA, FAQ } from "@/components/landing-page/index";
+import { TextHoverEffect } from "@/components/ui/text-hover-effect";
 
 export default function Home() {
   return (
@@ -20,8 +18,12 @@ export default function Home() {
         <Features />
         <HowItWorks />
         <CTA />
-        <Footer />
+        <FAQ />
       </main>
+      <div className="h-120 flex flex-col items-center justify-center bg-zinc-950">
+        <Footer />
+        <TextHoverEffect text="ReqRes" />
+      </div>
     </div>
   );
 }

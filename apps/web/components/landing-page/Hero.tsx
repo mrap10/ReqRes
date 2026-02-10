@@ -2,6 +2,7 @@
 
 import TerminalCode from "./TerminalCode";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const testCases = [
@@ -27,7 +28,7 @@ export default function Hero() {
   }, [typingComplete, visibleTests]);
 
   return (
-    <section className="relative mx-auto mt-20 grid w-full max-w-6xl gap-12 px-4 pb-10 md:grid-cols-[1.04fr_0.96fr] md:items-center">
+    <section className="relative mx-auto mt-20 grid w-full max-w-6xl gap-12 px-4 pb-10 md:grid-cols-2 md:items-center">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
         <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-10 w-125 h-125 bg-cyan-500/10 rounded-full blur-3xl" />
@@ -38,7 +39,7 @@ export default function Hero() {
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="space-y-7"
       >
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-cyan-400 mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-mono text-cyan-400 transition ease-out hover:bg-cyan-500/10 hover:duration-300 hover:border-cyan-400/40">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
@@ -57,12 +58,18 @@ export default function Hero() {
           broken endpoints, optimize middleware, and secure APIs.
         </p>
         <div className="flex flex-wrap gap-3">
-          <button className="rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-black transition-all hover:bg-indigo-100 cursor-pointer hover:scale-105">
+          <Link
+            href={"problems"}
+            className="rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-black transition-all hover:bg-indigo-100 cursor-pointer hover:scale-105"
+          >
             Start Practicing
-          </button>
-          <button className="rounded-xl border border-white/15 px-5 py-2.5 text-sm text-white/85 transition hover:border-cyan-300/40 hover:text-white cursor-pointer">
+          </Link>
+          <Link
+            href={"problems"}
+            className="rounded-xl border border-white/15 px-5 py-2.5 text-sm text-white/85 transition hover:border-cyan-300/40 hover:text-white cursor-pointer"
+          >
             View Challenge List
-          </button>
+          </Link>
         </div>
         <div className="flex items-center gap-5 text-xs text-white/55">
           <span>15+ practical challenges</span>

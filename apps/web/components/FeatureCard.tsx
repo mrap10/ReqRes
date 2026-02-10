@@ -39,7 +39,7 @@ export default function FeatureCard({ title, desc, index, icon }: FeatureCardPro
           <div className="w-16 h-16 rounded-lg bg-zinc-800 flex items-center justify-center mb-4">
             <Icon className="w-8 h-8 text-zinc-300" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+          <h3 className="text-xl font-bold text-white/85 mb-2">{title}</h3>
         </div>
         <div className="hidden group-hover:block mt-5">
           <p className="text-zinc-400 leading-relaxed">{desc}</p>

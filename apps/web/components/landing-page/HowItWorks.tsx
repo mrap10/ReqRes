@@ -50,7 +50,7 @@ export default function HowItWorks() {
   return (
     <div className="mx-auto mt-24 flex justify-center bg-[linear-gradient(170deg,#0d0d13_0%,#09090d_48%,#0b0b0f_100%)]">
       <div className="max-w-6xl overflow-hidden px-4 py-10 sm:px-8 sm:py-12">
-        <div className="grid gap-10 md:grid-cols-[1.08fr_0.92fr] md:items-center">
+        <div className="grid gap-10 md:grid-cols-2 md:items-center">
           <div>
             <h2 className="mb-8 text-3xl sm:text-4xl font-semibold tracking-tight text-white">
               The Flow is{" "}
