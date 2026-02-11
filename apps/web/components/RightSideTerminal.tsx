@@ -81,7 +81,7 @@ export default function RightSideTerminal() {
 
   return (
     <div
-      className="border-t border-zinc-800 bg-zinc-900 flex flex-col shrink-0 min-h-[40px]"
+      className="border-t border-zinc-800 bg-zinc-900 flex flex-col shrink-0 min-h-10"
       style={{ height: HEADER_HEIGHT + terminalHeight }}
     >
       <div
@@ -166,12 +166,25 @@ export default function RightSideTerminal() {
   );
 }
 
+interface TestResultItem {
+  name: string;
+  passed: boolean;
+  error?: string;
+  index?: number;
+  location?: {
+    line: number;
+    column: number;
+  };
+}
+
+const VISIBLE_TEST_LIMIT = 10;
+
 function TestResultsView({
   testResults,
   isRunning,
   status,
 }: {
-  testResults: { name: string; passed: boolean; error?: string }[];
+  testResults: TestResultItem[];
   isRunning: boolean;
   status: string;
 }) {
@@ -215,6 +228,24 @@ function TestResultsView({
 
   const passedCount = testResults.filter((t) => t.passed).length;
   const allPassed = passedCount === testResults.length;
+  const totalTests = testResults.length;
+  const hasHiddenTests = totalTests > VISIBLE_TEST_LIMIT;
+
+  let testsToDisplay: TestResultItem[] = [];
+  let hiddenPassedCount = 0;
+  let hiddenFailedTests: TestResultItem[] = [];
+
+  if (hasHiddenTests) {
+    const visibleTests = testResults.slice(0, VISIBLE_TEST_LIMIT);
+    const hiddenTests = testResults.slice(VISIBLE_TEST_LIMIT);
+
+    hiddenFailedTests = hiddenTests.filter((t) => !t.passed);
+    hiddenPassedCount = hiddenTests.filter((t) => t.passed).length;
+
+    testsToDisplay = [...visibleTests, ...hiddenFailedTests];
+  } else {
+    testsToDisplay = testResults;
+  }
 
   return (
     <div className="space-y-1">
@@ -222,36 +253,64 @@ function TestResultsView({
         <span>Result</span>
         <span>Status</span>
       </div>
-      {testResults.map((test, idx) => (
-        <div key={idx} className="group">
-          <div className="flex items-center justify-between p-2 rounded hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors">
-            <div className="flex items-center gap-3">
-              {test.passed ? (
-                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
-                  <Check className="w-3 h-3 stroke-[3]" />
+      {testsToDisplay.map((test, idx) => {
+        const isFromHiddenSection =
+          hasHiddenTests && !test.passed && (test.index ?? idx) >= VISIBLE_TEST_LIMIT;
+
+        return (
+          <div key={test.index ?? idx} className="group">
+            <div className="flex items-center justify-between p-2 rounded hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors">
+              <div className="flex items-center gap-3">
+                {test.passed ? (
+                  <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+                    <Check className="w-3 h-3 stroke-3" />
+                  </div>
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center">
+                    <XCircle className="w-3 h-3" />
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className={`${test.passed ? "text-zinc-300" : "text-rose-400"}`}>
+                    {isFromHiddenSection && (
+                      <span className="text-amber-500 text-xs mr-2">
+                        [Hidden #{(test.index ?? idx) + 1}]
+                      </span>
+                    )}
+                    {test.name}
+                  </span>
+                  {test.location && !test.passed && (
+                    <span className="text-xs text-zinc-500">
+                      Line {test.location.line}, Column {test.location.column}
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center">
-                  <XCircle className="w-3 h-3" />
-                </div>
-              )}
-              <span className={`${test.passed ? "text-zinc-300" : "text-rose-400"}`}>
-                {test.name}
+              </div>
+              <span
+                className={`text-xs font-mono ${test.passed ? "text-emerald-500" : "text-rose-500"}`}
+              >
+                {test.passed ? "PASS" : "FAIL"}
               </span>
             </div>
-            <span
-              className={`text-xs font-mono ${test.passed ? "text-emerald-500" : "text-rose-500"}`}
-            >
-              {test.passed ? "PASS" : "FAIL"}
+            {test.error && (
+              <div className="ml-8 mt-1 mb-2 p-2 text-rose-400/80 text-xs bg-rose-500/10 rounded border border-rose-500/20">
+                <pre className="whitespace-pre-wrap">{test.error}</pre>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {hasHiddenTests && hiddenPassedCount > 0 && (
+        <div className="mt-3 p-3 rounded bg-zinc-900/50 border border-zinc-800">
+          <div className="flex items-center gap-2 text-zinc-400 text-sm">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <span>
+              +{hiddenPassedCount} hidden test{hiddenPassedCount > 1 ? "s" : ""} passed
             </span>
           </div>
-          {test.error && (
-            <div className="ml-8 mt-1 mb-2 p-2 text-rose-400/80 text-xs bg-rose-500/10 rounded border border-rose-500/20">
-              <pre className="whitespace-pre-wrap">{test.error}</pre>
-            </div>
-          )}
         </div>
-      ))}
+      )}
 
       <div
         className={`mt-6 pt-4 border-t border-zinc-800 flex items-center gap-2 ${allPassed ? "text-emerald-400" : "text-rose-400"}`}
@@ -320,7 +379,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`px-4 min-w-[120px] h-full text-xs font-medium border-t-2 transition-colors cursor-pointer ${
+      className={`px-4 min-w-30 h-full text-xs font-medium border-t-2 transition-colors cursor-pointer ${
         active
           ? "border-indigo-500 text-white bg-zinc-950"
           : "border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50"

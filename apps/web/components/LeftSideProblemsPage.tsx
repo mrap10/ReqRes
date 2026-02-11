@@ -4,6 +4,7 @@ import { AlertCircle, Check, Copy, Terminal, Code2 } from "lucide-react";
 import { ProblemDetailDTO } from "@reqres/types";
 import InstructionsRenderer from "./InstructionsRenderer";
 import { useState, useMemo } from "react";
+import DifficultyTag from "./DifficultyTag";
 
 interface LeftSideProblemsPageProps {
   problemDetails: ProblemDetailDTO;
@@ -140,7 +141,10 @@ export default function LeftSideProblemsPage({ problemDetails }: LeftSideProblem
   return (
     <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-4">{problemDetails.title}</h2>
+        <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+          {problemDetails.title}
+          {problemDetails.difficulty && <DifficultyTag level={problemDetails.difficulty} />}
+        </h2>
         <p className="text-zinc-400 leading-relaxed">{problemDetails.description}</p>
       </div>
 

@@ -19,6 +19,11 @@ export type TestResult = {
   name: string;
   passed: boolean;
   error?: string;
+  index: number;
+  location?: {
+    line: number;
+    column: number;
+  };
 };
 
 export type ExecuteResponse = {

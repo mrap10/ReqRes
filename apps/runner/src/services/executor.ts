@@ -227,6 +227,7 @@ module.exports = {
 
 function parseTestOutput(JestJson: JestJSON): ExecuteResponse["results"] {
   const results: ExecuteResponse["results"] = [];
+  let testIndex = 0;
 
   for (const testSuite of JestJson.testResults) {
     for (const assertion of testSuite.assertionResults) {
@@ -243,7 +244,10 @@ function parseTestOutput(JestJson: JestJSON): ExecuteResponse["results"] {
           assertion.status === "failed"
             ? sanitizeError(assertion.failureMessages.join("\n"))
             : undefined,
+        index: testIndex,
+        location: assertion.location,
       });
+      testIndex++;
     }
   }
 

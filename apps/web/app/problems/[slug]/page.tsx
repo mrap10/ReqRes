@@ -12,7 +12,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   if (!problemDetail) {
     return (
       <div className="flex flex-col h-screen bg-zinc-950 text-slate-200 font-sans overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
-        <ProblemHeader title="Problem not found" difficulty="EASY" />
+        <ProblemHeader />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -33,7 +33,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-slate-200 font-sans overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
-      <ProblemHeader title={problemDetail.title} difficulty={problemDetail.difficulty} />
+      <ProblemHeader />
       <div className="flex-1 flex overflow-hidden">
         <div className="w-1/2 min-w-100 border-r border-zinc-800 flex flex-col bg-zinc-950/50">
           <LeftSideProblemsPage problemDetails={problemDetail} />

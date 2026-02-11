@@ -13,6 +13,11 @@ export interface TestResult {
   name: string;
   passed: boolean;
   error?: string;
+  index?: number;
+  location?: {
+    line: number;
+    column: number;
+  };
 }
 
 export interface SubmissionState {
