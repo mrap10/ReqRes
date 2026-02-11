@@ -1,8 +1,10 @@
-import ProblemHeader from "../../../components/ProblemHeader";
-import LeftSideProblemsPage from "../../../components/LeftSideProblemsPage";
+import {
+  ProblemHeader,
+  LeftSideProblemsPage,
+  ProblemWorkspace,
+} from "@/components/problems-page-components";
 import { getProblemDetail } from "../../../actions";
 import Link from "next/link";
-import ProblemWorkspace from "../../../components/ProblemWorkspace";
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

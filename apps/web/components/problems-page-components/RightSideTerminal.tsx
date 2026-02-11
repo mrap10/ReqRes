@@ -9,7 +9,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useSubmission } from "./SubmissionContext";
+import { useSubmission } from "../../lib/providers/SubmissionProvider";
 
 const DEFAULT_HEIGHT = 200;
 const HEADER_HEIGHT = 40;

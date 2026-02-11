@@ -1,7 +1,9 @@
-import AdminRateLimitTable from "@/components/admin-components/AdminRateLimitTable";
-import AdminSidebar from "@/components/admin-components/AdminSidebar";
-import GlobalConfigCard from "@/components/GlobalConfigCard";
-import RateLimitStatsCard from "@/components/admin-components/RateLimitStatsCard";
+import {
+  AdminRateLimitTable,
+  AdminSidebar,
+  GlobalConfigCard,
+  RateLimitStatsCard,
+} from "@/components/admin-components";
 import { ShieldCheck } from "lucide-react";
 
 export default function RateLimitPage() {

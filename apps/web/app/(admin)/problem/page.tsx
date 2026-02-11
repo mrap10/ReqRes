@@ -1,6 +1,6 @@
 "use client";
 
-import AdminSidebar from "@/components/admin-components/AdminSidebar";
+import { AdminSidebar } from "@/components/admin-components";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Trash2, Pencil, Loader2 } from "lucide-react";

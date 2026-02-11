@@ -1,6 +1,6 @@
 import Navbar from "../components/Navbar";
 import Footer from "@/components/Footer";
-import { Hero, Features, HowItWorks, CTA, FAQ } from "@/components/landing-page/index";
+import { Hero, Features, HowItWorks, CTA, FAQ } from "@/components/landing-page";
 import { TextHoverEffect } from "@/components/ui/text-hover-effect";
 
 export default function Home() {

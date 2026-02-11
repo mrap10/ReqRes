@@ -1,14 +1,16 @@
 "use client";
 
-import AdminSidebar from "@/components/admin-components/AdminSidebar";
-import ConfigurationSection from "@/components/admin-components/ConfigurationSection";
-import ContentSection from "@/components/admin-components/ContentSection";
-import DetailsSection from "@/components/admin-components/DetailsSection";
-import ExamplesSection from "@/components/admin-components/ExamplesSection";
-import JsonPreviewModal from "@/components/admin-components/JsonPreviewModal";
-import MetadataSection from "@/components/admin-components/MetaDataSection";
-import PageHeader from "@/components/admin-components/PageHeader";
-import TestEnvironmentSection from "@/components/admin-components/TestEnvironmentSection";
+import {
+  AdminSidebar,
+  ConfigurationSection,
+  ContentSection,
+  DetailsSection,
+  ExamplesSection,
+  JsonPreviewModal,
+  MetadataSection,
+  PageHeader,
+  TestEnvironmentSection,
+} from "@/components/admin-components";
 import { useProblemForm } from "@/lib/hooks/useProblemForm";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";

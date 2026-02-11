@@ -1,7 +1,7 @@
 "use client";
 
 import { FileCode, Play, Send } from "lucide-react";
-import { useSubmission } from "./SubmissionContext";
+import { useSubmission } from "../../lib/providers/SubmissionProvider";
 
 interface RightSideHeaderProps {
   onRun: () => void;

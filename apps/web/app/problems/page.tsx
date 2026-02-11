@@ -3,8 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2, Search, Sparkles } from "lucide-react";
 import Navbar from "../../components/Navbar";
-import ProblemCard from "../../components/ProblemCard";
-import Filters from "../../components/Filters";
+import { ProblemCard, Filters } from "@/components/problems-page-components";
 import Footer from "../../components/Footer";
 import { useEffect, useMemo, useState } from "react";
 import { getProblems } from "../../actions";

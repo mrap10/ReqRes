@@ -4,7 +4,7 @@ import { useRef, useCallback } from "react";
 import Editor, { EditorRef } from "./Editor";
 import RightSideHeader from "./RightSideHeader";
 import RightSideTerminal from "./RightSideTerminal";
-import { SubmissionProvider, useSubmission } from "./SubmissionContext";
+import { SubmissionProvider, useSubmission } from "../../lib/providers/SubmissionProvider";
 import { useAuth } from "@/lib/providers/AuthProvider";
 import { useRouter } from "next/navigation";
 

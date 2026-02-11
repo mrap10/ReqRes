@@ -4,7 +4,7 @@ import { AlertCircle, Check, Copy, Terminal, Code2 } from "lucide-react";
 import { ProblemDetailDTO } from "@reqres/types";
 import InstructionsRenderer from "./InstructionsRenderer";
 import { useState, useMemo } from "react";
-import DifficultyTag from "./DifficultyTag";
+import DifficultyTag from "../DifficultyTag";
 
 interface LeftSideProblemsPageProps {
   problemDetails: ProblemDetailDTO;

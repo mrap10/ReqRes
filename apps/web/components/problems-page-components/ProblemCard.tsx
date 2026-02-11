@@ -1,6 +1,6 @@
 "use client";
 
-import DifficultyTag from "./DifficultyTag";
+import DifficultyTag from "../DifficultyTag";
 import { ProblemListDTO } from "@reqres/types";
 import Link from "next/link";
 import { motion } from "motion/react";
