@@ -5,6 +5,7 @@ interface PageHeaderProps {
   setShowJsonPreview: (show: boolean) => void;
   onSave: () => void;
   isSubmitting: boolean;
+  isEditMode?: boolean;
 }
 
 export default function PageHeader({
@@ -12,12 +13,17 @@ export default function PageHeader({
   setShowJsonPreview,
   onSave,
   isSubmitting,
+  isEditMode = false,
 }: PageHeaderProps) {
   return (
     <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">Add New Problem</h1>
-        <p className="text-zinc-500 text-sm">Create a new challenge for the users.</p>
+        <h1 className="text-2xl font-bold text-white mb-1">
+          {isEditMode ? "Update Problem" : "Add New Problem"}
+        </h1>
+        <p className="text-zinc-500 text-sm">
+          {isEditMode ? "Edit the problem details below." : "Create a new challenge for the users."}
+        </p>
       </div>
 
       <div className="flex items-center gap-3 text-sm">
@@ -39,7 +45,7 @@ export default function PageHeader({
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {isSubmitting ? "Saving..." : "Save Problem"}
+          {isSubmitting ? "Saving..." : isEditMode ? "Update Problem" : "Save Problem"}
         </button>
       </div>
     </header>

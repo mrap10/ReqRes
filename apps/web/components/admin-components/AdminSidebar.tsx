@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 
 const sidebarItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/add-problems", label: "Problems", icon: CodeXml },
+  { href: "/problem", label: "Problems", icon: CodeXml },
   { href: "/rate-limit", label: "Rate Limit", icon: ShieldAlert },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

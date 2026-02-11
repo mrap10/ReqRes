@@ -138,7 +138,7 @@ export default function DashboardPage() {
   return (
     <div className="bg-zinc-950 min-h-screen text-slate-200 font-sans selection:bg-indigo-500/30 selection:text-indigo-200 flex">
       <AdminSidebar />
-      <main className="flex-1 ml-16 lg:ml-64 p-6 lg:p-10 max-w-[1600px]">
+      <main className="flex-1 ml-16 lg:ml-64 p-6 lg:p-10 max-w-400">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">Dashboard</h1>

@@ -1,4 +1,4 @@
-import { prisma } from "@reqres/database";
+import { prisma, Prisma } from "@reqres/database";
 import { Router } from "express";
 import { ProblemListDTO, ProblemDetailDTO, CreateProblemDTO } from "@reqres/types";
 import { apiLogger } from "../lib/logger.js";
@@ -32,6 +32,59 @@ router.get("/", async (req, res) => {
       "Failed to fetch problems list"
     );
     res.status(500).json({ error: "Failed to fetch problems", correlationId: req.correlationId });
+  }
+});
+
+router.get("/admin/all", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const problems = await prisma.problem.findMany({
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        shortDescription: true,
+        difficulty: true,
+        tags: true,
+        track: true,
+        isPublished: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    res.json({ problems });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to fetch admin problems list"
+    );
+    res.status(500).json({ error: "Failed to fetch problems", correlationId: req.correlationId });
+  }
+});
+
+router.get("/admin/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const problem = await prisma.problem.findUnique({
+      where: { id: req.params.id },
+      include: { testConfig: true },
+    });
+
+    if (!problem) {
+      return res.status(404).json({ error: "Problem not found", correlationId: req.correlationId });
+    }
+
+    res.json({ problem });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to fetch problem for editing"
+    );
+    res.status(500).json({ error: "Failed to fetch problem", correlationId: req.correlationId });
   }
 });
 
@@ -180,6 +233,132 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
       error: "Failed to create problem",
       correlationId: req.correlationId,
     });
+  }
+});
+
+router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const body = req.body as CreateProblemDTO;
+
+    const existing = await prisma.problem.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Problem not found", correlationId: req.correlationId });
+    }
+
+    if (body.slug && body.slug !== existing.slug) {
+      const slugConflict = await prisma.problem.findUnique({ where: { slug: body.slug } });
+      if (slugConflict) {
+        return res
+          .status(409)
+          .json({
+            error: "A problem with this slug already exists",
+            correlationId: req.correlationId,
+          });
+      }
+    }
+
+    let parsedExamples: Prisma.InputJsonValue | typeof Prisma.JsonNull =
+      existing.examples ?? Prisma.JsonNull;
+    if (body.examples !== undefined) {
+      try {
+        parsedExamples = body.examples ? JSON.parse(body.examples) : Prisma.JsonNull;
+      } catch {
+        parsedExamples = Prisma.JsonNull;
+      }
+    }
+
+    const problemId = id as string;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedProblem = await tx.problem.update({
+        where: { id: problemId },
+        data: {
+          title: body.title,
+          slug: body.slug,
+          description: body.description,
+          shortDescription: body.shortDescription,
+          instructions: body.instructions,
+          difficulty: body.difficulty,
+          track: body.track,
+          starterCode: JSON.stringify(body.starterCode),
+          constraints: body.constraints,
+          tags: body.tags,
+          examples: parsedExamples,
+          isPublished: body.isPublished,
+        },
+      });
+
+      if (body.testConfig) {
+        await tx.testConfig.upsert({
+          where: { problemId },
+          update: {
+            timeoutMs: body.testConfig.timeoutMs,
+            memoryMb: body.testConfig.memoryMb,
+          },
+          create: {
+            problemId,
+            timeoutMs: body.testConfig.timeoutMs,
+            memoryMb: body.testConfig.memoryMb,
+          },
+        });
+      }
+
+      return updatedProblem;
+    });
+
+    apiLogger.info(
+      {
+        correlationId: req.correlationId,
+        problemId: updated.id,
+        slug: updated.slug,
+        adminId: req.user?.id,
+      },
+      "Problem updated successfully"
+    );
+
+    res.json({
+      message: "Problem updated successfully",
+      problem: { id: updated.id, slug: updated.slug, title: updated.title },
+    });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to update problem"
+    );
+    res.status(500).json({ error: "Failed to update problem", correlationId: req.correlationId });
+  }
+});
+
+router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.problem.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Problem not found", correlationId: req.correlationId });
+    }
+
+    await prisma.problem.delete({ where: { id } });
+
+    apiLogger.info(
+      { correlationId: req.correlationId, problemId: id, adminId: req.user?.id },
+      "Problem deleted successfully"
+    );
+
+    res.json({ message: "Problem deleted successfully" });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to delete problem"
+    );
+    res.status(500).json({ error: "Failed to delete problem", correlationId: req.correlationId });
   }
 });
 

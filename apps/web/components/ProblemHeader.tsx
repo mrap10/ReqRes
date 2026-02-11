@@ -5,7 +5,13 @@ import DifficultyTag from "./DifficultyTag";
 import Link from "next/link";
 import { useAuth } from "@/lib/providers/AuthProvider";
 
-export default function ProblemHeader({ title }: { title: string }) {
+export default function ProblemHeader({
+  title,
+  difficulty,
+}: {
+  title: string;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+}) {
   const { user, isAuthenticated } = useAuth();
 
   return (
@@ -21,7 +27,7 @@ export default function ProblemHeader({ title }: { title: string }) {
         <div>
           <h1 className="text-sm font-bold text-white flex items-center gap-3">
             {title}
-            <DifficultyTag level="MEDIUM" />
+            {difficulty && <DifficultyTag level={difficulty} />}
           </h1>
         </div>
       </div>
@@ -33,7 +39,7 @@ export default function ProblemHeader({ title }: { title: string }) {
         </div>
         {isAuthenticated ? (
           <Link href="/profile" className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 flex items-center justify-center text-[10px] font-semibold text-white">
+            <div className="w-6 h-6 rounded-full bg-linear-to-tr from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 flex items-center justify-center text-[10px] font-semibold text-white">
               {user?.username?.charAt(0).toUpperCase()}
             </div>
           </Link>

@@ -10,16 +10,23 @@ import MetadataSection from "@/components/admin-components/MetaDataSection";
 import PageHeader from "@/components/admin-components/PageHeader";
 import TestEnvironmentSection from "@/components/admin-components/TestEnvironmentSection";
 import { useProblemForm } from "@/lib/hooks/useProblemForm";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function AddProblemsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const editId = searchParams.get("edit");
+
   const [showJsonPreview, setShowJsonPreview] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const {
     formData,
     isSubmitting,
+    isLoadingProblem,
+    isEditMode,
     error,
     updateField,
     handleTitleChange,
@@ -30,7 +37,7 @@ export default function AddProblemsPage() {
     resetForm,
     submitForm,
     setError,
-  } = useProblemForm();
+  } = useProblemForm(editId);
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
@@ -52,23 +59,41 @@ export default function AddProblemsPage() {
 
     const success = await submitForm();
     if (success) {
-      setSuccessMessage("Problem created successfully!");
+      setSuccessMessage(
+        isEditMode ? "Problem updated successfully!" : "Problem created successfully!"
+      );
       setTimeout(() => {
-        resetForm();
+        if (isEditMode) {
+          router.push("/problem");
+        } else {
+          resetForm();
+        }
         setSuccessMessage(null);
-      }, 2000);
+      }, 1500);
     }
   };
+
+  if (isLoadingProblem) {
+    return (
+      <div className="bg-zinc-950 min-h-screen text-slate-200 font-sans flex">
+        <AdminSidebar />
+        <main className="flex-1 ml-16 lg:ml-64 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-zinc-950 min-h-screen text-slate-200 font-sans selection:bg-indigo-500/30 selection:text-indigo-200 flex">
       <AdminSidebar />
-      <main className="flex-1 ml-16 lg:ml-64 p-6 lg:p-10 max-w-[1600px]">
+      <main className="flex-1 ml-16 lg:ml-64 p-6 lg:p-10 max-w-400">
         <PageHeader
           showJsonPreview={showJsonPreview}
           setShowJsonPreview={setShowJsonPreview}
           onSave={handleSave}
           isSubmitting={isSubmitting}
+          isEditMode={isEditMode}
         />
 
         {error && (

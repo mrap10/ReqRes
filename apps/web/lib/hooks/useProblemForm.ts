@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   ProblemFormData,
   DEFAULT_PROBLEM_FORM,
@@ -8,13 +8,56 @@ import {
   StarterCodeFile,
 } from "@/lib/types/problem-form";
 
-export function useProblemForm(initialData?: Partial<ProblemFormData>) {
-  const [formData, setFormData] = useState<ProblemFormData>({
-    ...DEFAULT_PROBLEM_FORM,
-    ...initialData,
-  });
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+export function useProblemForm(editId?: string | null) {
+  const [formData, setFormData] = useState<ProblemFormData>(DEFAULT_PROBLEM_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingProblem, setIsLoadingProblem] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isEditMode = !!editId;
+
+  useEffect(() => {
+    if (!editId) return;
+    setIsLoadingProblem(true);
+    setError(null);
+
+    fetch(`${API_BASE_URL}/problems/admin/${editId}`, { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Failed to load problem");
+        const { problem } = await res.json();
+
+        let starterCode: StarterCodeFile[] = [{ filename: "index.js", content: "" }];
+        if (problem.starterCode) {
+          try {
+            starterCode = JSON.parse(problem.starterCode);
+          } catch {
+            starterCode = [{ filename: "index.js", content: problem.starterCode }];
+          }
+        }
+
+        setFormData({
+          title: problem.title || "",
+          slug: problem.slug || "",
+          difficulty: problem.difficulty || "EASY",
+          track: problem.track || "ROUTING",
+          shortDescription: problem.shortDescription || "",
+          description: problem.description || "",
+          instructions: problem.instructions || "",
+          starterCode,
+          constraints: problem.constraints || [],
+          tags: problem.tags || [],
+          testConfig: {
+            timeoutMs: problem.testConfig?.timeoutMs || 3000,
+            memoryMb: problem.testConfig?.memoryMb || 256,
+          },
+          examples: problem.examples ? JSON.stringify(problem.examples, null, 2) : "",
+          isPublished: problem.isPublished ?? false,
+        });
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setIsLoadingProblem(false));
+  }, [editId]);
 
   const updateField = useCallback(
     <K extends keyof ProblemFormData>(field: K, value: ProblemFormData[K]) => {
@@ -67,11 +110,12 @@ export function useProblemForm(initialData?: Partial<ProblemFormData>) {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/problems`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const url = isEditMode ? `${API_BASE_URL}/problems/${editId}` : `${API_BASE_URL}/problems`;
+      const method = isEditMode ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(formData),
       });
@@ -79,7 +123,7 @@ export function useProblemForm(initialData?: Partial<ProblemFormData>) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Failed to create problem");
+        setError(data.error || `Failed to ${isEditMode ? "update" : "create"} problem`);
         return false;
       }
 
@@ -90,11 +134,13 @@ export function useProblemForm(initialData?: Partial<ProblemFormData>) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData]);
+  }, [formData, isEditMode, editId]);
 
   return {
     formData,
     isSubmitting,
+    isLoadingProblem,
+    isEditMode,
     error,
     updateField,
     handleTitleChange,
