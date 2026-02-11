@@ -6,37 +6,56 @@ import Navbar from "../../components/Navbar";
 import ProblemCard from "../../components/ProblemCard";
 import Filters from "../../components/Filters";
 import Footer from "../../components/Footer";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getProblems } from "../../actions";
 import { ProblemListDTO } from "@reqres/types";
 import { useAuth } from "@/lib/providers/AuthProvider";
 
+let problemsCache: ProblemListDTO[] | null = null;
+
 export default function ProblemPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeDifficulty, setActiveDifficulty] = useState("all");
   const [filteredProblems, setFilteredProblems] = useState<ProblemListDTO[]>([]);
-  const [problems, setProblems] = useState<ProblemListDTO[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [problems, setProblems] = useState<ProblemListDTO[]>(problemsCache ?? []);
+  const [isLoading, setIsLoading] = useState(!problemsCache);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (problemsCache) return;
     async function fetchProblems() {
       setIsLoading(true);
       const data = await getProblems();
+      problemsCache = data;
       setProblems(data);
       setIsLoading(false);
     }
     fetchProblems();
   }, []);
 
+  const difficultyCounts = useMemo(
+    () => ({
+      easy: problems.filter((p) => p.difficulty === "EASY").length,
+      medium: problems.filter((p) => p.difficulty === "MEDIUM").length,
+      hard: problems.filter((p) => p.difficulty === "HARD").length,
+    }),
+    [problems]
+  );
+
   useEffect(() => {
     let result = problems;
 
-    if (activeFilter !== "all") {
+    if (activeCategory !== "all") {
       result = result.filter(
         (problem) =>
-          problem.track === activeFilter || (problem.tags && problem.tags.includes(activeFilter))
+          problem.track === activeCategory ||
+          (problem.tags && problem.tags.some((t) => t.toUpperCase() === activeCategory))
       );
+    }
+
+    if (activeDifficulty !== "all") {
+      result = result.filter((problem) => problem.difficulty === activeDifficulty);
     }
 
     if (searchQuery) {
@@ -49,11 +68,10 @@ export default function ProblemPage() {
     }
 
     setFilteredProblems(result);
-  }, [searchQuery, activeFilter, problems]);
+  }, [searchQuery, activeCategory, activeDifficulty, problems]);
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_-20%,rgba(124,131,255,0.22),transparent_45%),radial-gradient(circle_at_88%_-30%,rgba(76,215,246,0.14),transparent_42%)]" />
       <Navbar />
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-14">
@@ -61,8 +79,9 @@ export default function ProblemPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeInOut" }}
-          className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0d0d13] p-6 sm:p-8"
+          className="p-6 sm:p-8 relative overflow-hidden rounded-3xl border border-white/10 bg-[#0c0c11]"
         >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_-20%,rgba(124,131,255,0.22),transparent_45%),radial-gradient(circle_at_88%_-30%,rgba(76,215,246,0.14),transparent_42%)]" />
           <div className="relative grid gap-8 lg:grid-cols-2 lg:items-end">
             <div>
               <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-white">
@@ -77,15 +96,15 @@ export default function ProblemPage() {
               <p className="mb-3 text-sm tracking-wider text-white/45">Library Overview</p>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="rounded-xl border border-white/10 bg-white/4 px-2 py-3">
-                  <p className="text-xl font-semibold text-emerald-300">5</p>
+                  <p className="text-xl font-semibold text-emerald-300">{difficultyCounts.easy}</p>
                   <p className="mt-1 text-[12px] tracking-wider text-white/50">Easy</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/4 px-2 py-3">
-                  <p className="text-xl font-semibold text-amber-300">5</p>
+                  <p className="text-xl font-semibold text-amber-300">{difficultyCounts.medium}</p>
                   <p className="mt-1 text-[12px] tracking-wider text-white/50">Medium</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/4 px-2 py-3">
-                  <p className="text-xl font-semibold text-rose-300">5</p>
+                  <p className="text-xl font-semibold text-rose-300">{difficultyCounts.hard}</p>
                   <p className="mt-1 text-[12px] tracking-wider text-white/50">Hard</p>
                 </div>
               </div>
@@ -107,7 +126,12 @@ export default function ProblemPage() {
             </div>
           </div>
 
-          <Filters currentFilter={activeFilter} setFilter={setActiveFilter} />
+          <Filters
+            activeCategory={activeCategory}
+            activeDifficulty={activeDifficulty}
+            setCategory={setActiveCategory}
+            setDifficulty={setActiveDifficulty}
+          />
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -122,21 +146,15 @@ export default function ProblemPage() {
               >
                 <div className="rounded-xl border border-white/10 bg-[#0b0b10] p-4">
                   <p className="text-xl font-semibold text-white">4</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.14em] text-white/48">
-                    Solved This Week
-                  </p>
+                  <p className="mt-1 text-sm tracking-wider text-white/48">Solved This Week</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#0b0b10] p-4">
                   <p className="text-xl font-semibold text-indigo-100">12</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.14em] text-white/48">
-                    Current Streak
-                  </p>
+                  <p className="mt-1 text-sm tracking-wider text-white/48">Current Streak</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#0b0b10] p-4">
                   <p className="text-xl font-semibold text-cyan-100">Top 5%</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.14em] text-white/48">
-                    Rank Snapshot
-                  </p>
+                  <p className="mt-1 text-sm tracking-wider text-white/48">Rank Snapshot</p>
                 </div>
               </motion.div>
             ) : (
@@ -160,33 +178,63 @@ export default function ProblemPage() {
           </AnimatePresence>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
           {isLoading ? (
-            <div className="col-span-full py-20 text-center">
-              <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-[#0b0b10] p-2">
+                <div className="animate-pulse rounded-xl border border-white/5 bg-zinc-900/40 p-6">
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="h-3 w-16 rounded bg-white/8" />
+                      <div className="mt-3 h-5 w-3/4 rounded bg-white/10" />
+                    </div>
+                    <div className="h-6 w-16 rounded-md bg-white/8" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3.5 w-full rounded bg-white/6" />
+                    <div className="h-3.5 w-5/6 rounded bg-white/6" />
+                  </div>
+                  <div className="mt-4 pt-4 flex gap-2 border-t border-white/10">
+                    <div className="h-6 w-14 rounded-md bg-white/6" />
+                    <div className="h-6 w-18 rounded-md bg-white/6" />
+                    <div className="h-6 w-12 rounded-md bg-white/6" />
+                  </div>
+                </div>
               </div>
-              <p className="text-zinc-400">Loading problems...</p>
-            </div>
+            ))
           ) : filteredProblems.length > 0 ? (
-            filteredProblems.map((problem) => <ProblemCard key={problem.id} problem={problem} />)
+            <AnimatePresence mode="popLayout">
+              {filteredProblems.map((problem, index) => (
+                <motion.div
+                  key={problem.id}
+                  layout
+                  className="h-full"
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.22, delay: index * 0.05 }}
+                >
+                  <ProblemCard key={problem.id} problem={problem} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           ) : (
-            <div className="col-span-full py-20 text-center border border-dashed border-zinc-800 rounded-2xl">
-              <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-6 h-6 text-zinc-500" />
-              </div>
-              <h3 className="text-lg font-medium text-white mb-1">No problems found</h3>
-              <p className="text-zinc-500">Try adjusting your search or filters.</p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveFilter("all");
-                }}
-                className="mt-4 text-sm text-indigo-400 hover:text-indigo-300 font-medium"
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="col-span-full h-80 place-content-center rounded-2xl border border-dashed border-white/18 bg-black/25 py-14 text-center"
               >
-                Clear all filters
-              </button>
-            </div>
+                <Search className="mx-auto h-5 w-5 text-white/45" />
+                <h3 className="mt-4 text-lg font-medium text-white">
+                  No matches with these filters
+                </h3>
+                <p className="mt-2 text-sm text-white/55">
+                  Try another category, or difficulty level.
+                </p>
+              </motion.div>
+            </AnimatePresence>
           )}
         </div>
       </main>

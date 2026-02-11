@@ -4,23 +4,31 @@ import { motion } from "motion/react";
 import { Database, Server, ShieldCheck, Terminal, Zap } from "lucide-react";
 
 interface FiltersProps {
-  currentFilter: string;
-  setFilter: (filter: string) => void;
+  activeCategory: string;
+  activeDifficulty: string;
+  setCategory: (filter: string) => void;
+  setDifficulty: (filter: string) => void;
 }
 
-export default function Filters({ currentFilter, setFilter }: FiltersProps) {
+export default function Filters({
+  activeCategory,
+  activeDifficulty,
+  setCategory,
+  setDifficulty,
+}: FiltersProps) {
   const categories = [
     { id: "all", label: "All Problems", icon: Terminal },
-    { id: "routing", label: "Routing", icon: Server },
-    { id: "middleware", label: "Middleware", icon: Zap },
-    { id: "security", label: "Security", icon: ShieldCheck },
-    { id: "database", label: "Database", icon: Database },
+    { id: "ROUTING", label: "Routing", icon: Server },
+    { id: "MIDDLEWARE", label: "Middleware", icon: Zap },
+    { id: "SECURITY", label: "Security", icon: ShieldCheck },
+    { id: "DATABASE", label: "Database", icon: Database },
   ];
 
   const difficulty = [
-    { id: "easy", label: "Easy" },
-    { id: "medium", label: "Medium" },
-    { id: "hard", label: "Hard" },
+    { id: "all", label: "All" },
+    { id: "EASY", label: "Easy" },
+    { id: "MEDIUM", label: "Medium" },
+    { id: "HARD", label: "Hard" },
   ];
 
   return (
@@ -30,13 +38,13 @@ export default function Filters({ currentFilter, setFilter }: FiltersProps) {
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => {
             const Icon = category.icon;
-            const isActive = currentFilter === category.id;
+            const isActive = activeCategory === category.id;
             return (
               <motion.button
                 key={category.id}
                 type="button"
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setFilter(category.id)}
+                onClick={() => setCategory(category.id)}
                 className={`rounded-lg border px-3 py-1.5 text-xs transition flex items-center gap-2 ${
                   isActive
                     ? "border-indigo-300/45 bg-indigo-400/15 text-white"
@@ -55,13 +63,13 @@ export default function Filters({ currentFilter, setFilter }: FiltersProps) {
         <p className="mb-2 text-sm tracking-wider text-center text-white/45">Difficulty</p>
         <div className="flex flex-wrap gap-4">
           {difficulty.map((level) => {
-            const isActive = currentFilter === level.id;
+            const isActive = activeDifficulty === level.id;
             return (
               <motion.button
                 key={level.id}
                 type="button"
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setFilter(level.id)}
+                onClick={() => setDifficulty(level.id)}
                 className={`rounded-lg border px-3 py-1.5 text-xs transition ${
                   isActive
                     ? "border-indigo-300/45 bg-indigo-400/15 text-white"

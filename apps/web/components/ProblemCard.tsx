@@ -1,7 +1,9 @@
-import { Code } from "lucide-react";
+"use client";
+
 import DifficultyTag from "./DifficultyTag";
 import { ProblemListDTO } from "@reqres/types";
 import Link from "next/link";
+import { motion } from "motion/react";
 
 interface ProblemCardProps {
   problem: ProblemListDTO;
@@ -9,38 +11,40 @@ interface ProblemCardProps {
 
 export default function ProblemCard({ problem }: ProblemCardProps) {
   return (
-    <Link href={`/problems/${problem.slug}`} className="block">
-      <div className="group relative bg-zinc-900/40 border border-white/5 rounded-xl p-6 hover:bg-zinc-900 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-lg font-bold text-slate-200 group-hover:text-indigo-300 transition-colors">
+    <motion.div
+      layout
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 230, damping: 20 }}
+      className="group relative h-full overflow-hidden rounded-2xl border p-2 border-[#0b0b10]"
+    >
+      <Link href={`/problems/${problem.slug}`} className="block h-full">
+        <div className="group relative h-full flex flex-col bg-zinc-900/40 border border-white/5 rounded-xl p-6 hover:bg-zinc-900 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-white/42">
+                {problem.track}
+              </p>
+              <h3 className="mt-2 text-lg font-medium tracking-tight text-white">
                 {problem.title}
               </h3>
-              <DifficultyTag level={problem.difficulty} />
             </div>
-            <p className="text-sm text-zinc-400 line-clamp-2 leading-relaxed h-10">
-              {problem.shortDescription}
-            </p>
+            <DifficultyTag level={problem.difficulty} />
           </div>
 
-          <button className="flex-shrink-0 w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center cursor-pointer text-zinc-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-            <Code className="size-4" />
-          </button>
-        </div>
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5">
-          <div className="flex flex-wrap gap-2">
-            {problem.tags.map((tag) => (
+          <p className="flex-1 text-sm leading-6 text-white/62">{problem.shortDescription}</p>
+
+          <div className="mt-4 pt-4 flex flex-wrap gap-2 border-t border-white/10">
+            {problem.tags.slice(0, 4).map((tag) => (
               <span
                 key={tag}
-                className="text-xs font-mono text-zinc-500 bg-zinc-950 px-2 py-1 rounded border border-zinc-800"
+                className="rounded-md border border-white/10 bg-white/3 px-2 py-1 font-mono text-[11px] text-white/56"
               >
-                #{tag.toLowerCase()}
+                #{tag}
               </span>
             ))}
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </motion.div>
   );
 }

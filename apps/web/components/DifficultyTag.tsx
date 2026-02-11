@@ -2,9 +2,9 @@ import { ProblemDifficulty } from "@reqres/types";
 
 export default function DifficultyTag({ level }: { level: ProblemDifficulty }) {
   const styles: Record<ProblemDifficulty, string> = {
-    EASY: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    MEDIUM: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    HARD: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+    EASY: "border-emerald-300/25 bg-emerald-300/10 text-emerald-100",
+    MEDIUM: "border-amber-300/30 bg-amber-400/10 text-amber-100",
+    HARD: "border-rose-300/25 bg-rose-400/10 text-rose-300",
   };
 
   const labels: Record<ProblemDifficulty, string> = {

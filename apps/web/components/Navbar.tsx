@@ -50,7 +50,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50">
+    <header className="sticky top-0 z-10">
       <div className="mx-auto mt-4 max-w-6xl px-4">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/55 backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_-20%,rgba(124,131,255,0.25),transparent_45%),radial-gradient(circle_at_92%_-30%,rgba(76,215,246,0.16),transparent_42%)]" />
@@ -103,7 +103,7 @@ export default function Navbar() {
                   </button>
 
                   {showDropdown && (
-                    <div className="absolute right-0 mt-2 w-48 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl py-2 z-10">
+                    <div className="absolute right-0 mt-2 w-48 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl py-2">
                       <div className="px-4 py-2 border-b border-zinc-800">
                         <p className="text-sm font-medium text-white truncate">{user?.username}</p>
                         <p className="text-xs text-zinc-400 truncate">{user?.email}</p>
