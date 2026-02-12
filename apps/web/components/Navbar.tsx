@@ -175,37 +175,22 @@ export default function Navbar() {
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/80 transition-all hover:border-indigo-300/35 hover:text-white"
                     >
-                      <Star className="w-4 h-4" />
+                      <Star className="w-4 h-4 border-2 fill-white/75" />
                       Star
                     </Link>
                     {isLoading ? (
                       <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
                     ) : isAuthenticated ? (
-                      <div className="flex flex-col gap-2 pt-2 border-t border-zinc-800">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center text-sm font-semibold text-white">
-                            {user?.username?.charAt(0).toUpperCase() ||
-                              user?.email?.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-white">{user?.username}</p>
-                            <p className="text-xs text-zinc-400">{user?.email}</p>
-                          </div>
-                        </div>
-                        <Link href="/profile" className="text-zinc-400 hover:text-cyan-400 text-sm">
-                          Profile
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="text-left text-sm text-zinc-400 hover:text-rose-400 transition-colors"
-                        >
-                          Sign Out
-                        </button>
-                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="rounded-full cursor-pointer border border-white/15 bg-white/5 px-3 py-1.5 text-xs hover:border-indigo-300/35 text-zinc-400 hover:text-rose-400 transition-colors"
+                      >
+                        Sign Out
+                      </button>
                     ) : (
                       <Link
                         href="/signin"
-                        className="font-medium block rounded-full border border-white/15 px-3 py-1.5 text-sm text-white/90 transition hover:border-cyan-300/40 hover:text-white "
+                        className="font-medium rounded-full border border-white/15 px-3 py-1.5 text-sm text-white/90 transition hover:border-cyan-300/40 hover:text-white"
                       >
                         Sign In
                       </Link>

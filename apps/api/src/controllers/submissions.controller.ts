@@ -149,7 +149,6 @@ export async function getUserSubmissions(req: Request, res: Response) {
     const submissions = await prisma.submission.findMany({
       where: {
         userId,
-        status: "PASSED",
       },
       include: {
         problem: {
@@ -167,7 +166,10 @@ export async function getUserSubmissions(req: Request, res: Response) {
 
     const submissionList = submissions.map((submission) => ({
       id: submission.id,
+      problemId: submission.problemId,
       problemTitle: submission.problem.title,
+      userId: submission.userId,
+      status: submission.status,
       track: submission.problem.track,
       difficulty: submission.problem.difficulty,
       durationMs: submission.durations || 0,

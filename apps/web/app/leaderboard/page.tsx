@@ -1,6 +1,6 @@
 import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
-import { LeaderboardContent } from "@/components/leaderboard-page";
+import { LeaderboardContent, UserHistoryPanel } from "@/components/leaderboard-page";
 
 export default function LeaderboardPage() {
   return (
@@ -8,6 +8,7 @@ export default function LeaderboardPage() {
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 pt-14 pb-16">
         <LeaderboardContent />
+        <UserHistoryPanel />
       </main>
       <Footer />
     </div>

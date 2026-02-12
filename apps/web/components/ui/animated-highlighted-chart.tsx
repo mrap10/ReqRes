@@ -63,7 +63,7 @@ export function AnimatedHighlightedAreaChart({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="h-[200px] flex items-center justify-center">
+          <div className="h-50 flex items-center justify-center">
             <div className="animate-pulse bg-zinc-800 rounded w-full h-full" />
           </div>
         ) : (

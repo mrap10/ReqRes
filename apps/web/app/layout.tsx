@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import ThemeProvider from "@/lib/providers/ThemeProvider";
 import AuthProvider from "@/lib/providers/AuthProvider";
+import UserSubmissionsProvider from "@/lib/providers/UserSubmissionsProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -40,10 +41,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${JetBrainsMono.variable} antialiased`}
       >
         <AuthProvider>
-          <ThemeProvider attribute={"class"} defaultTheme="dark" disableTransitionOnChange>
-            {children}
-            <Toaster position="bottom-right" theme="dark" richColors />
-          </ThemeProvider>
+          <UserSubmissionsProvider>
+            <ThemeProvider attribute={"class"} defaultTheme="dark" disableTransitionOnChange>
+              {children}
+              <Toaster position="bottom-right" theme="dark" richColors />
+            </ThemeProvider>
+          </UserSubmissionsProvider>
         </AuthProvider>
       </body>
     </html>

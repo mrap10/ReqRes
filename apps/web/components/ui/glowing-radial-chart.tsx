@@ -11,11 +11,17 @@ import {
 } from "@/components/ui/chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 
-const chartData = [
-  { difficulty: "easy", solved: 200, fill: "var(--color-easy)" },
-  { difficulty: "medium", solved: 187, fill: "var(--color-medium)" },
-  { difficulty: "hard", solved: 90, fill: "var(--color-hard)" },
-];
+interface DifficultyStats {
+  easy: number;
+  medium: number;
+  hard: number;
+}
+
+interface GlowingRadialChartProps {
+  difficultyCounts: DifficultyStats;
+  totalSolved: number;
+  isLoading?: boolean;
+}
 
 const chartConfig = {
   solved: {
@@ -35,45 +41,64 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-type ActiveBrowser = keyof typeof chartConfig | "all" | null;
+type ActiveDifficulty = "easy" | "medium" | "hard" | null;
 
-export function GlowingRadialChart() {
-  const [activeBrowser, setActiveBrowser] = React.useState<ActiveBrowser>(null);
+export function GlowingRadialChart({
+  difficultyCounts,
+  totalSolved,
+  isLoading,
+}: GlowingRadialChartProps) {
+  const [activeDifficulty, setActiveDifficulty] = React.useState<ActiveDifficulty>(null);
+
+  const chartData = [
+    { difficulty: "easy", solved: difficultyCounts.easy, fill: "var(--color-easy)" },
+    { difficulty: "medium", solved: difficultyCounts.medium, fill: "var(--color-medium)" },
+    { difficulty: "hard", solved: difficultyCounts.hard, fill: "var(--color-hard)" },
+  ];
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col border-white/10 bg-[#0b0b10]">
       <CardHeader className="items-center pb-0">
-        <CardTitle className="text-2xl">Solved Problems</CardTitle>
-        <CardDescription>Hover over a segment to see your progress.</CardDescription>
+        <CardTitle className="text-xl text-white">Solved Problems</CardTitle>
+        <CardDescription className="text-white/50">
+          {isLoading ? "Loading..." : `${totalSolved} problems solved across all difficulties`}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
+      <CardContent className="pb-3">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-52">
           <RadialBarChart
             data={chartData}
             innerRadius={30}
             outerRadius={110}
             onMouseMove={(data) => {
               if (data && data.activePayload && data.activePayload[0]) {
-                setActiveBrowser(data.activePayload[0].payload.difficulty);
+                setActiveDifficulty(data.activePayload[0].payload.difficulty);
               }
             }}
-            onMouseLeave={() => setActiveBrowser(null)}
+            onMouseLeave={() => setActiveDifficulty(null)}
           >
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel nameKey="difficulty" />}
             />
-            <RadialBar cornerRadius={10} dataKey="solved" background className="drop-shadow-lg">
+            <RadialBar
+              cornerRadius={10}
+              dataKey="solved"
+              background={{ fill: "rgba(255,255,255,0.04)" }}
+              className="drop-shadow-lg"
+            >
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={entry.fill}
                   filter={
-                    activeBrowser === entry.difficulty
+                    activeDifficulty === entry.difficulty
                       ? `url(#radial-glow-${entry.difficulty})`
                       : undefined
                   }
-                  opacity={activeBrowser === null || activeBrowser === entry.difficulty ? 1 : 0.3}
+                  opacity={
+                    activeDifficulty === null || activeDifficulty === entry.difficulty ? 1 : 0.3
+                  }
                 />
               ))}
             </RadialBar>
@@ -94,6 +119,21 @@ export function GlowingRadialChart() {
             </defs>
           </RadialBarChart>
         </ChartContainer>
+
+        <div className="mt-1 grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg border border-white/8 bg-white/3 px-2 py-2">
+            <p className="text-xs text-white/45">Easy</p>
+            <p className="mt-0.5 text-sm font-semibold text-emerald-400">{difficultyCounts.easy}</p>
+          </div>
+          <div className="rounded-lg border border-white/8 bg-white/3 px-2 py-2">
+            <p className="text-xs text-white/45">Medium</p>
+            <p className="mt-0.5 text-sm font-semibold text-amber-400">{difficultyCounts.medium}</p>
+          </div>
+          <div className="rounded-lg border border-white/8 bg-white/3 px-2 py-2">
+            <p className="text-xs text-white/45">Hard</p>
+            <p className="mt-0.5 text-sm font-semibold text-rose-400">{difficultyCounts.hard}</p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,4 +1,4 @@
-export { slugify, truncate, capitalize, normalizeWhitespace } from "./string.js";
+export { slugify, truncate, capitalize, normalizeWhitespace } from "./string";
 
 export {
   isValidEmail,
@@ -6,7 +6,7 @@ export {
   isStrongPassword,
   isValidCodeLength,
   isNonEmptyString,
-} from "./validation.js";
+} from "./validation";
 
 export {
   formatDate,
@@ -14,4 +14,4 @@ export {
   getRelativeTime,
   formatExecutionTime,
   formatMemory,
-} from "./date.js";
+} from "./date";
