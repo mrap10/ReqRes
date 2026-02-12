@@ -50,7 +50,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-10">
+    <header className="sticky top-0 z-50">
       <div className="mx-auto mt-4 max-w-6xl px-4">
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/55 backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_-20%,rgba(124,131,255,0.25),transparent_45%),radial-gradient(circle_at_92%_-30%,rgba(76,215,246,0.16),transparent_42%)]" />

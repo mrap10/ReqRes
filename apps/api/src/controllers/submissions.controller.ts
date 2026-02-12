@@ -229,6 +229,7 @@ export async function getLeaderboard(req: Request, res: Response) {
 
     const sortedLeaderboard = leaderboardData
       .map((entry) => ({
+        userId: entry.userId,
         username: userMap.get(entry.userId) || "Unknown",
         totalScore: entry._sum.score || 0,
         problemsSolved: problemCountMap.get(entry.userId) || 0,

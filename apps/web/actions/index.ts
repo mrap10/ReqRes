@@ -1,4 +1,7 @@
-import { ProblemDetailDTO, ProblemListDTO } from "@reqres/types";
+import { LeaderboardDTO, ProblemDetailDTO, ProblemListDTO } from "@reqres/types";
+
+let leaderboardCache: { data: LeaderboardDTO[]; timestamp: number } | null = null;
+const LEADERBOARD_CACHE_TTL = 2 * 60 * 1000;
 
 export async function getProblems(): Promise<ProblemListDTO[]> {
   try {
@@ -46,7 +49,11 @@ export async function getProblemDetail(slug: string): Promise<ProblemDetailDTO |
   }
 }
 
-export async function getLeaderboard() {
+export async function getLeaderboard(): Promise<LeaderboardDTO[]> {
+  if (leaderboardCache && Date.now() - leaderboardCache.timestamp < LEADERBOARD_CACHE_TTL) {
+    return leaderboardCache.data;
+  }
+
   try {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions/leaderboard`,
@@ -55,20 +62,20 @@ export async function getLeaderboard() {
         headers: {
           "Content-Type": "application/json",
         },
-        cache: "no-store",
       }
     );
 
     if (!response.ok) {
       console.error("Failed to fetch leaderboard data");
-      return [];
+      return leaderboardCache?.data ?? [];
     }
 
     const data = await response.json();
+    leaderboardCache = { data: data.leaderboard, timestamp: Date.now() };
     return data.leaderboard;
   } catch (error) {
     console.error("Error fetching leaderboard data:", error);
-    return [];
+    return leaderboardCache?.data ?? [];
   }
 }
 
@@ -79,6 +86,7 @@ export async function getUsersSubmission({ id }: { id: string }) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
 
