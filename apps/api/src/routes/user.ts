@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { Prisma, prisma } from "@reqres/database";
 import { apiLogger } from "../lib/logger.js";
+import { getUserStreakData, getActivityGrid } from "../services/streak.service.js";
 
 const router = Router();
 
@@ -45,6 +46,45 @@ router.patch("/username", requireAuth, async (req: Request, res: Response) => {
       );
       res.status(500).json({ error: "Internal server error.", correlationId: req.correlationId });
     }
+  }
+});
+
+router.get("/streak", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const timezone = (req.query.timezone as string) || "UTC";
+    const streak = await getUserStreakData(req.user!.id, timezone);
+    res.json(streak);
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        userId: req.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to fetch streak data"
+    );
+    res
+      .status(500)
+      .json({ error: "Failed to fetch streak data", correlationId: req.correlationId });
+  }
+});
+
+router.get("/activity-grid", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const grid = await getActivityGrid(req.user!.id);
+    res.json({ grid });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        userId: req.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to fetch activity grid"
+    );
+    res
+      .status(500)
+      .json({ error: "Failed to fetch activity grid", correlationId: req.correlationId });
   }
 });
 

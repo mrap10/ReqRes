@@ -1,6 +1,7 @@
 import { prisma } from "@reqres/database";
 import { Router } from "express";
 import { apiLogger } from "../lib/logger.js";
+import { invalidateActivityGrid } from "../services/streak.service.js";
 
 const router = Router();
 
@@ -140,6 +141,8 @@ router.post("/result", async (req, res) => {
         },
       });
     });
+
+    await invalidateActivityGrid(userId);
 
     apiLogger.info({ submissionId, status: prismaStatus }, "Submission result recorded");
     res.json({ message: "Result recorded" });

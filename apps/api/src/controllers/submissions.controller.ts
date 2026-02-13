@@ -6,6 +6,7 @@ import type { JobProgress } from "bullmq";
 import { apiLogger } from "../lib/logger.js";
 import { captureException, setUserContext, addBreadcrumb } from "../lib/sentry.js";
 import { metricsService, MetricType } from "../services/metrics.service.js";
+import { updateStreakOnSubmission, invalidateActivityGrid } from "../services/streak.service.js";
 
 const CreateSubmissionSchema = z.object({
   problemId: z.cuid(),
@@ -13,6 +14,7 @@ const CreateSubmissionSchema = z.object({
     files: z.record(z.string(), z.string()),
     entryPoint: z.string().optional().default("index.ts"),
   }),
+  timezone: z.string().optional().default("UTC"),
 });
 
 export async function createSubmission(req: Request, res: Response) {
@@ -45,7 +47,7 @@ export async function createSubmission(req: Request, res: Response) {
       });
     }
 
-    const { problemId, code } = parseResult.data;
+    const { problemId, code, timezone } = parseResult.data;
 
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized", correlationId });
@@ -73,14 +75,22 @@ export async function createSubmission(req: Request, res: Response) {
       correlationId,
     });
 
-    const submission = await prisma.submission.create({
-      data: {
-        userId,
-        problemId,
-        codeBundle: JSON.stringify(code),
-        status: "PENDING",
-      },
+    const submission = await prisma.$transaction(async (tx) => {
+      const sub = await tx.submission.create({
+        data: {
+          userId,
+          problemId,
+          codeBundle: JSON.stringify(code),
+          status: "PENDING",
+        },
+      });
+
+      await updateStreakOnSubmission(tx, userId, timezone);
+
+      return sub;
     });
+
+    await invalidateActivityGrid(userId);
 
     addBreadcrumb("Adding job to submission queue", "queue", {
       submissionId: submission.id,

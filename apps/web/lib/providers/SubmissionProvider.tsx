@@ -267,6 +267,7 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
             },
             entryPoint: "index.js",
           },
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         };
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions`, {
