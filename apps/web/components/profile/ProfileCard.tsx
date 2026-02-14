@@ -1,17 +1,61 @@
-import { Check } from "lucide-react";
-import Image from "next/image";
+"use client";
 
-export default function ProfileCard() {
+import { Check, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+interface ProfileCardProps {
+  user: {
+    name?: string | null;
+    username: string;
+    email: string;
+    image?: string | null;
+  };
+  streak: { currentStreak: number; longestStreak: number };
+  onAvatarClick: () => void;
+  onUserUpdated: () => void;
+}
+
+export default function ProfileCard({
+  user,
+  streak,
+  onAvatarClick,
+  onUserUpdated,
+}: ProfileCardProps) {
+  const [name, setName] = useState(user.name || "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveName = async () => {
+    if (!name.trim() || name.trim() === user.name) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/name`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      if (res.ok) onUserUpdated();
+    } catch {
+      // silently fail
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="rounded-3xl border border-white/15 bg-[#0e0e15] p-5 sm:p-6">
       <div className="flex flex-col md:flex-row justify-around md:items-start items-center gap-5">
         <div className="flex flex-col items-center">
           <button
             type="button"
+            onClick={onAvatarClick}
             className="group relative h-36 w-36 overflow-hidden rounded-full border-2 cursor-pointer border-white/65 bg-white/5 transition hover:border-cyan-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/75"
           >
             <Image
-              src="/avatar1.svg"
+              src={user.image || "/avatar1.svg"}
               alt="User avatar"
               fill
               className="mt-2 object-cover transition duration-200 group-hover:scale-105"
@@ -28,13 +72,21 @@ export default function ProfileCard() {
               <input
                 id="name"
                 type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="min-w-0 flex-1 rounded-l-xl border border-white/20 bg-black/45 px-3 py-2.5 text-sm text-white outline-none transition focus:border-(--brand-cyan)/85"
               />
               <button
                 type="button"
-                className="inline-flex items-center cursor-pointer gap-1 rounded-r-xl border border-indigo-200/55 bg-indigo-300/25 px-3 py-2.5 text-sm font-medium text-indigo-50 transition hover:border-indigo-100/80 hover:bg-indigo-300/35"
+                onClick={handleSaveName}
+                disabled={isSaving || !name.trim() || name.trim() === user.name}
+                className="inline-flex items-center cursor-pointer gap-1 rounded-r-xl border border-indigo-200/55 bg-indigo-300/25 px-3 py-2.5 text-sm font-medium text-indigo-50 transition hover:border-indigo-100/80 hover:bg-indigo-300/35 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Check className="size-4" />
+                {isSaving ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Check className="size-4" />
+                )}
                 Save
               </button>
             </div>
@@ -43,18 +95,20 @@ export default function ProfileCard() {
           <div className="space-y-3">
             <div>
               <p className="text-sm tracking-wider text-white/50">Username</p>
-              <p className="mt-1 text-lg text-white">@username_placeholder</p>
+              <p className="mt-1 text-lg text-white">@{user.username}</p>
             </div>
             <div>
               <p className="text-sm tracking-wider text-white/50">Email</p>
-              <p className="mt-1 text-lg text-white">email_placeholder</p>
+              <p className="mt-1 text-lg text-white">{user.email}</p>
             </div>
           </div>
         </div>
 
         <div className="rounded-2xl w-full md:w-auto md:place-self-center place-items-center border border-white/20 bg-black/40 p-4">
-          <p className="text-sm font-medium text-white">Current Streak: 12</p>
-          <p className="mt-2 text-sm font-medium text-white">Longeset Streak: 15</p>
+          <p className="text-sm font-medium text-white">Current Streak: {streak.currentStreak}</p>
+          <p className="mt-2 text-sm font-medium text-white">
+            Longest Streak: {streak.longestStreak}
+          </p>
         </div>
       </div>
     </div>

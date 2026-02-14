@@ -88,4 +88,160 @@ router.get("/activity-grid", requireAuth, async (req: Request, res: Response) =>
   }
 });
 
+const ALLOWED_AVATARS = [
+  "/avatar1.svg",
+  "/avatar2.svg",
+  "/avatar3.svg",
+  "/avatar4.svg",
+  "/avatar5.svg",
+  "/avatar6.svg",
+];
+
+router.patch("/avatar", requireAuth, async (req: Request, res: Response) => {
+  const { avatar } = req.body;
+
+  if (!avatar || !ALLOWED_AVATARS.includes(avatar)) {
+    return res
+      .status(400)
+      .json({ error: "Invalid avatar selection.", correlationId: req.correlationId });
+  }
+
+  try {
+    const updated = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { image: avatar },
+    });
+
+    apiLogger.info(
+      { correlationId: req.correlationId, userId: req.user!.id },
+      "Avatar updated successfully"
+    );
+    res.json({ image: updated.image });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        userId: req.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to update avatar"
+    );
+    res.status(500).json({ error: "Internal server error.", correlationId: req.correlationId });
+  }
+});
+
+router.patch("/name", requireAuth, async (req: Request, res: Response) => {
+  const { name } = req.body;
+
+  if (!name || name.trim().length < 1) {
+    return res
+      .status(400)
+      .json({ error: "Name cannot be empty.", correlationId: req.correlationId });
+  }
+
+  if (name.length > 50) {
+    return res
+      .status(400)
+      .json({ error: "Name must be at most 50 characters.", correlationId: req.correlationId });
+  }
+
+  try {
+    const updated = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { name: name.trim() },
+    });
+
+    apiLogger.info(
+      { correlationId: req.correlationId, userId: req.user!.id },
+      "Name updated successfully"
+    );
+    res.json({ name: updated.name });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        userId: req.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to update name"
+    );
+    res.status(500).json({ error: "Internal server error.", correlationId: req.correlationId });
+  }
+});
+
+router.get("/stats", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const solvedProblems = await prisma.submission.findMany({
+      where: { userId, status: "PASSED" },
+      distinct: ["problemId"],
+      select: {
+        problemId: true,
+        problem: { select: { difficulty: true } },
+      },
+    });
+
+    const byDifficulty = { easy: 0, medium: 0, hard: 0 };
+    for (const s of solvedProblems) {
+      const d = s.problem.difficulty.toLowerCase() as keyof typeof byDifficulty;
+      if (d in byDifficulty) byDifficulty[d]++;
+    }
+
+    const leaderboard = await prisma.submission.groupBy({
+      by: ["userId"],
+      where: { status: "PASSED" },
+      _sum: { score: true },
+    });
+
+    const sorted = leaderboard
+      .map((e) => ({ userId: e.userId, score: e._sum.score || 0 }))
+      .sort((a, b) => b.score - a.score);
+
+    const rank = sorted.findIndex((e) => e.userId === userId) + 1;
+
+    res.json({
+      rank: rank || null,
+      totalSolved: solvedProblems.length,
+      byDifficulty,
+    });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        userId: req.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to fetch user stats"
+    );
+    res.status(500).json({ error: "Failed to fetch user stats", correlationId: req.correlationId });
+  }
+});
+
+router.delete("/account", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    await prisma.user.delete({
+      where: { id: userId },
+    });
+
+    apiLogger.info(
+      { correlationId: req.correlationId, userId },
+      "User account deleted successfully"
+    );
+    res.json({ message: "Account deleted successfully." });
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        userId: req.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to delete account"
+    );
+    res.status(500).json({ error: "Failed to delete account.", correlationId: req.correlationId });
+  }
+});
+
 export default router;
