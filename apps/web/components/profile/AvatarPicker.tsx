@@ -20,7 +20,7 @@ interface AvatarPickerProps {
   isOpen: boolean;
   currentAvatar: string | null | undefined;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (newAvatar: string) => void;
 }
 
 export default function AvatarPicker({
@@ -42,7 +42,7 @@ export default function AvatarPicker({
         body: JSON.stringify({ avatar: selected }),
       });
       if (res.ok) {
-        onSave();
+        onSave(selected);
         onClose();
       }
     } catch {

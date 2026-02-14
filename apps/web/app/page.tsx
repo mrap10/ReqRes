@@ -20,8 +20,8 @@ export default function Home() {
         <CTA />
         <FAQ />
       </main>
-      <div className="h-120 flex flex-col items-center justify-center bg-zinc-950">
-        <Footer />
+      <Footer />
+      <div className="-mt-17 h-90 hidden lg:flex flex-col items-center justify-center bg-zinc-950">
         <TextHoverEffect text="ReqRes" />
       </div>
     </div>

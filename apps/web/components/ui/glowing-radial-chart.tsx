@@ -134,6 +134,16 @@ export function GlowingRadialChart({
             <p className="mt-0.5 text-sm font-semibold text-rose-400">{difficultyCounts.hard}</p>
           </div>
         </div>
+
+        <div className="flex items-center gap-2 mt-5">
+          <div className="font-mono italic text-white/70 text-[8px] rounded-full bg-zinc-800 px-1 font-semibold py-0.5">
+            i
+          </div>
+          <p className="text-[11px] text-white/50">
+            If the chart doesn&apos;t look right, try refreshing the page. It sometimes takes few
+            minutes to update chart data in UI due to caches.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

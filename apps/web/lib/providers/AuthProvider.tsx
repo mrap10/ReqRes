@@ -5,6 +5,7 @@ import { useSession } from "../auth-client";
 
 interface User {
   id: string;
+  name?: string | null;
   email: string;
   username: string;
   role: "USER" | "ADMIN";
@@ -51,6 +52,7 @@ function mapSessionToUser(session: BetterAuthSession | null): User | null {
 
   return {
     id: session.user.id,
+    name: session.user.name || null,
     email: session.user.email,
     username: session.user.username!,
     role: (session.user.role || "USER") as "USER" | "ADMIN",

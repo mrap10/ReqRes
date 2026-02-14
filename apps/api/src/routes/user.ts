@@ -7,7 +7,39 @@ import { getUserStreakData, getActivityGrid } from "../services/streak.service.j
 const router = Router();
 
 router.get("/me", requireAuth, async (req: Request, res: Response) => {
-  res.json(req.user);
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+        image: true,
+        role: true,
+        xp: true,
+        emailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found", correlationId: req.correlationId });
+    }
+
+    res.json(user);
+  } catch (error) {
+    apiLogger.error(
+      {
+        correlationId: req.correlationId,
+        userId: req.user?.id,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to fetch user profile"
+    );
+    res.status(500).json({ error: "Failed to fetch profile", correlationId: req.correlationId });
+  }
 });
 
 router.patch("/username", requireAuth, async (req: Request, res: Response) => {
