@@ -108,7 +108,7 @@ export default function PasswordReset() {
         <div className="w-full max-w-md space-y-6">
           <Link
             href="/signin"
-            className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-indigo-400 transition-colors"
+            className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-cyan-200 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to Login
@@ -136,7 +136,7 @@ export default function PasswordReset() {
 
                 {error && (
                   <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 px-4 py-3 rounded-lg">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
@@ -144,7 +144,7 @@ export default function PasswordReset() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isLoading ? "Sending..." : "Send Reset Link"}
                 </button>
@@ -161,7 +161,7 @@ export default function PasswordReset() {
                 <h2 className="text-2xl font-bold text-white mb-2">Check your inbox</h2>
                 <p className="text-zinc-400 text-sm">
                   We sent a password reset link to{" "}
-                  <span className="text-indigo-400 font-medium">{email}</span>
+                  <span className="text-cyan-400 font-medium">{email}</span>
                 </p>
               </div>
               <p className="text-zinc-500 text-sm">
@@ -177,7 +177,7 @@ export default function PasswordReset() {
                   className="text-sm text-zinc-400 transition-colors"
                 >
                   Didn&apos;t receive email?{" "}
-                  <span className="text-indigo-400 cursor-pointer">Try again</span>
+                  <span className="text-cyan-400 hover:underline cursor-pointer">Try again</span>
                 </button>
               </div>
             </div>
@@ -215,7 +215,7 @@ export default function PasswordReset() {
 
                 {error && (
                   <div className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 px-4 py-3 rounded-lg">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{error}</span>
                   </div>
                 )}
@@ -223,7 +223,7 @@ export default function PasswordReset() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isLoading ? "Resetting..." : "Reset Password"}
                 </button>
@@ -244,7 +244,7 @@ export default function PasswordReset() {
               </div>
               <button
                 onClick={() => router.push("/signin")}
-                className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02]"
+                className="w-full py-3.5 text-sm  bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02]"
               >
                 Continue to Sign In
               </button>

@@ -227,7 +227,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </button>
@@ -238,7 +238,7 @@ export default function SignupPage() {
               Already have an account?{" "}
               <Link
                 href="/signin"
-                className="text-zinc-300 font-bold hover:text-indigo-400 transition-colors"
+                className="text-zinc-300 font-bold hover:text-cyan-200 transition-colors"
               >
                 Sign In
               </Link>

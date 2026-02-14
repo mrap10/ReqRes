@@ -120,7 +120,10 @@ export default function SigninPage() {
                 placeholder="********"
               />
               <div className="flex justify-end">
-                <Link href="/reset-password" className="text-xs text-indigo-400 hover:underline">
+                <Link
+                  href="/reset-password"
+                  className="text-xs text-white/50 hover:text-white/80 hover:underline"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -131,7 +134,7 @@ export default function SigninPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02]"
+              className="w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02]"
             >
               {isLoading ? "Signing In..." : "Sign In"}
             </button>
@@ -142,7 +145,7 @@ export default function SigninPage() {
               New to ReqRes?{" "}
               <Link
                 href="/signup"
-                className="text-zinc-300 font-bold hover:text-indigo-400 transition-colors"
+                className="text-zinc-300 font-bold hover:text-cyan-200 transition-colors"
               >
                 Create an account
               </Link>

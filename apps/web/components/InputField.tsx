@@ -21,7 +21,7 @@ export default function InputField({
     <div className="space-y-2 group">
       <label
         htmlFor={type}
-        className="text-xs text-zinc-500 tracking-wider group-focus-within:text-indigo-400 transition-colors"
+        className="text-xs text-zinc-500 tracking-wider group-focus-within:text-white transition-colors"
       >
         {label}
       </label>
@@ -35,7 +35,7 @@ export default function InputField({
           value={inputValue}
           onChange={onchange}
           disabled={disabled}
-          className="block w-full pl-10 pr-3 py-3 text-sm bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+          className="block w-full pl-10 pr-3 py-3 text-sm bg-zinc-900/50 border border-zinc-800 rounded-xl text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-300/50 transition-all"
           placeholder={placeholder}
         />
       </div>

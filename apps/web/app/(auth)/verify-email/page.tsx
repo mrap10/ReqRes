@@ -71,19 +71,19 @@ export default function VerifyEmailPage() {
               </p>
               <div className="pt-4">
                 <p className="text-zinc-500 text-sm">
-                  Redirecting in <span className="text-indigo-400 font-bold">{countdown}</span>{" "}
+                  Redirecting in <span className="text-cyan-400 font-bold">{countdown}</span>{" "}
                   seconds...
                 </p>
                 <div className="w-full bg-zinc-800 rounded-full h-2 mt-3">
                   <div
-                    className="bg-indigo-500 h-2 rounded-full transition-all duration-1000"
+                    className="bg-cyan-500 h-2 rounded-full transition-all duration-1000"
                     style={{ width: `${((5 - countdown) / 5) * 100}%` }}
                   />
                 </div>
               </div>
               <Link
                 href="/problems"
-                className="inline-block mt-4 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="inline-block mt-4 text-sm  text-cyan-400 hover:text-cyan-300 transition-colors"
               >
                 Go to Problems now →
               </Link>
@@ -100,13 +100,13 @@ export default function VerifyEmailPage() {
               <div className="pt-4 space-y-3">
                 <Link
                   href="/signin"
-                  className="block w-full py-3.5 text-sm bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl transition-all text-center"
+                  className="block w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 text-white font-bold rounded-xl transition-all text-center"
                 >
                   Go to Sign In
                 </Link>
                 <p className="text-xs text-zinc-500">
                   Need help?{" "}
-                  <Link href="/feedback" className="text-indigo-400 hover:underline">
+                  <Link href="/feedback" className="text-cyan-400 hover:underline">
                     Contact support
                   </Link>
                 </p>
