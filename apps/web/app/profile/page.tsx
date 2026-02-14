@@ -12,11 +12,24 @@ import {
   DeleteAccountDialog,
 } from "@/components/profile/";
 import { useAuth } from "@/lib/providers/AuthProvider";
-import { useSession } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string;
+  username: string;
+  image: string | null;
+  role: string;
+  xp: number;
+  emailVerified: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface UserStats {
   rank: number | null;
@@ -31,17 +44,26 @@ interface StreakData {
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
-  const { refetch } = useSession();
+  const router = useRouter();
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
+  const [activityGrid, setActivityGrid] = useState<Record<string, number>>({});
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/me`, { credentials: "include" });
+      if (res.ok) setProfile(await res.json());
+    } catch {
+      // silently fail
+    }
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/user/stats`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE_URL}/user/stats`, { credentials: "include" });
       if (res.ok) setStats(await res.json());
     } catch {
       // silently fail
@@ -60,19 +82,37 @@ export default function ProfilePage() {
     }
   }, []);
 
+  const fetchActivityGrid = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/user/activity-grid`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setActivityGrid(data.grid);
+      }
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/signin");
+    }
+  }, [isLoading, user, router]);
+
   useEffect(() => {
     if (user) {
-      fetchStats();
-      fetchStreak();
+      Promise.all([fetchProfile(), fetchStats(), fetchStreak(), fetchActivityGrid()]);
     }
-  }, [user, fetchStats, fetchStreak]);
+  }, [user, fetchProfile, fetchStats, fetchStreak, fetchActivityGrid]);
 
-  const handleUserUpdated = () => {
-    refetch();
+  const handleUserUpdated = async () => {
+    await fetchProfile();
   };
 
-  const handleAvatarSaved = () => {
-    refetch();
+  const handleAvatarSaved = async (newAvatar: string) => {
+    setProfile((prev) => (prev ? { ...prev, image: newAvatar } : prev));
+    await fetchProfile();
   };
 
   if (isLoading) {
@@ -87,7 +127,17 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) return null;
+  if (!user || !profile) {
+    return (
+      <div className="relative min-h-screen overflow-x-clip">
+        <Navbar />
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="size-8 animate-spin text-white/50" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
@@ -102,13 +152,13 @@ export default function ProfilePage() {
         >
           <h3 className="text-2xl font-semibold mb-5">Account Overview</h3>
           <ProfileCard
-            user={user}
+            user={profile}
             streak={streak}
             onAvatarClick={() => setAvatarPickerOpen(true)}
             onUserUpdated={handleUserUpdated}
           />
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
-            <ActivityGrid />
+            <ActivityGrid grid={activityGrid} />
             <QuickStats stats={stats} />
           </div>
           <ProfileActions onDeleteAccount={() => setDeleteDialogOpen(true)} />
@@ -119,7 +169,7 @@ export default function ProfilePage() {
 
       <AvatarPicker
         isOpen={avatarPickerOpen}
-        currentAvatar={user.image}
+        currentAvatar={profile.image}
         onClose={() => setAvatarPickerOpen(false)}
         onSave={handleAvatarSaved}
       />
