@@ -12,6 +12,19 @@ import { useAuth } from "@/lib/providers/AuthProvider";
 
 let problemsCache: ProblemListDTO[] | null = null;
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+interface UserStats {
+  rank: number | null;
+  totalSolved: number;
+  byDifficulty: { easy: number; medium: number; hard: number };
+}
+
+interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+}
+
 export default function ProblemPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -19,6 +32,8 @@ export default function ProblemPage() {
   const [filteredProblems, setFilteredProblems] = useState<ProblemListDTO[]>([]);
   const [problems, setProblems] = useState<ProblemListDTO[]>(problemsCache ?? []);
   const [isLoading, setIsLoading] = useState(!problemsCache);
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [streak, setStreak] = useState<StreakData | null>(null);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -32,6 +47,33 @@ export default function ProblemPage() {
     }
     fetchProblems();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    async function fetchUserData() {
+      try {
+        const [statsRes, streakRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/user/stats`, { credentials: "include" }),
+          fetch(`${API_BASE_URL}/user/streak`, { credentials: "include" }),
+        ]);
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+
+        if (streakRes.ok) {
+          const streakData = await streakRes.json();
+          setStreak(streakData);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    }
+
+    fetchUserData();
+  }, [isAuthenticated]);
 
   const difficultyCounts = useMemo(
     () => ({
@@ -144,16 +186,20 @@ export default function ProblemPage() {
                 className="grid gap-3 sm:grid-cols-3 md:col-span-2"
               >
                 <div className="rounded-xl border border-white/10 bg-[#0b0b10] p-4">
-                  <p className="text-xl font-semibold text-white">4</p>
-                  <p className="mt-1 text-sm tracking-wider text-white/48">Solved This Week</p>
+                  <p className="text-xl font-semibold text-white">{stats?.totalSolved ?? 0}</p>
+                  <p className="mt-1 text-sm tracking-wider text-white/48">Total Solved</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#0b0b10] p-4">
-                  <p className="text-xl font-semibold text-indigo-100">12</p>
+                  <p className="text-xl font-semibold text-indigo-100">
+                    {streak?.currentStreak ?? 0}
+                  </p>
                   <p className="mt-1 text-sm tracking-wider text-white/48">Current Streak</p>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-[#0b0b10] p-4">
-                  <p className="text-xl font-semibold text-cyan-100">Top 5%</p>
-                  <p className="mt-1 text-sm tracking-wider text-white/48">Rank Snapshot</p>
+                  <p className="text-xl font-semibold text-cyan-100">
+                    {stats?.rank ? `#${stats.rank}` : "Unranked"}
+                  </p>
+                  <p className="mt-1 text-sm tracking-wider text-white/48">Global Rank</p>
                 </div>
               </motion.div>
             ) : (
