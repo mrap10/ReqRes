@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   title: "ReqRes",
   description:
     "Prove your backend logic skills with real-world Express.js easy, medium and hard challenges.",
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({
