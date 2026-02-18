@@ -4,12 +4,16 @@ import DifficultyTag from "../DifficultyTag";
 import { ProblemListDTO } from "@reqres/types";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { useUserSubmissions } from "@/lib/providers/UserSubmissionsProvider";
 
 interface ProblemCardProps {
   problem: ProblemListDTO;
 }
 
 export default function ProblemCard({ problem }: ProblemCardProps) {
+  const { solvedProblemIds } = useUserSubmissions();
+  const isSolved = solvedProblemIds.has(problem.id);
+
   return (
     <motion.div
       layout
@@ -19,16 +23,23 @@ export default function ProblemCard({ problem }: ProblemCardProps) {
     >
       <Link href={`/problems/${problem.slug}`} className="block h-full">
         <div className="group relative h-full flex flex-col bg-zinc-900/40 border border-white/5 rounded-xl p-6 hover:bg-zinc-900 hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-white/42">
-                {problem.track}
-              </p>
-              <h3 className="mt-2 text-lg font-medium tracking-tight text-white">
-                {problem.title}
-              </h3>
+          <div className="mb-2 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-5">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/40">
+                  {problem.track}
+                </p>
+                {isSolved && (
+                  <p className="text-[10px] tracking-wide text-emerald-400 bg-emerald-700/40 px-2 py-1 rounded-md">
+                    Solved
+                  </p>
+                )}
+              </div>
+              <DifficultyTag level={problem.difficulty} />
             </div>
-            <DifficultyTag level={problem.difficulty} />
+            <h3 className="text-lg font-medium tracking-tight text-white w-full">
+              {problem.title}
+            </h3>
           </div>
 
           <p className="flex-1 text-sm leading-6 text-white/62">{problem.shortDescription}</p>

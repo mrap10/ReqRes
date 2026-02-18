@@ -234,7 +234,7 @@ export async function getLeaderboard(req: Request, res: Response) {
 
     const userIds = leaderboardData.map((entry) => entry.userId);
     const users = await prisma.user.findMany({
-      where: { id: { in: userIds } },
+      where: { id: { in: userIds }, role: "USER" },
       select: { id: true, username: true },
     });
 
@@ -242,6 +242,7 @@ export async function getLeaderboard(req: Request, res: Response) {
     const problemCountMap = new Map(uniqueProblems.map((p) => [p.userId, p.count]));
 
     const sortedLeaderboard = leaderboardData
+      .filter((entry) => userMap.has(entry.userId))
       .map((entry) => ({
         userId: entry.userId,
         username: userMap.get(entry.userId) || "Unknown",

@@ -3,12 +3,13 @@
 import { getUsersSubmission } from "@/actions";
 import { useAuth } from "./AuthProvider";
 import { SubmissionListDTO } from "@reqres/types";
-import React, {
+import {
   createContext,
   ReactNode,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -25,6 +26,7 @@ interface UserSubmissionsContextType {
   submissions: SubmissionListDTO[];
   isLoading: boolean;
   totalSolved: number;
+  solvedProblemIds: Set<string>;
   difficultyCounts: DifficultyStats;
   baseXp: number;
   bonusXp: number;
@@ -79,7 +81,7 @@ export default function UserSubmissionsProvider({ children }: { children: ReactN
     }
   }, [isAuthenticated]);
 
-  const uniqueSolved = React.useMemo(() => {
+  const uniqueSolved = useMemo(() => {
     const seen = new Set<string>();
     return submissions.filter((s) => {
       if (s.status !== "PASSED") return false;
@@ -90,6 +92,11 @@ export default function UserSubmissionsProvider({ children }: { children: ReactN
   }, [submissions]);
 
   const totalSolved = uniqueSolved.length;
+
+  const solvedProblemIds = useMemo(
+    () => new Set(uniqueSolved.map((s) => s.problemId)),
+    [uniqueSolved]
+  );
 
   const difficultyCounts: DifficultyStats = uniqueSolved.reduce(
     (acc, s) => {
@@ -111,6 +118,7 @@ export default function UserSubmissionsProvider({ children }: { children: ReactN
         submissions,
         isLoading,
         totalSolved,
+        solvedProblemIds,
         difficultyCounts,
         baseXp,
         bonusXp,

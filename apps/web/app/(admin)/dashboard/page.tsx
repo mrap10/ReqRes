@@ -28,10 +28,10 @@ export default function DashboardPage() {
   const fetchAllMetrics = useCallback(async () => {
     try {
       const [dashboardRes, hourlyRes, dailyUsersRes, queueRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/metrics/dashboard`),
-        fetch(`${API_BASE_URL}/metrics/submissions/hourly?hours=24`),
-        fetch(`${API_BASE_URL}/metrics/users/daily?days=7`),
-        fetch(`${API_BASE_URL}/metrics/queue`),
+        fetch(`${API_BASE_URL}/metrics/dashboard`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/metrics/submissions/hourly?hours=24`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/metrics/users/daily?days=7`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/metrics/queue`, { credentials: "include" }),
       ]);
 
       if (dashboardRes.ok) {

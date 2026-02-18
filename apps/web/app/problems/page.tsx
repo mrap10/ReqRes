@@ -5,7 +5,7 @@ import { CheckCircle2, Search, Sparkles } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import { ProblemCard, Filters } from "@/components/problems-page-components";
 import Footer from "../../components/Footer";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getProblems } from "../../actions";
 import { ProblemListDTO } from "@reqres/types";
 import { useAuth } from "@/lib/providers/AuthProvider";
@@ -27,9 +27,10 @@ interface StreakData {
 
 export default function ProblemPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeDifficulty, setActiveDifficulty] = useState("all");
-  const [filteredProblems, setFilteredProblems] = useState<ProblemListDTO[]>([]);
   const [problems, setProblems] = useState<ProblemListDTO[]>(problemsCache ?? []);
   const [isLoading, setIsLoading] = useState(!problemsCache);
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -75,6 +76,18 @@ export default function ProblemPage() {
     fetchUserData();
   }, [isAuthenticated]);
 
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
   const difficultyCounts = useMemo(
     () => ({
       easy: problems.filter((p) => p.difficulty === "EASY").length,
@@ -84,7 +97,7 @@ export default function ProblemPage() {
     [problems]
   );
 
-  useEffect(() => {
+  const filteredProblems = useMemo(() => {
     let result = problems;
 
     if (activeCategory !== "all") {
@@ -99,17 +112,18 @@ export default function ProblemPage() {
       result = result.filter((problem) => problem.difficulty === activeDifficulty);
     }
 
-    if (searchQuery) {
+    if (debouncedSearch) {
+      const query = debouncedSearch.toLowerCase();
       result = result.filter(
         (problem) =>
-          problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          problem.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          problem.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+          problem.title.toLowerCase().includes(query) ||
+          problem.shortDescription.toLowerCase().includes(query) ||
+          problem.tags.some((tag) => tag.toLowerCase().includes(query))
       );
     }
 
-    setFilteredProblems(result);
-  }, [searchQuery, activeCategory, activeDifficulty, problems]);
+    return result;
+  }, [debouncedSearch, activeCategory, activeDifficulty, problems]);
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
@@ -161,7 +175,7 @@ export default function ProblemPage() {
                 type="text"
                 placeholder="Search problems, tags..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full rounded-xl border border-white/10 bg-black/35 py-2.5 pl-9 pr-3 text-sm text-white/85 placeholder:text-white/35 outline-none transition focus:border-indigo-300/35"
               />
             </div>

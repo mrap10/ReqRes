@@ -3,7 +3,8 @@
 import clsx from "clsx";
 import { CodeXml, LayoutDashboard, LogOut, Settings, ShieldAlert } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "@/lib/auth-client";
 
 const sidebarItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14,11 +15,16 @@ const sidebarItems = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  // const router = useRouter();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    // keeping this route open for now, will add auth and complications later after adding auth API endpoints
-    alert("Logged out!");
+  const handleLogout = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/signin");
+        },
+      },
+    });
   };
 
   return (
@@ -27,7 +33,7 @@ export default function AdminSidebar() {
         <div className="h-16 flex items-center justify-center lg:justify-start cursor-pointer lg:px-6 border-b border-zinc-900">
           <h1 className="text-2xl font-bold text-white tracking-tight">
             Req<span className="text-indigo-400">Res</span>{" "}
-            <span className="text-indigo-400 text-xs px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-linear-to-r from-indigo-300 to-cyan-200 bg-clip-text text-transparent">
               Admin
             </span>
           </h1>
