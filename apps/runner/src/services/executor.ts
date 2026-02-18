@@ -36,18 +36,18 @@ async function emitLog(
   level: "info" | "error" | "warn",
   message: string
 ): Promise<void> {
-  try {
-    await axios.post(
+  axios
+    .post(
       `${process.env.API_CALLBACK_URL!.replace("/result", "/log")}`,
       { submissionId, level, message },
       {
         headers: { "x-runner-secret": process.env.RUNNER_SHARED_SECRET! },
-        timeout: 5000,
+        timeout: 3000,
       }
-    );
-  } catch (err) {
-    console.error("Failed to emit log:", err);
-  }
+    )
+    .catch((err) => {
+      console.error("Failed to emit log:", err);
+    });
 }
 
 async function copyTestFiles(problemSlug: string, workspace: string): Promise<boolean> {
@@ -96,7 +96,7 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
   execLogger.debug({ workspace }, "Created temporary workspace");
 
   try {
-    await emitLog(payload.submissionId, "info", "Preparing execution environment");
+    emitLog(payload.submissionId, "info", "Preparing execution environment");
 
     for (const [filePath, content] of Object.entries(payload.codeBundle.files)) {
       if (filePath.endsWith(".ts")) {
@@ -107,7 +107,7 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
       await fs.writeFile(fullPath, content, "utf-8");
     }
 
-    await emitLog(payload.submissionId, "info", "Setting up test configuration");
+    emitLog(payload.submissionId, "info", "Setting up test environment");
 
     // package.json for the test workspace
     const packageJson = {
@@ -129,20 +129,35 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
 
     const hasSetupFile = await copyTestFiles(payload.problem.slug, workspace);
 
+    const isRunMode = payload.mode === "run";
+    const RUN_MODE_MAX_TESTS = 2;
+
+    const setupFiles: string[] = [];
+    if (hasSetupFile) {
+      setupFiles.push(`'<rootDir>/tests/${payload.problem.slug}/setup.js'`);
+    }
+
     const jestConfig = `
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['<rootDir>/tests/**/*.test.js'],
-  ${hasSetupFile ? `setupFilesAfterEnv: ['<rootDir>/tests/${payload.problem.slug}/setup.js'],` : ""}
+  ${setupFiles.length > 0 ? `setupFilesAfterEnv: [${setupFiles.join(", ")}],` : ""}
 };
 `;
     await fs.writeFile(path.join(workspace, "jest.config.js"), jestConfig, "utf-8");
 
-    await emitLog(payload.submissionId, "info", "Starting container");
-    await emitLog(payload.submissionId, "info", "Installing dependencies");
+    if (isRunMode) {
+      emitLog(payload.submissionId, "info", `Running ${RUN_MODE_MAX_TESTS} sample tests`);
+    } else {
+      emitLog(
+        payload.submissionId,
+        "info",
+        "Running full test suite - this migght take a moment for larger problems"
+      );
+    }
 
     if (payload.problem.slug === "rate-limiting-middleware") {
-      await emitLog(
+      emitLog(
         payload.submissionId,
         "info",
         "Applying rate-limit logic to your middleware implementation"
@@ -151,7 +166,7 @@ module.exports = {
 
     execLogger.info("Starting container execution");
 
-    const jestResults = await runDocker(workspace, payload.testConfig.timeoutMs);
+    const jestResults = await runDocker(workspace, payload.testConfig.timeoutMs, payload.mode);
 
     execLogger.info(
       {
@@ -162,19 +177,19 @@ module.exports = {
       "Docker execution completed"
     );
 
-    await emitLog(payload.submissionId, "info", "Running tests");
+    emitLog(payload.submissionId, "info", "Evaluating results");
 
     const parsedResults = parseTestOutput(jestResults);
 
-    const isRunMode = payload.mode === "run";
-    const RUN_MODE_MAX_TESTS = 2;
     const reportedResults = isRunMode ? parsedResults.slice(0, RUN_MODE_MAX_TESTS) : parsedResults;
 
     const passedCount = reportedResults.filter((r) => r.passed).length;
     const totalCount = reportedResults.length;
-    const allPassed = isRunMode ? reportedResults.every((r) => r.passed) : jestResults.success;
+    const allPassed = isRunMode
+      ? reportedResults.length > 0 && reportedResults.every((r) => r.passed)
+      : jestResults.success;
 
-    await emitLog(
+    emitLog(
       payload.submissionId,
       allPassed ? "info" : "error",
       allPassed
@@ -207,8 +222,8 @@ module.exports = {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     execLogger.error({ error: errorMessage }, "Execution failed");
-    await emitLog(payload.submissionId, "error", `Execution failed: ${errorMessage}`);
-    await emitLog(payload.submissionId, "error", "0 test cases passed due to error");
+    emitLog(payload.submissionId, "error", `Execution failed: ${errorMessage}`);
+    emitLog(payload.submissionId, "error", "0 test cases passed due to error");
 
     const response: ExecuteResponse = {
       submissionId: payload.submissionId,

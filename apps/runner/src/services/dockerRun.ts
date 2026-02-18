@@ -3,7 +3,11 @@ import path from "path";
 import fs from "fs/promises";
 import { JestJSON } from "../types.js";
 
-export async function runDocker(workspace: string, timeoutMs: number): Promise<JestJSON> {
+export async function runDocker(
+  workspace: string,
+  timeoutMs: number,
+  mode: "run" | "submit" = "submit"
+): Promise<JestJSON> {
   const resultsFileName = "jest-results.json";
   const resultsPath = path.join(workspace, resultsFileName);
 
@@ -23,11 +27,12 @@ export async function runDocker(workspace: string, timeoutMs: number): Promise<J
     const dockerArgs = [
       "run",
       "--rm",
-      "--memory=256m",
-      "--cpus=0.5",
+      "--memory=512m",
+      "--cpus=1.5",
       "--read-only",
+      "--network=none",
       "--tmpfs",
-      "/tmp:rw,size=256m",
+      "/tmp:rw,exec,size=512m",
       "--tmpfs",
       "/root:rw,size=64m",
       "-v",
@@ -48,7 +53,7 @@ export NODE_PATH=/runner/node_modules
 cp -r /app /tmp/workspace
 cd /tmp/workspace
 
-/runner/node_modules/.bin/jest --runInBand --json --outputFile=/app/${resultsFileName} || true
+/runner/node_modules/.bin/jest --runInBand --forceExit --json --outputFile=/app/${resultsFileName}${mode === "run" ? " --bail" : ""} || true
       `,
     ];
 

@@ -116,17 +116,53 @@ router.post("/result", async (req, res) => {
             status: { in: ["WRONG_ANSWER", "RUNTIME_ERROR", "TIME_LIMIT", "MEMORY_LIMIT"] },
             id: { not: submissionId },
           },
-          orderBy: {
-            createdAt: "desc",
-          },
+          select: { id: true },
         });
 
         if (oldFailedSubmissions.length > 0) {
+          const oldIds = oldFailedSubmissions.map((s) => s.id);
+
+          await tx.executionResult.deleteMany({
+            where: { submissionId: { in: oldIds } },
+          });
+
+          await tx.executionLog.deleteMany({
+            where: { submissionId: { in: oldIds } },
+          });
+
+          await tx.submission.deleteMany({
+            where: { id: { in: oldIds } },
+          });
+        }
+      }
+
+      if (prismaStatus === "PASSED" && !isRunMode) {
+        const oldPassedSubmissions = await tx.submission.findMany({
+          where: {
+            userId,
+            problemId,
+            status: "PASSED",
+            id: { not: submissionId },
+          },
+          select: { id: true },
+        });
+
+        if (oldPassedSubmissions.length > 0) {
+          await tx.executionResult.deleteMany({
+            where: {
+              submissionId: { in: oldPassedSubmissions.map((s) => s.id) },
+            },
+          });
+
+          await tx.executionLog.deleteMany({
+            where: {
+              submissionId: { in: oldPassedSubmissions.map((s) => s.id) },
+            },
+          });
+
           await tx.submission.deleteMany({
             where: {
-              id: {
-                in: oldFailedSubmissions.map((s) => s.id),
-              },
+              id: { in: oldPassedSubmissions.map((s) => s.id) },
             },
           });
         }
