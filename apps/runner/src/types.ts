@@ -13,6 +13,7 @@ export type ExecutionRequest = {
     timeoutMs: number;
     memoryMb: number;
   };
+  mode: "run" | "submit";
 };
 
 export type TestResult = {
@@ -33,6 +34,7 @@ export type ExecuteResponse = {
   durationMs: number;
   stderr?: string;
   stdout?: string;
+  mode: "run" | "submit";
 };
 
 export type JestJSON = {

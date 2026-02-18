@@ -66,6 +66,7 @@ interface ErrorResponse {
 interface SubmissionContextType {
   submission: SubmissionState;
   submitCode: (problemId: string, code: string) => Promise<void>;
+  runCode: (problemId: string, code: string) => Promise<void>;
   clearSubmission: () => void;
 }
 
@@ -247,11 +248,13 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
   );
 
   const submitCode = useCallback(
-    async (problemIdToUse: string, code: string) => {
+    async (problemIdToUse: string, code: string, mode: "run" | "submit" = "submit") => {
+      const isRunMode = mode === "run";
+
       setSubmission({
         submissionId: null,
         status: "pending",
-        logs: [{ type: "info", message: "Submitting code..." }],
+        logs: [{ type: "info", message: isRunMode ? "Running code..." : "Submitting code..." }],
         testResults: [],
         output: null,
         durationMs: null,
@@ -268,6 +271,7 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
             entryPoint: "index.js",
           },
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          mode,
         };
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/submissions`, {
@@ -324,8 +328,15 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
     setSubmission(initialState);
   }, []);
 
+  const runCode = useCallback(
+    async (problemIdToUse: string, code: string) => {
+      return submitCode(problemIdToUse, code, "run");
+    },
+    [submitCode]
+  );
+
   return (
-    <SubmissionContext.Provider value={{ submission, submitCode, clearSubmission }}>
+    <SubmissionContext.Provider value={{ submission, submitCode, runCode, clearSubmission }}>
       {children}
     </SubmissionContext.Provider>
   );

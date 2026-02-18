@@ -19,6 +19,7 @@ export interface SubmissionJobData {
     memoryMb: number;
   };
   correlationId: string;
+  mode: "run" | "submit";
 }
 
 export const submissionQueue = new Queue<SubmissionJobData>("submissionQueue", queueConfig);

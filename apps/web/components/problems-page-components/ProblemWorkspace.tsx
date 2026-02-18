@@ -15,7 +15,7 @@ interface ProblemWorkspaceProps {
 
 function WorkspaceContent({ problemId, starterCode }: ProblemWorkspaceProps) {
   const editorRef = useRef<EditorRef>(null);
-  const { submitCode } = useSubmission();
+  const { submitCode, runCode } = useSubmission();
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -27,9 +27,9 @@ function WorkspaceContent({ problemId, starterCode }: ProblemWorkspaceProps) {
 
     const code = editorRef.current?.getCode();
     if (code) {
-      submitCode(problemId, code);
+      runCode(problemId, code);
     }
-  }, [problemId, submitCode, isAuthenticated, router]);
+  }, [problemId, runCode, isAuthenticated, router]);
 
   const handleSubmit = useCallback(() => {
     if (!isAuthenticated) {

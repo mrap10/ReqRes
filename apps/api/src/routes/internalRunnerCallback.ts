@@ -24,7 +24,7 @@ router.post("/result", async (req, res) => {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { status, results, durationMs, stdout, stderr } = req.body;
+  const { status, results, durationMs, stdout, stderr, mode } = req.body;
 
   // there is def. better way to do this, will look into it later.
   let prismaStatus: "PASSED" | "WRONG_ANSWER" | "RUNTIME_ERROR";
@@ -35,6 +35,8 @@ router.post("/result", async (req, res) => {
   } else {
     prismaStatus = "RUNTIME_ERROR";
   }
+
+  const isRunMode = mode === "run";
 
   try {
     const currentSubmission = await prisma.submission.findUnique({
@@ -55,7 +57,7 @@ router.post("/result", async (req, res) => {
       let xpToAward = 0;
       let isFirstTryBonus = false;
 
-      if (prismaStatus === "PASSED") {
+      if (prismaStatus === "PASSED" && !isRunMode) {
         const previousPassedSubmission = await tx.submission.findFirst({
           where: {
             userId,

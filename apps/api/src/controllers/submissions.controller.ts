@@ -15,6 +15,7 @@ const CreateSubmissionSchema = z.object({
     entryPoint: z.string().optional().default("index.ts"),
   }),
   timezone: z.string().optional().default("UTC"),
+  mode: z.enum(["run", "submit"]).optional().default("submit"),
 });
 
 export async function createSubmission(req: Request, res: Response) {
@@ -47,7 +48,7 @@ export async function createSubmission(req: Request, res: Response) {
       });
     }
 
-    const { problemId, code, timezone } = parseResult.data;
+    const { problemId, code, timezone, mode } = parseResult.data;
 
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized", correlationId });
@@ -115,6 +116,7 @@ export async function createSubmission(req: Request, res: Response) {
           memoryMb: problem.testConfig.memoryMb,
         },
         correlationId: correlationId || "",
+        mode,
       },
       {
         jobId: submission.id,

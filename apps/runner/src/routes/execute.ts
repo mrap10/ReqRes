@@ -27,6 +27,7 @@ const ExecuteSchema = z.object({
     memoryMb: z.number().min(16).max(2048),
   }),
   correlationId: z.string().optional(),
+  mode: z.enum(["run", "submit"]).optional().default("submit"),
 });
 
 executeRouter.post("/", requireRunnerSecret, async (req, res) => {

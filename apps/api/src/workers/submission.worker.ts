@@ -63,7 +63,7 @@ function mapRunnerStatusToSubmissionStatus(runnerStatus: string): SubmissionStat
 const RUNNER_URL = process.env.RUNNER_BASE_URL;
 
 async function processSubmission(job: Job<SubmissionJobData>) {
-  const { submissionId, problem, codeBundle, testConfig, correlationId } = job.data;
+  const { submissionId, problem, codeBundle, testConfig, correlationId, mode } = job.data;
 
   const jobLogger = workerLogger.child({ submissionId, correlationId });
 
@@ -115,6 +115,7 @@ async function processSubmission(job: Job<SubmissionJobData>) {
             codeBundle,
             testConfig,
             correlationId,
+            mode,
           },
           {
             headers: {

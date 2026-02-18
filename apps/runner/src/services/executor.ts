@@ -166,9 +166,13 @@ module.exports = {
 
     const parsedResults = parseTestOutput(jestResults);
 
-    const passedCount = parsedResults.filter((r) => r.passed).length;
-    const totalCount = parsedResults.length;
-    const allPassed = jestResults.success;
+    const isRunMode = payload.mode === "run";
+    const RUN_MODE_MAX_TESTS = 2;
+    const reportedResults = isRunMode ? parsedResults.slice(0, RUN_MODE_MAX_TESTS) : parsedResults;
+
+    const passedCount = reportedResults.filter((r) => r.passed).length;
+    const totalCount = reportedResults.length;
+    const allPassed = isRunMode ? reportedResults.every((r) => r.passed) : jestResults.success;
 
     await emitLog(
       payload.submissionId,
@@ -180,11 +184,12 @@ module.exports = {
 
     const response: ExecuteResponse = {
       submissionId: payload.submissionId,
-      status: jestResults.success ? "PASSED" : "FAILED",
-      results: parsedResults,
+      status: allPassed ? "PASSED" : "FAILED",
+      results: reportedResults,
       durationMs: Date.now() - start,
-      stdout: `${jestResults.numPassedTests}/${jestResults.numTotalTests} tests passed`,
+      stdout: `${passedCount}/${totalCount} tests passed`,
       stderr: "",
+      mode: payload.mode || "submit",
     };
 
     await axios.post(process.env.API_CALLBACK_URL!, response, {
@@ -211,6 +216,7 @@ module.exports = {
       results: [],
       durationMs: Date.now() - start,
       stderr: errorMessage,
+      mode: payload.mode || "submit",
     };
 
     await axios.post(process.env.API_CALLBACK_URL!, response, {
