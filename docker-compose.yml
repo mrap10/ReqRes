@@ -37,6 +37,7 @@ services:
     networks:
       - reqres-internal
 
+  # standalone worker (for production-like setup, separate from API)
   worker:
     build:
       context: .
