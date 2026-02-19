@@ -1,6 +1,12 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+if (!resend) {
+  console.warn(
+    "[email] RESEND_API_KEY not set — email sending disabled. Set RESEND_API_KEY to enable."
+  );
+}
 
 export async function sendVerificationEmail({
   email,
@@ -11,6 +17,7 @@ export async function sendVerificationEmail({
   verificationUrl: string;
   username?: string;
 }) {
+  if (!resend) return { success: false, error: "Email sending disabled — RESEND_API_KEY not set" };
   try {
     const { data, error } = await resend.emails.send({
       from: "ReqRes <onboarding@resend.dev>",
@@ -89,6 +96,7 @@ export async function sendPasswordResetEmail({
   resetUrl: string;
   username?: string;
 }) {
+  if (!resend) return { success: false, error: "Email sending disabled — RESEND_API_KEY not set" };
   try {
     const { data, error } = await resend.emails.send({
       from: "ReqRes <onboarding@resend.dev>",

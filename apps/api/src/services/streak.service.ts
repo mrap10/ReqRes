@@ -2,10 +2,26 @@ import { Redis } from "ioredis";
 import { prisma } from "@reqres/database";
 import { apiLogger } from "../lib/logger.js";
 
-const redis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
-});
+const REDIS_AVAILABLE = !!process.env.REDIS_HOST;
+
+let redis: Redis | null = null;
+
+if (REDIS_AVAILABLE) {
+  redis = new Redis({
+    host: process.env.REDIS_HOST || "localhost",
+    port: Number(process.env.REDIS_PORT) || 6379,
+    lazyConnect: true,
+  });
+  redis.connect().catch((err) => {
+    apiLogger.warn(
+      { error: err.message },
+      "Streak Redis connection failed — cache will be unavailable"
+    );
+    redis = null;
+  });
+} else {
+  apiLogger.warn("REDIS_HOST not set — streak cache disabled. Set REDIS_HOST to enable.");
+}
 
 // validating an IANA timezone string.
 function safeTimezone(timezone: string): string {
@@ -77,6 +93,7 @@ function activityGridKey(userId: string): string {
 }
 
 export async function invalidateActivityGrid(userId: string): Promise<void> {
+  if (!redis) return;
   try {
     await redis.del(activityGridKey(userId));
   } catch (error) {
@@ -88,8 +105,10 @@ export async function getActivityGrid(userId: string): Promise<Record<string, nu
   const cacheKey = activityGridKey(userId);
 
   try {
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached);
+    if (redis) {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    }
   } catch (error) {
     apiLogger.error({ userId, error }, "Failed to read activity grid from cache");
   }
@@ -113,7 +132,9 @@ export async function getActivityGrid(userId: string): Promise<Record<string, nu
   }
 
   try {
-    await redis.set(cacheKey, JSON.stringify(grid), "EX", 86400);
+    if (redis) {
+      await redis.set(cacheKey, JSON.stringify(grid), "EX", 86400);
+    }
   } catch (error) {
     apiLogger.error({ userId, error }, "Failed to cache activity grid");
   }

@@ -1,10 +1,26 @@
 import { Redis } from "ioredis";
 import { apiLogger } from "../lib/logger.js";
 
-const redis = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number(process.env.REDIS_PORT) || 6379,
-});
+const REDIS_AVAILABLE = !!process.env.REDIS_HOST;
+
+let redis: Redis | null = null;
+
+if (REDIS_AVAILABLE) {
+  redis = new Redis({
+    host: process.env.REDIS_HOST || "localhost",
+    port: Number(process.env.REDIS_PORT) || 6379,
+    lazyConnect: true,
+  });
+  redis.connect().catch((err) => {
+    apiLogger.warn(
+      { error: err.message },
+      "Metrics Redis connection failed — metrics will be unavailable"
+    );
+    redis = null;
+  });
+} else {
+  apiLogger.warn("REDIS_HOST not set — metrics service disabled. Set REDIS_HOST to enable.");
+}
 
 export enum MetricType {
   SUBMISSION_CREATED = "submission:created",
@@ -19,63 +35,72 @@ export enum MetricType {
 }
 
 class MetricsService {
+  private get available(): boolean {
+    return redis !== null;
+  }
+
   async incrementCounter(metric: MetricType, value: number = 1): Promise<void> {
+    if (!this.available) return;
     try {
       const key = `metrics:counter:${metric}`;
-      await redis.incrby(key, value);
+      await redis!.incrby(key, value);
 
       const hourKey = `metrics:counter:${metric}:${this.getCurrentHour()}`;
-      await redis.incrby(hourKey, value);
-      await redis.expire(hourKey, 60 * 60 * 24 * 7);
+      await redis!.incrby(hourKey, value);
+      await redis!.expire(hourKey, 60 * 60 * 24 * 7);
     } catch (error) {
       apiLogger.error({ metric, error }, "Failed to increment counter metric");
     }
   }
 
   async setGauge(metric: MetricType, value: number): Promise<void> {
+    if (!this.available) return;
     try {
       const key = `metrics:gauge:${metric}`;
-      await redis.set(key, value);
+      await redis!.set(key, value);
     } catch (error) {
       apiLogger.error({ metric, error }, "Failed to set gauge metric");
     }
   }
 
   async recordTiming(metric: MetricType, durationMs: number): Promise<void> {
+    if (!this.available) return;
     try {
       const key = `metrics:timing:${metric}`;
       const timestamp = Date.now();
 
-      await redis.zadd(key, timestamp, `${timestamp}:${durationMs}`);
+      await redis!.zadd(key, timestamp, `${timestamp}:${durationMs}`);
 
-      await redis.zremrangebyrank(key, 0, -100001);
+      await redis!.zremrangebyrank(key, 0, -100001);
 
       const hourKey = `metrics:timing:${metric}:${this.getCurrentHour()}`;
-      await redis.rpush(hourKey, durationMs.toString());
-      await redis.expire(hourKey, 60 * 60 * 24 * 7);
+      await redis!.rpush(hourKey, durationMs.toString());
+      await redis!.expire(hourKey, 60 * 60 * 24 * 7);
     } catch (error) {
       apiLogger.error({ metric, error }, "Failed to record timing metric");
     }
   }
 
   async trackUniqueUser(userId: string): Promise<void> {
+    if (!this.available) return;
     try {
       const dailyKey = `metrics:unique_users:${this.getCurrentDay()}`;
-      await redis.pfadd(dailyKey, userId);
-      await redis.expire(dailyKey, 60 * 60 * 24 * 30);
+      await redis!.pfadd(dailyKey, userId);
+      await redis!.expire(dailyKey, 60 * 60 * 24 * 30);
 
       const hourlyKey = `metrics:unique_users:${this.getCurrentHour()}`;
-      await redis.pfadd(hourlyKey, userId);
-      await redis.expire(hourlyKey, 60 * 60 * 24 * 7);
+      await redis!.pfadd(hourlyKey, userId);
+      await redis!.expire(hourlyKey, 60 * 60 * 24 * 7);
     } catch (error) {
       apiLogger.error({ userId, error }, "Failed to track unique user");
     }
   }
 
   async getCounter(metric: MetricType): Promise<number> {
+    if (!this.available) return 0;
     try {
       const key = `metrics:counter:${metric}`;
-      const value = await redis.get(key);
+      const value = await redis!.get(key);
       return value ? parseInt(value, 10) : 0;
     } catch (error) {
       apiLogger.error({ metric, error }, "Failed to get counter metric");
@@ -84,9 +109,10 @@ class MetricsService {
   }
 
   async getGauge(metric: MetricType): Promise<number> {
+    if (!this.available) return 0;
     try {
       const key = `metrics:gauge:${metric}`;
-      const value = await redis.get(key);
+      const value = await redis!.get(key);
       return value ? parseFloat(value) : 0;
     } catch (error) {
       apiLogger.error({ metric, error }, "Failed to get gauge metric");
@@ -97,9 +123,10 @@ class MetricsService {
   async getTimingStats(
     metric: MetricType
   ): Promise<{ avg: number; count: number; p50: number; p95: number; p99: number }> {
+    if (!this.available) return { avg: 0, count: 0, p50: 0, p95: 0, p99: 0 };
     try {
       const key = `metrics:timing:${metric}`;
-      const values = await redis.zrange(key, 0, -1);
+      const values = await redis!.zrange(key, 0, -1);
 
       if (values.length === 0) {
         return {
@@ -152,6 +179,7 @@ class MetricsService {
     metric: MetricType,
     hours: number = 24
   ): Promise<Array<{ hour: string; value: number }>> {
+    if (!this.available) return [];
     try {
       const data: Array<{ hour: string; value: number }> = [];
       const now = new Date();
@@ -159,7 +187,7 @@ class MetricsService {
       for (let i = hours - 1; i >= 0; i--) {
         const date = new Date(now.getTime() - i * 60 * 60 * 1000);
         const hourKey = `metrics:counter:${metric}:${this.formatHour(date)}`;
-        const value = await redis.get(hourKey);
+        const value = await redis!.get(hourKey);
 
         data.push({
           hour: this.formatHour(date),
@@ -175,9 +203,10 @@ class MetricsService {
   }
 
   async getDailyActiveUsers(): Promise<number> {
+    if (!this.available) return 0;
     try {
       const key = `metrics:unique_users:${this.getCurrentDay()}`;
-      const count = await redis.pfcount(key);
+      const count = await redis!.pfcount(key);
       return count;
     } catch (error) {
       apiLogger.error({ error }, "Failed to get daily active users metric");
@@ -186,9 +215,10 @@ class MetricsService {
   }
 
   async getHourlyActiveUsers(): Promise<number> {
+    if (!this.available) return 0;
     try {
       const key = `metrics:unique_users:${this.getCurrentHour()}`;
-      const count = await redis.pfcount(key);
+      const count = await redis!.pfcount(key);
       return count;
     } catch (error) {
       apiLogger.error({ error }, "Failed to get hourly active users metric");
@@ -216,6 +246,7 @@ class MetricsService {
     metric: MetricType,
     days: number = 7
   ): Promise<Array<{ day: string; dayLabel: string; value: number }>> {
+    if (!this.available) return [];
     try {
       const data: Array<{ day: string; dayLabel: string; value: number }> = [];
       const now = new Date();
@@ -230,7 +261,7 @@ class MetricsService {
           const hourDate = new Date(date);
           hourDate.setHours(h, 0, 0, 0);
           const hourKey = `metrics:counter:${metric}:${this.formatHour(hourDate)}`;
-          const value = await redis.get(hourKey);
+          const value = await redis!.get(hourKey);
           dayTotal += value ? parseInt(value, 10) : 0;
         }
 
@@ -251,6 +282,7 @@ class MetricsService {
   async getDailyActiveUsersHistory(
     days: number = 7
   ): Promise<Array<{ day: string; dayLabel: string; value: number }>> {
+    if (!this.available) return [];
     try {
       const data: Array<{ day: string; dayLabel: string; value: number }> = [];
       const now = new Date();
@@ -260,7 +292,7 @@ class MetricsService {
         const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
         const dayKey = date.toISOString().slice(0, 10);
         const redisKey = `metrics:unique_users:${dayKey}`;
-        const count = await redis.pfcount(redisKey);
+        const count = await redis!.pfcount(redisKey);
 
         data.push({
           day: dayKey,
@@ -283,6 +315,14 @@ class MetricsService {
     avgExecutionTime: number;
     activeUsers: number;
   }> {
+    const defaultMetrics = {
+      submissions: 0,
+      completed: 0,
+      failed: 0,
+      avgExecutionTime: 0,
+      activeUsers: 0,
+    };
+    if (!this.available) return defaultMetrics;
     try {
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const yesterdayKey = yesterday.toISOString().slice(0, 10);
@@ -301,9 +341,9 @@ class MetricsService {
         const failedKey = `metrics:counter:${MetricType.SUBMISSION_FAILED}:${hourStr}`;
 
         const [createdVal, completedVal, failedVal] = await Promise.all([
-          redis.get(createdKey),
-          redis.get(completedKey),
-          redis.get(failedKey),
+          redis!.get(createdKey),
+          redis!.get(completedKey),
+          redis!.get(failedKey),
         ]);
 
         submissions += createdVal ? parseInt(createdVal, 10) : 0;
@@ -312,7 +352,7 @@ class MetricsService {
       }
 
       const activeUsersKey = `metrics:unique_users:${yesterdayKey}`;
-      const activeUsers = await redis.pfcount(activeUsersKey);
+      const activeUsers = await redis!.pfcount(activeUsersKey);
 
       let totalTime = 0;
       let timeCount = 0;
@@ -322,7 +362,7 @@ class MetricsService {
         hourDate.setHours(h, 0, 0, 0);
         const hourStr = this.formatHour(hourDate);
         const timingKey = `metrics:timing:${MetricType.EXECUTION_TIME}:${hourStr}`;
-        const timings = await redis.lrange(timingKey, 0, -1);
+        const timings = await redis!.lrange(timingKey, 0, -1);
 
         for (const t of timings) {
           totalTime += parseFloat(t);
@@ -358,6 +398,14 @@ class MetricsService {
     avgExecutionTime: number;
     activeUsers: number;
   }> {
+    const defaultMetrics = {
+      submissions: 0,
+      completed: 0,
+      failed: 0,
+      avgExecutionTime: 0,
+      activeUsers: 0,
+    };
+    if (!this.available) return defaultMetrics;
     try {
       const today = new Date();
       const todayKey = today.toISOString().slice(0, 10);
@@ -378,9 +426,9 @@ class MetricsService {
         const failedKey = `metrics:counter:${MetricType.SUBMISSION_FAILED}:${hourStr}`;
 
         const [createdVal, completedVal, failedVal] = await Promise.all([
-          redis.get(createdKey),
-          redis.get(completedKey),
-          redis.get(failedKey),
+          redis!.get(createdKey),
+          redis!.get(completedKey),
+          redis!.get(failedKey),
         ]);
 
         submissions += createdVal ? parseInt(createdVal, 10) : 0;
@@ -389,7 +437,7 @@ class MetricsService {
       }
 
       const activeUsersKey = `metrics:unique_users:${todayKey}`;
-      const activeUsers = await redis.pfcount(activeUsersKey);
+      const activeUsers = await redis!.pfcount(activeUsersKey);
 
       let totalTime = 0;
       let timeCount = 0;
@@ -399,7 +447,7 @@ class MetricsService {
         hourDate.setHours(h, 0, 0, 0);
         const hourStr = this.formatHour(hourDate);
         const timingKey = `metrics:timing:${MetricType.EXECUTION_TIME}:${hourStr}`;
-        const timings = await redis.lrange(timingKey, 0, -1);
+        const timings = await redis!.lrange(timingKey, 0, -1);
 
         for (const t of timings) {
           totalTime += parseFloat(t);

@@ -203,7 +203,7 @@ async function processSubmission(job: Job<SubmissionJobData>) {
 export const submissionWorker = new Worker<SubmissionJobData>(
   "submissionQueue",
   processSubmission,
-  workerConfig
+  workerConfig!
 );
 
 submissionWorker.on("completed", async (job) => {
@@ -215,8 +215,8 @@ submissionWorker.on("completed", async (job) => {
     "Submission job completed successfully"
   );
 
-  const waitingCount = await submissionQueue.getWaitingCount();
-  await metricsService.setGauge(MetricType.QUEUE_DEPTH, waitingCount);
+  const waitingCount = await submissionQueue?.getWaitingCount();
+  await metricsService.setGauge(MetricType.QUEUE_DEPTH, waitingCount ?? 0);
 });
 
 submissionWorker.on("active", (job) => {
@@ -250,8 +250,8 @@ submissionWorker.on("failed", async (job, err) => {
     });
   }
 
-  const waitingCount = await submissionQueue.getWaitingCount();
-  await metricsService.setGauge(MetricType.QUEUE_DEPTH, waitingCount);
+  const waitingCount = await submissionQueue?.getWaitingCount();
+  await metricsService.setGauge(MetricType.QUEUE_DEPTH, waitingCount ?? 0);
 });
 
 submissionWorker.on("error", (err) => {

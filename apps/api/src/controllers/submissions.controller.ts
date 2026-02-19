@@ -98,6 +98,13 @@ export async function createSubmission(req: Request, res: Response) {
       correlationId,
     });
 
+    if (!submissionQueue) {
+      return res.status(503).json({
+        error: "Submission queue unavailable — Redis is not configured",
+        correlationId,
+      });
+    }
+
     await submissionQueue.add(
       "processSubmission",
       {
@@ -375,6 +382,13 @@ export async function streamSubmissionStatus(req: Request, res: Response) {
 
     addBreadcrumb("Starting submission status stream", "sse", { submissionId: id, correlationId });
 
+    if (!submissionQueue || !submissionQueueEvents) {
+      return res.status(503).json({
+        error: "Submission queue unavailable — Redis is not configured",
+        correlationId,
+      });
+    }
+
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -454,9 +468,9 @@ export async function streamSubmissionStatus(req: Request, res: Response) {
     };
 
     const cleanup = () => {
-      submissionQueueEvents.off("progress", onProgress);
-      submissionQueueEvents.off("completed", onCompleted);
-      submissionQueueEvents.off("failed", onFailed);
+      submissionQueueEvents!.off("progress", onProgress);
+      submissionQueueEvents!.off("completed", onCompleted);
+      submissionQueueEvents!.off("failed", onFailed);
     };
 
     submissionQueueEvents.on("progress", onProgress);

@@ -1,5 +1,5 @@
 import { Queue, QueueEvents } from "bullmq";
-import { queueConfig } from "./config.js";
+import { queueConfig, isQueueAvailable } from "./config.js";
 import { queueLogger } from "../lib/logger.js";
 import { metricsService, MetricType } from "../services/metrics.service.js";
 
@@ -22,13 +22,21 @@ export interface SubmissionJobData {
   mode: "run" | "submit";
 }
 
-export const submissionQueue = new Queue<SubmissionJobData>("submissionQueue", queueConfig);
+export const submissionQueue: Queue<SubmissionJobData> | null = isQueueAvailable()
+  ? new Queue<SubmissionJobData>("submissionQueue", queueConfig!)
+  : null;
 
-export const submissionQueueEvents = new QueueEvents("submissionQueue", {
-  connection: queueConfig.connection,
-});
+export const submissionQueueEvents: QueueEvents | null = isQueueAvailable()
+  ? new QueueEvents("submissionQueue", {
+      connection: queueConfig!.connection,
+    })
+  : null;
 
 export async function queueSubmission(data: SubmissionJobData) {
+  if (!submissionQueue) {
+    throw new Error("Submission queue unavailable — Redis is not configured");
+  }
+
   queueLogger.info(
     {
       correlationId: data.correlationId,
@@ -59,6 +67,11 @@ export async function queueSubmission(data: SubmissionJobData) {
 }
 
 export async function getSubmissionStatus(submissionId: string) {
+  if (!submissionQueue) {
+    queueLogger.warn({ submissionId }, "Queue unavailable — cannot fetch submission status");
+    return null;
+  }
+
   const job = await submissionQueue.getJob(submissionId);
   if (!job) {
     queueLogger.warn({ submissionId }, "Submission job not found in queue");

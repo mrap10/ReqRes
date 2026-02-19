@@ -6,7 +6,7 @@ import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js";
 import { logAuditEvent, getClientIp, getUserAgent } from "./auditLogger.js";
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:4000",
   basePath: "/api/auth",
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -52,18 +52,22 @@ export const auth = betterAuth({
     autoSignInAfterVerification: true,
   },
   socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-      mapProfileToUser: (profile) => {
-        return {
-          email: profile.email || `${profile.login}@users.noreply.github.com`,
-          image: profile.avatar_url,
-          emailVerified: true,
-          username: profile.login || `github_${Date.now()}`,
-        };
-      },
-    },
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? {
+          github: {
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            mapProfileToUser: (profile) => {
+              return {
+                email: profile.email || `${profile.login}@users.noreply.github.com`,
+                image: profile.avatar_url,
+                emailVerified: true,
+                username: profile.login || `github_${Date.now()}`,
+              };
+            },
+          },
+        }
+      : {}),
   },
   user: {
     additionalFields: {

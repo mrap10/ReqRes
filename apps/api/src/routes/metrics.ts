@@ -147,6 +147,9 @@ router.get("/users/daily", async (req: Request, res: Response) => {
 });
 
 router.get("/queue", async (_, res: Response) => {
+  if (!submissionQueue) {
+    return res.status(503).json({ error: "Queue unavailable — Redis is not configured" });
+  }
   try {
     const [waiting, active, completed, failed] = await Promise.all([
       submissionQueue.getWaitingCount(),

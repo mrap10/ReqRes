@@ -7,13 +7,12 @@ import submissionsRouter from "./src/routes/submissions.js";
 import callbackRouter from "./src/routes/internalRunnerCallback.js";
 import problemsRouter from "./src/routes/problems.js";
 import userRouter from "./src/routes/user.js";
-// import debugRouter from "./src/routes/debug.js";
 import metricsRouter from "./src/routes/metrics.js";
 import adminRateLimitsRouter from "./src/routes/adminRateLimits.js";
 import healthRouter from "./src/routes/health.js";
 import { auth } from "./src/lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
-import { closeQueueConnections } from "./src/queues/config.js";
+import { closeQueueConnections, isQueueAvailable } from "./src/queues/config.js";
 import {
   correlationMiddleware,
   requestLoggingMiddleware,
@@ -25,12 +24,14 @@ import {
 import { apiLogger } from "./src/lib/logger.js";
 
 // importing worker conditionally via embedded for dev mode only, will run separately in prod
-const WORKER_ENABLED = process.env.WORKER_ENABLED !== "false";
+const WORKER_ENABLED = process.env.WORKER_ENABLED !== "false" && isQueueAvailable();
 let submissionWorker: { close: () => Promise<void> } | null = null;
 
 if (WORKER_ENABLED) {
   const workerModule = await import("./src/workers/submission.worker.js");
   submissionWorker = workerModule.submissionWorker;
+} else if (!isQueueAvailable()) {
+  apiLogger.warn("Worker disabled — Redis is not configured");
 }
 
 const PORT = process.env.PORT;
