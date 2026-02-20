@@ -1,281 +1,133 @@
 # ReqRes
 
-Somthing like leetcode but modern and for backend (express for now, will extend as needed)
+🔗 [reqres.online](https://reqres.online)
 
-## Architecture overview
+Solve real-world **Express.js challenges** ~ build APIs, write middleware, implement auth flows ~ and get instant feedback in a sandboxed environment.
 
-```tree
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Frontend  │────▶│   API       │────▶│   Redis     │────▶│   Worker    │
-│   (Next.js) │◀────│   (Express) │◀────│   (Queue)   │◀────│   (BullMQ)  │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-      │                   │                                        │
-      │                   │                                        ▼
-      │                   │                                  ┌─────────────┐
-      │◀──────────────────│◀───────────────────────────────▶│   Runner    │
-      │       SSE         │                                  │   (Docker)  │
-      │                   │                                  └─────────────┘
-```
+Instead of reversing linked lists, you'll build JWT authentication middleware, implement CRUD APIs with error handling, configure CORS, and more. Your code runs in isolated Docker containers, tested with Jest + Supertest, scored in real-time.
 
-Flow:
+## Features
 
-1. **User submits code** → Frontend sends POST to `/submissions`
-2. **API queues job** → Creates submission in DB, adds job to Redis queue
-3. **Worker picks up job** → Processes submission, calls Runner service
-4. **Real-time updates** → Frontend receives updates via SSE (Server-Sent Events)
-5. **Completion** → Worker updates DB, SSE sends final result
+- **Curated challenges** across 4 tracks: Routing, Middleware, Security, Database with difficulty levels from Easy to Hard
+- **XP & streaks** ~ Gamification with difficulty-based XP, first-try bonuses, and daily streaks
+- **Leaderboard** ~ Global ranking by XP
+- **Activity grid** ~ GitHub-style contribution heatmap on your profile
+- **Run mode** (quick 2-test feedback) and **Submit mode** (full test suite + scoring)
+- **Auth** ~ Email/password + GitHub OAuth with email verification
+- **Monaco code editor** in the browser with file tabs and syntax highlighting
+- **Sandboxed execution** ~ Docker containers with no network, read-only filesystem, memory/CPU limits
+- **Real-time results** via Server-Sent Events ~ watch tests pass/fail as they run
 
----
+## Tech Stack
 
-## Runner
+| Layer          | Technology                                          |
+| :------------- | :-------------------------------------------------- |
+| Frontend       | Next.js 16, React 19, Tailwind CSS 4, Monaco Editor |
+| API            | Express 5, Bun runtime, Zod validation              |
+| Auth           | better-auth (sessions, OAuth, email verification)   |
+| Database       | PostgreSQL (Neon serverless), Prisma 7              |
+| Queue          | BullMQ, Redis 7                                     |
+| Code Execution | Docker (ephemeral containers), Jest, Supertest      |
+| Observability  | Sentry, Pino structured logging                     |
+| Email          | Resend                                              |
+| Monorepo       | Turborepo, Bun workspaces                           |
 
-- does the heavy lifting of executing user submissions in a secure environment
-
-- pulls the submission code from the database, runs it against predefined test cases, and reports the results back to the API.
-
-### Workflow
-
-```tree
-User submits code → API creates submission (PENDING)
-    ↓
-API sends to Runner → Runner creates temp workspace
-    ↓
-Writes user code + tests + configs → Runs Docker with Jest --json
-    ↓
-Docker outputs to jest-results.json → Runner reads file
-    ↓
-Parses results → Sends back to API callback
-    ↓
-API updates: status=PASSED/FAILED, stores results JSON
-    ↓
-User fetches submission → Gets detailed test results
-```
-
----
-
-## Current Architecture Overview (docker x runner explanation)
-
-### Queue-Based Execution (Phase 3 Update!)
-
-We now use **BullMQ + Redis** for handling submission spikes without overloading the runner:
-
-**Old Flow:** User → API → Runner (direct) → Response (could crash under load)  
-**New Flow:** User → API → Queue → Worker → Runner → Response (via SSE)
-
-**Why queues?**
-
-- Handles submission spikes gracefully (100 concurrent users? no problem)
-- Workers scale independently (add more workers = more throughput)
-- Real-time updates via SSE (watch your code execute live!)
-- Submissions never get lost (Redis persistence)
-
-**Architecture:**
-
-- **Redis:** Job queue storage, persisted to disk
-- **Worker:** Picks jobs from queue, calls runner, updates DB
-- **SSE:** Real-time streaming of submission status to frontend
-
-For detailed setup, testing, and production deployment → (will add later)
-
-### dockerRun.ts - Code Execution Engine
-
-Handles secure code execution in isolated Docker containers:
-
-**Workflow:**
-
-1. Creates temp workspace with user's transpiled JS code
-2. Spawns Docker container with security limits (memory, CPU, read-only filesystem)
-3. Mounts workspace as read-only + Jest results file as writable
-4. Container copies files to `/tmp`, runs Jest tests, writes results to mounted file
-5. Host reads results JSON after container exits
-6. Returns parsed Jest output (passed/failed tests, errors)
-
-- Docker executes JS code only (for now, will prob. extend it to TS in v1.1+)
-
-Runner service uses **ephemeral containers** - they're created on-demand and destroyed after each submission:
-
-```typescript
-// In dockerRun.ts
-docker run --rm \           // --rm = auto-delete after execution
-  node:20-alpine \          // Uses official Node.js Alpine image (lightweight)
-  sh -c "npm install && npm test"
-```
-
-Why this approach?
-
-- no image building needed, each submission gets a clean environment, automatic cleanup, simple for MVP
-
-Run locally with Docker Desktop running.
-Check with: (if empty table appears, Docker is running)
-
-```powershell
-docker ps
-```
-
-### Docker commands used by Runner
-
-```bash
-docker run \
-  --rm \                    # Remove container after exit
-  --network none \          # No internet access (security)
-  --memory=256m \           # Limit RAM to 256MB
-  --cpus=0.5 \             # Limit to 0.5 CPU cores
-  --read-only \            # Filesystem is read-only (security)
-  --tmpfs /tmp:rw \        # Writable temp directory
-  -v "C:/path":/app:ro \   # Mount user code (read-only)
-  -w /app \                # Working directory
-  node:20-alpine \         # Image to use
-  sh -c "npm test"         # Command to run
-```
-
-| Flag             | Purpose              | Why?                        |
-| :--------------- | :------------------- | :-------------------------- |
-| `--network none` | No internet          | Prevent data exfiltration   |
-| `--read-only`    | Immutable filesystem | Can't modify system         |
-| `--memory=256m`  | RAM limit            | Prevent memory bombs        |
-| `--cpus=0.5`     | CPU limit            | Prevent infinite loops      |
-| `:ro` mount      | Read-only code       | Can't modify submitted code |
-
-## Common Docker Issues & Fixes
-
-### "Cannot connect to Docker daemon"
-
--> **Fix:** Start Docker Desktop
-
-### "Execution timeout"
-
--> **Causes:**
-
-1. Infinite loop in user code
-2. Tests taking too long
-3. Docker is slow/unresponsive
-
-**Fix:** Restart Docker Desktop or increase `timeoutMs`
-
-### "Permission denied" (Linux/Mac)
-
-```bash
-sudo usermod -aG docker $USER
-# Then logout and login
-```
-
-### "Drive not shared" (Windows)
-
--> **Fix:** Docker Desktop → Settings → Resources → File Sharing → Add your project drive
-
-### "Slow performance" (Windows)
-
--> **Fix:** Use WSL2 backend (Docker Desktop → Settings → General → Use WSL2 based engine)
-
----
-
-## Steps to run locally
+## Quick Start
 
 ### Prerequisites
 
-- **Docker Desktop** running (for Redis + code execution in containers)
-- Node.js/Bun installed
-- PostgreSQL running
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) running
+- [Bun](https://bun.sh/) installed
+- PostgreSQL instance ([Neon](https://neon.tech/) free tier works great)
 
-### Environment Setup
-
-1. **Start Redis** (required for queue system)
-
-   ```bash
-   # From project root
-   docker-compose up -d
-
-   # Verify it's running
-   docker-compose ps
-   ```
-
-2. **Configure API environment**
-
-   ```bash
-   cd apps/api
-   cp .env.example .env
-   # Edit .env and set:
-   # - REDIS_HOST=localhost
-   # - REDIS_PORT=6379
-   # - RUNNER_SHARED_SECRET=your-secret
-   # - Other values as needed
-   ```
-
-3. **Configure Runner environment**
-
-   ```bash
-   cd apps/runner
-   cp .env.example .env
-   # Make sure RUNNER_SHARED_SECRET matches API's secret
-   ```
-
-### Running the Application
-
-**You need 4 terminals:**
+### 1. Clone & install
 
 ```bash
-# Terminal 1: Redis (already started via docker-compose)
-docker-compose ps  # Just verify it's running
-
-# Terminal 2: API Server (includes embedded worker for dev)
-cd apps/api
-bun run dev
-
-# Terminal 3: Runner Service
-cd apps/runner
-bun run dev
-
-# Terminal 4: Frontend
-cd apps/web
-bun run dev
+git clone git@github.com:mrap10/ReqRes.git
+cd ReqRes
+bun install
 ```
 
-**For production-like setup** (separate worker process):
+### 2. Start Redis
 
 ```bash
-# Terminal 2: API only (no embedded worker)
-cd apps/api
-bun run dev:api-only
-
-# Terminal 3: Dedicated Worker
-cd apps/api
-bun run worker:dev
-
-# Terminal 4: Runner
-cd apps/runner
-bun run dev
-
-# Terminal 5: Frontend
-cd apps/web
-bun run dev
+docker compose up -d
+docker compose ps   # Verify it's running
 ```
 
-Open `http://localhost:3000` and start solving problems!
-
-### Build the optimized runner base image (one-time setup)
+### 3. Build the sandbox image (one-time)
 
 ```bash
-# From the project root directory
 docker build -f docker/runner-base.Dockerfile -t reqres-runner:latest .
 ```
 
-- verify the Image
+Verify: `docker run --rm reqres-runner:latest node --version`
+
+### 4. Configure environment
 
 ```bash
-# Check image size
-docker images reqres-runner:latest
+# API
+cd apps/api
+cp .env.example .env
+# Set: DATABASE_URL, REDIS_HOST=localhost, RUNNER_SHARED_SECRET, WEB_BASE_URL, BETTER_AUTH_URL
 
-# Test the image
-docker run --rm reqres-runner:latest node --version
-docker run --rm reqres-runner:latest npm list --depth=0
+# Runner
+cd ../runner
+cp .env.example .env
+# Set: RUNNER_SHARED_SECRET (must match API), API_CALLBACK_URL
 ```
 
-### Quick Testing
+<details>
+<summary><strong>Full Environment Variable Reference</strong></summary>
 
-Submit code via the frontend at `http://localhost:3000` or use curl:
+<br />
+
+| Variable                   | Service     | Required | Purpose                                               |
+| -------------------------- | ----------- | -------- | ----------------------------------------------------- |
+| `DATABASE_URL`             | API         | Yes      | PostgreSQL connection string                          |
+| `REDIS_HOST`               | API         | Yes      | Redis hostname (localhost for dev)                    |
+| `REDIS_PORT`               | API         | No       | Redis port (default: 6379)                            |
+| `RUNNER_SHARED_SECRET`     | API, Runner | Yes      | Inter-service auth (same value in both)               |
+| `RUNNER_BASE_URL`          | API         | Yes      | Runner URL (e.g., `http://localhost:5000`)            |
+| `API_CALLBACK_URL`         | Runner      | Yes      | API callback URL (e.g., `http://localhost:4000`)      |
+| `WEB_BASE_URL`             | API         | Yes      | Frontend URL for CORS (e.g., `http://localhost:3000`) |
+| `API_BASE_URL`             | Web         | Yes      | API URL for SSR                                       |
+| `NEXT_PUBLIC_API_BASE_URL` | Web         | Yes      | API URL for client-side                               |
+| `BETTER_AUTH_URL`          | API         | Yes      | Auth base URL                                         |
+| `GITHUB_CLIENT_ID`         | API         | No       | GitHub OAuth (optional)                               |
+| `GITHUB_CLIENT_SECRET`     | API         | No       | GitHub OAuth (optional)                               |
+| `RESEND_API_KEY`           | API         | No       | Email sending (optional)                              |
+| `SENTRY_DSN`               | API, Runner | No       | Error tracking (optional)                             |
+| `WORKER_ENABLED`           | API         | No       | Embedded worker (default: true)                       |
+| `WORKER_CONCURRENCY`       | API         | No       | Parallel jobs (default: 5)                            |
+
+</details>
+
+### 5. Set up the database
 
 ```bash
-# Create a submission (you'll need a valid auth cookie and problem ID)
+cd packages/database
+bunx prisma migrate dev    # Run migrations
+bunx prisma db seed        # Seed problems + test users
+```
+
+### 6. Start everything
+
+```bash
+# From project root
+turbo run dev
+```
+
+This starts **API** (:4000) + **Runner** (:5000) + **Web** (:3000) with hot-reload.
+
+Open **<http://localhost:3000>** and start solving!
+
+> In development, the API runs with an embedded BullMQ worker by default, so you don't need a separate worker process.
+
+### Quick test with curl
+
+```bash
+# Create a submission (needs valid auth cookie + problem ID)
 curl -X POST http://localhost:4000/submissions \
   -H "Content-Type: application/json" \
   -H "Cookie: your-auth-cookie" \
@@ -290,104 +142,187 @@ curl -X POST http://localhost:4000/submissions \
 # Watch real-time updates via SSE
 curl -N http://localhost:4000/submissions/<submission-id>/stream \
   -H "Cookie: your-auth-cookie"
-
-# Get final results
-curl http://localhost:4000/submissions/<submission-id> \
-  -H "Cookie: your-auth-cookie"
 ```
 
-### Monitoring the Queue
+## Project Structure
+
+```tree
+reqres/
+├── apps/
+│   ├── api/            # Express 5 API + embedded BullMQ worker
+│   ├── runner/         # Code execution service (Docker orchestrator)
+│   └── web/            # Next.js 16 frontend
+├── packages/
+│   ├── database/       # Prisma schema, client, seeds
+│   ├── types/          # Shared TypeScript DTOs & enums
+│   ├── utils/          # Shared utility functions
+│   ├── eslint-config/  # Shared ESLint presets
+│   └── typescript-config/  # Shared tsconfig presets
+├── docker/             # Dockerfiles (sandbox, worker, runner)
+├── docker-compose.yml  # Redis + optional standalone worker
+└── turbo.json          # Turborepo pipeline config
+```
+
+See each app's README for module-specific details:
+
+- [/api](apps/api/README.md) — API routes, middleware, services
+- [/runner](apps/runner/README.md) — Execution pipeline, Docker sandbox
+- [/web](apps/web/README.md) — Frontend pages, components, auth flow
+
+## How It Works
+
+1. **User writes code** in the Monaco editor and clicks Run or Submit
+2. **API** validates, saves to DB, enqueues a BullMQ job
+3. **Worker** picks the job, sends code to the Runner
+4. **Runner** creates a temp workspace, spawns a sandboxed Docker container
+5. **Docker** runs Jest tests against the user's Express app (no network, read-only FS, resource limits)
+6. **Runner** parses results, callbacks to the API
+7. **SSE** streams real-time progress to the browser
+8. **Results** displayed in the terminal panel with pass/fail details
+
+For the full technical deep dive: architecture evolution, design decisions, security model, and learnings ~ see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
+## Available Problems (will be expanded after stable v1 release)
+
+| #   | Problem                       | Difficulty | Track      |
+| :-- | :---------------------------- | :--------- | :--------- |
+| 1   | Hello Express API             | Easy       | Routing    |
+| 2   | Query Parameter Parser        | Easy       | Routing    |
+| 3   | Request Body Parser           | Easy       | Routing    |
+| 4   | Path Parameters               | Easy       | Routing    |
+| 5   | Custom Error Handler          | Easy       | Middleware |
+| 6   | Request Logger Middleware     | Medium     | Middleware |
+| 7   | In-Memory CRUD API            | Medium     | Routing    |
+| 8   | Input Validation Middleware   | Medium     | Middleware |
+| 9   | API Versioning                | Medium     | Routing    |
+| 10  | CORS Configuration            | Medium     | Security   |
+| 11  | File Upload Handler           | Hard       | Middleware |
+| 12  | JWT Authentication Middleware | Hard       | Security   |
+| 13  | JWT with Refresh Tokens       | Hard       | Security   |
+| 14  | GraphQL-like Query API        | Hard       | Routing    |
+| 15  | Rate Limiting Middleware      | Hard       | Middleware |
+
+## Standalone Worker (Production)
+
+For production-like setup where the worker runs as a separate process:
 
 ```bash
-# Check Redis queue status
+# Via docker compose
+docker compose --profile worker up -d
+
+# Or manually
+cd apps/api
+WORKER_ENABLED=false bun run dev:api-only  # API without embedded worker
+bun run worker:dev                          # Standalone worker
+```
+
+## Monitoring
+
+```bash
+# Redis queue status
 docker exec -it reqres-redis redis-cli
+> LLEN bull:submissionQueue:wait     # Waiting jobs
+> LLEN bull:submissionQueue:active   # Processing jobs
 
-# In Redis CLI:
-> KEYS bull:*  # View all queues
-> LLEN bull:submissionQueue:wait  # Check waiting jobs
-> LLEN bull:submissionQueue:active  # Check processing jobs
-
-# Optional: Start Redis Commander UI for visual monitoring
-docker-compose --profile debug up -d
+# Redis Commander GUI (debug profile)
+docker compose --profile debug up -d
 # Open http://localhost:8081
 ```
 
+Admin dashboard at `/admin/dashboard` (requires admin role) shows real-time metrics, queue depth, success rates, and daily active users.
+
 ## Troubleshooting
 
-### Submission stuck in PENDING
+<details>
+<summary><strong>Submission stuck in PENDING</strong></summary>
 
-**Possible causes:**
-
-- Worker not running (check terminal 2/3)
-- Redis connection failed (check `docker-compose ps`)
-- Runner not running (terminal 3/4)
-
-**Debug:**
+- Check the worker is running (look for `[Worker] Processing job...` in API logs)
+- Verify Redis: `docker compose ps`
+- Verify Runner is running
 
 ```bash
-# Check if worker is processing
-# Look for "[Worker] Processing job..." in API logs
-
-# Check queue depth
 docker exec -it reqres-redis redis-cli
 > LLEN bull:submissionQueue:wait
 ```
 
-### Runner not responding (ECONNREFUSED)
+</details>
 
-- Check if both API and Runner services are running
-- Check if Docker is running
-- Verify environment variables are set correctly
-- Check logs in both terminals
+<details>
+<summary><strong>Runner not responding (ECONNREFUSED)</strong></summary>
 
-### Docker errors
+- Check both API and Runner services are running
+- Verify `RUNNER_BASE_URL` and `API_CALLBACK_URL` are correct
+- Check Docker Desktop is running
 
-- Ensure Docker Desktop is running
-- On Windows, make sure WSL2 backend is enabled
+</details>
 
-### Database connection errors
+<details>
+<summary><strong>Docker issues</strong></summary>
+
+| Issue                           | Fix                                                  |
+| :------------------------------ | :--------------------------------------------------- |
+| Cannot connect to Docker daemon | Start Docker Desktop                                 |
+| Execution timeout               | Restart Docker Desktop or increase `timeoutMs`       |
+| Permission denied (Linux/Mac)   | `sudo usermod -aG docker $USER` then re-login        |
+| Drive not shared (Windows)      | Docker Desktop → Settings → Resources → File Sharing |
+| Slow performance (Windows)      | Enable WSL2 backend in Docker Desktop settings       |
+
+</details>
+
+<details>
+<summary><strong>Database connection errors</strong></summary>
 
 - Verify PostgreSQL is running
-- Check DATABASE_URL is correct
+- Check `DATABASE_URL` is correct
 - Run migrations: `bunx prisma migrate dev`
 
----
+</details>
 
-phase 1 completed - MVP achieved! (sort of)
+## Contributing
 
-phase 2 completed - working ui, editor, leaderboard, stats, BE integration, runner improvements and more
+Contributions are welcome! Here's how to get started:
 
-- learned a bit more about using refs
-- "that" express problem came again (route order lmao)
-- handling refs and editor/terminal layout was hard bits here. other were pretty much db queries and some api/runner improvements
+### Adding a New Problem
 
-phase 3 completed - queue system, bullmq, redis, sse for real-time updates, worker process, better runner with docker security
+1. Create a test directory: `apps/runner/tests/{your-problem-slug}/`
+2. Add `problem.test.js` (and optional `setup.js`) using the supertest pattern:
 
-- authentication done with better-auth+postgres/prisma setup, github oauth for now, will add google oauth later
-- learned a lot about queues, bullmq, redis, sse, docker security, process management (will explore about it more later)
-- setting up queue system was hard bit here. other were pretty much api/runner improvements and some docker configs
-- overall architecture improved a lot with queues and worker process
-- real-time updates via sse is cool af (haha)
-- sentry integration for error tracking was easy and useful
-- pino logging was also done in this phase
-- also added admin thingys like monitoring ui, rate-limit ui and more.
-- rate limiting was challenging, encountered weird neon connection pool bug cause due to some fkups, better-auth and my schema/ was not synced (yeah weird lol). some real good strategies learned here about rate limiting with redis, better-auth also provides help, will deep dive into it later after prolly a month later
-- overall this phase was challenging but learned a lot of new stuff
+   ```javascript
+   const app = require("../../index");
+   const request = require("supertest");
 
-now onto phase 4 - more problems, better ui/ux, code editor improvements, testing, ci/cd, docs etc.
+   describe("Your Problem", () => {
+     test("should do something", async () => {
+       const res = await request(app).get("/endpoint");
+       expect(res.status).toBe(200);
+     });
+   });
+   ```
 
-phase 4.1 checkpoint:
+3. Add the slug to the whitelist in `apps/runner/src/services/executor.ts`
+4. Seed the problem in the database via `packages/database/prisma/`
 
-- added more problems (14 for now, 5E 5M 4H, will add more just before/after beta release)
-- fixed some monaco editor issues (arised due to stricter headers in next.config, which was blocking monaco cdn)
-- added tests and verified (all good for now)
-- didnt need to tweak even a bit inside /runner (yay! lol, happy that runner was mature enough to handle new problems but still not much mature enough for quicker execution and other perf.)
-- eliminated some console warnings, some are/should-be ignorable/ignored.
-- overall this checkpoint was pretty smooth, just some minor tweaks and fixes, no major architectural changes or anything.
-- now focusing on better ui/ux and other improvements for the next checkpoint.
+### Development Workflow
 
-haha feel so much nicer to move into ui phase lol, maybe a sense of happiness to be entering to work inside own's niche and confidence to do it quicker enough haha.
+```bash
+bun install                  # Install all dependencies
+turbo run dev                # Start all services with hot-reload
+turbo run lint               # Lint all packages
+turbo run check-types        # Type-check all packages
+turbo run build              # Build all packages
+```
 
----
+### Code Style
 
-Will update this README as the project evolves. Now that i realize where this project has reached, will write a complete blog from scratch about the entire journey, architecture, learnings and more.
+- TypeScript strict mode across all packages
+- ESLint + Prettier (runs via lint-staged on commit)
+- Pino structured logging (no `console.log`)
+- Zod validation on all API inputs
+
+## Architecture Deep Dive
+
+For comprehensive technical documentation — the full evolution from MVP to current architecture, design decisions, security model, challenge breakdowns, and lessons learned — see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
