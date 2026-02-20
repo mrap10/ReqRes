@@ -19,6 +19,7 @@
     "REDIS_PORT",
     "REDIS_PASSWORD",
     "WORKER_ENABLED",
+    "TRUST_PROXY",
     "LOG_LEVEL",
     "SENTRY_DSN",
     "package_version",

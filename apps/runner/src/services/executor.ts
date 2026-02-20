@@ -12,6 +12,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const TESTS_BASE_DIR = path.join(__dirname, "../../tests");
+const MAX_SUBMISSION_FILES = 30;
+const MAX_FILE_SIZE_BYTES = 100_000;
+const MAX_TOTAL_CODE_SIZE_BYTES = 500_000;
 
 // whitelisting for now (will replace it with dynamic check later in v1)
 const ALLOWED_PROBLEM_SLUGS = new Set([
@@ -85,6 +88,27 @@ async function copyTestFiles(problemSlug: string, workspace: string): Promise<bo
   return hasSetupFile;
 }
 
+function resolveSubmissionFilePath(workspace: string, filePath: string): string {
+  if (!filePath || filePath.length > 200) {
+    throw new Error("Invalid file path.");
+  }
+
+  if (filePath.includes("\0")) {
+    throw new Error("Invalid file path.");
+  }
+
+  const normalizedPath = path.posix.normalize(filePath.replace(/\\/g, "/"));
+  if (
+    normalizedPath.startsWith("../") ||
+    normalizedPath === ".." ||
+    path.isAbsolute(normalizedPath)
+  ) {
+    throw new Error("File path traversal is not allowed.");
+  }
+
+  return path.join(workspace, normalizedPath);
+}
+
 export async function runExecution(payload: ExecutionRequest): Promise<ExecuteResponse> {
   const start = Date.now();
   const workspace = await createTempDir();
@@ -98,11 +122,32 @@ export async function runExecution(payload: ExecutionRequest): Promise<ExecuteRe
   try {
     emitLog(payload.submissionId, "info", "Preparing execution environment");
 
-    for (const [filePath, content] of Object.entries(payload.codeBundle.files)) {
+    const submissionFiles = Object.entries(payload.codeBundle.files);
+    if (submissionFiles.length === 0) {
+      throw new Error("No files were submitted.");
+    }
+
+    if (submissionFiles.length > MAX_SUBMISSION_FILES) {
+      throw new Error(`Too many files. Max allowed is ${MAX_SUBMISSION_FILES}.`);
+    }
+
+    let totalCodeSize = 0;
+    for (const [filePath, content] of submissionFiles) {
       if (filePath.endsWith(".ts")) {
         throw new Error("TypeScript files are not supported in this runner version.");
       }
-      const fullPath = path.join(workspace, filePath);
+
+      const fileSize = Buffer.byteLength(content, "utf8");
+      if (fileSize > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File ${filePath} exceeds the max allowed size.`);
+      }
+
+      totalCodeSize += fileSize;
+      if (totalCodeSize > MAX_TOTAL_CODE_SIZE_BYTES) {
+        throw new Error("Submission is too large.");
+      }
+
+      const fullPath = resolveSubmissionFilePath(workspace, filePath);
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.writeFile(fullPath, content, "utf-8");
     }
@@ -152,7 +197,7 @@ module.exports = {
       emitLog(
         payload.submissionId,
         "info",
-        "Running full test suite - this migght take a moment for larger problems"
+        "Running full test suite - this might take a moment for larger problems"
       );
     }
 

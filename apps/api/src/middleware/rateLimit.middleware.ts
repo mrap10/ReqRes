@@ -396,8 +396,24 @@ export async function getRateLimitMetrics(): Promise<{
   }
 
   try {
-    const keys = await redisClient.keys("ratelimit:*");
-    return { currentWindowRequests: keys.length };
+    const MAX_KEYS_TO_SCAN = 10_000;
+    let cursor = "0";
+    let keyCount = 0;
+
+    do {
+      const [nextCursor, keys] = await redisClient.scan(
+        cursor,
+        "MATCH",
+        "ratelimit:*",
+        "COUNT",
+        "200"
+      );
+
+      keyCount += keys.length;
+      cursor = nextCursor;
+    } while (cursor !== "0" && keyCount < MAX_KEYS_TO_SCAN);
+
+    return { currentWindowRequests: keyCount };
   } catch {
     return { currentWindowRequests: 0 };
   }

@@ -1,5 +1,6 @@
-import { prisma } from "@reqres/database";
-import { Router } from "express";
+import { SubmissionStatus, prisma } from "@reqres/database";
+import { Request, Router } from "express";
+import { z } from "zod";
 import { apiLogger } from "../lib/logger.js";
 import { invalidateActivityGrid } from "../services/streak.service.js";
 
@@ -12,57 +13,157 @@ const XP_VALUES = {
 } as const;
 
 const FIRST_SUBMISSION_BONUS = 25;
+const MAX_OUTPUT_LENGTH = 12_000;
+const MAX_LOG_MESSAGE_LENGTH = 1_000;
+const TERMINAL_SUBMISSION_STATUSES = new Set<SubmissionStatus>([
+  SubmissionStatus.PASSED,
+  SubmissionStatus.WRONG_ANSWER,
+  SubmissionStatus.TIME_LIMIT,
+  SubmissionStatus.MEMORY_LIMIT,
+  SubmissionStatus.RUNTIME_ERROR,
+  SubmissionStatus.COMPILE_ERROR,
+]);
 
-// hope i dont need explicit middleware here
+const RunnerResultSchema = z.object({
+  submissionId: z.cuid(),
+  status: z.string().min(1).max(32),
+  results: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(300),
+        passed: z.boolean(),
+        error: z.string().max(2_000).optional(),
+        index: z.number().int().nonnegative().optional(),
+        location: z
+          .object({
+            line: z.number().int().nonnegative(),
+            column: z.number().int().nonnegative(),
+          })
+          .optional(),
+      })
+    )
+    .max(200)
+    .optional()
+    .default([]),
+  durationMs: z.number().int().nonnegative().max(300_000).optional(),
+  stdout: z.string().max(MAX_OUTPUT_LENGTH).optional(),
+  stderr: z.string().max(MAX_OUTPUT_LENGTH).optional(),
+  mode: z.enum(["run", "submit"]).optional().default("submit"),
+});
+
+const RunnerLogSchema = z.object({
+  submissionId: z.cuid(),
+  level: z.enum(["info", "warn", "error"]),
+  message: z.string().min(1).max(MAX_LOG_MESSAGE_LENGTH),
+});
+
+function verifyRunnerSecret(req: Request): { ok: boolean; status: number; error: string } {
+  const configuredSecret = process.env.RUNNER_SHARED_SECRET;
+  if (!configuredSecret) {
+    apiLogger.error("RUNNER_SHARED_SECRET is missing; rejecting internal runner callbacks");
+    return { ok: false, status: 503, error: "Service unavailable" };
+  }
+
+  const incomingSecret = req.headers["x-runner-secret"];
+  if (typeof incomingSecret !== "string" || incomingSecret !== configuredSecret) {
+    return { ok: false, status: 403, error: "Forbidden" };
+  }
+
+  return { ok: true, status: 200, error: "" };
+}
+
+function truncateText(value: string | undefined, maxLength: number): string | undefined {
+  if (!value) {
+    return value;
+  }
+
+  return value.length > maxLength ? `${value.slice(0, maxLength)}...[truncated]` : value;
+}
+
+function mapRunnerStatusToSubmissionStatus(status: string): SubmissionStatus {
+  const normalizedStatus = status.toUpperCase();
+
+  switch (normalizedStatus) {
+    case "PASSED":
+      return SubmissionStatus.PASSED;
+    case "FAILED":
+    case "WRONG_ANSWER":
+      return SubmissionStatus.WRONG_ANSWER;
+    case "TIMEOUT":
+    case "TIME_LIMIT":
+    case "TLE":
+      return SubmissionStatus.TIME_LIMIT;
+    case "MEMORY_LIMIT":
+    case "MLE":
+    case "OOM":
+      return SubmissionStatus.MEMORY_LIMIT;
+    case "COMPILE_ERROR":
+    case "COMPILATION_ERROR":
+      return SubmissionStatus.COMPILE_ERROR;
+    case "RUNTIME_ERROR":
+    case "ERROR":
+    default:
+      return SubmissionStatus.RUNTIME_ERROR;
+  }
+}
+
 router.post("/result", async (req, res) => {
-  const { submissionId } = req.body;
-  apiLogger.debug({ body: req.body }, "Runner callback received");
-
-  const secret = req.headers["x-runner-secret"];
-  if (secret !== process.env.RUNNER_SHARED_SECRET) {
-    apiLogger.warn({ submissionId }, "Runner callback rejected - invalid secret");
-    return res.status(403).json({ error: "Forbidden" });
+  const secretCheck = verifyRunnerSecret(req);
+  if (!secretCheck.ok) {
+    return res.status(secretCheck.status).json({ error: secretCheck.error });
   }
 
-  const { status, results, durationMs, stdout, stderr, mode } = req.body;
-
-  // there is def. better way to do this, will look into it later.
-  let prismaStatus: "PASSED" | "WRONG_ANSWER" | "RUNTIME_ERROR";
-  if (status === "PASSED") {
-    prismaStatus = "PASSED";
-  } else if (status === "FAILED") {
-    prismaStatus = "WRONG_ANSWER";
-  } else {
-    prismaStatus = "RUNTIME_ERROR";
+  const parseResult = RunnerResultSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: "Invalid runner callback payload" });
   }
 
+  const { submissionId, status, results, durationMs, stdout, stderr, mode } = parseResult.data;
+  apiLogger.debug(
+    { submissionId, status, mode, resultCount: results.length },
+    "Runner callback received"
+  );
+
+  const prismaStatus = mapRunnerStatusToSubmissionStatus(status);
   const isRunMode = mode === "run";
+  const safeStdout = truncateText(stdout, MAX_OUTPUT_LENGTH);
+  const safeStderr = truncateText(stderr, MAX_OUTPUT_LENGTH);
 
   try {
-    const currentSubmission = await prisma.submission.findUnique({
+    const submissionExists = await prisma.submission.findUnique({
       where: { id: submissionId },
-      include: {
-        problem: true,
-        user: true,
-      },
+      select: { id: true },
     });
-
-    if (!currentSubmission) {
+    if (!submissionExists) {
       return res.status(404).json({ error: "Submission not found" });
     }
 
-    const { userId, problemId, problem } = currentSubmission;
+    const txResult = await prisma.$transaction(async (tx) => {
+      const currentSubmission = await tx.submission.findUnique({
+        where: { id: submissionId },
+        include: {
+          problem: true,
+        },
+      });
 
-    await prisma.$transaction(async (tx) => {
+      if (!currentSubmission) {
+        return { processed: false, userId: null as string | null };
+      }
+
+      if (TERMINAL_SUBMISSION_STATUSES.has(currentSubmission.status)) {
+        return { processed: false, userId: currentSubmission.userId };
+      }
+
+      const { userId, problemId, problem } = currentSubmission;
       let xpToAward = 0;
       let isFirstTryBonus = false;
 
-      if (prismaStatus === "PASSED" && !isRunMode) {
+      if (prismaStatus === SubmissionStatus.PASSED && !isRunMode) {
         const previousPassedSubmission = await tx.submission.findFirst({
           where: {
             userId,
             problemId,
-            status: "PASSED",
+            status: SubmissionStatus.PASSED,
             id: { not: submissionId },
           },
         });
@@ -84,36 +185,56 @@ router.post("/result", async (req, res) => {
           } else {
             xpToAward = baseXP;
           }
-
-          await tx.user.update({
-            where: { id: userId },
-            data: {
-              xp: {
-                increment: xpToAward,
-              },
-            },
-          });
         }
       }
 
-      await tx.submission.update({
-        where: { id: submissionId },
+      const updateResult = await tx.submission.updateMany({
+        where: {
+          id: submissionId,
+          status: {
+            in: [SubmissionStatus.PENDING, SubmissionStatus.RUNNING],
+          },
+        },
         data: {
           status: prismaStatus,
           durations: durationMs,
-          output: status === "PASSED" ? stdout : stderr || stdout || "Execution failed!",
+          output:
+            prismaStatus === SubmissionStatus.PASSED
+              ? safeStdout
+              : safeStderr || safeStdout || "Execution failed!",
           score: xpToAward,
           isFirstTryBonus,
         },
       });
 
-      // keeping only the latest failed submission per user per problem
-      if (prismaStatus !== "PASSED") {
+      if (updateResult.count === 0) {
+        return { processed: false, userId };
+      }
+
+      if (xpToAward > 0) {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            xp: {
+              increment: xpToAward,
+            },
+          },
+        });
+      }
+
+      if (prismaStatus !== SubmissionStatus.PASSED) {
         const oldFailedSubmissions = await tx.submission.findMany({
           where: {
             userId,
             problemId,
-            status: { in: ["WRONG_ANSWER", "RUNTIME_ERROR", "TIME_LIMIT", "MEMORY_LIMIT"] },
+            status: {
+              in: [
+                SubmissionStatus.WRONG_ANSWER,
+                SubmissionStatus.RUNTIME_ERROR,
+                SubmissionStatus.TIME_LIMIT,
+                SubmissionStatus.MEMORY_LIMIT,
+              ],
+            },
             id: { not: submissionId },
           },
           select: { id: true },
@@ -136,12 +257,12 @@ router.post("/result", async (req, res) => {
         }
       }
 
-      if (prismaStatus === "PASSED" && !isRunMode) {
+      if (prismaStatus === SubmissionStatus.PASSED && !isRunMode) {
         const oldPassedSubmissions = await tx.submission.findMany({
           where: {
             userId,
             problemId,
-            status: "PASSED",
+            status: SubmissionStatus.PASSED,
             id: { not: submissionId },
           },
           select: { id: true },
@@ -171,41 +292,57 @@ router.post("/result", async (req, res) => {
       await tx.executionResult.upsert({
         where: { submissionId },
         update: {
-          rawResult: JSON.stringify({ results, stdout, stderr, durationMs }),
+          rawResult: JSON.stringify({
+            results,
+            stdout: safeStdout,
+            stderr: safeStderr,
+            durationMs,
+          }),
         },
         create: {
           submissionId,
-          rawResult: JSON.stringify({ results, stdout, stderr, durationMs }),
+          rawResult: JSON.stringify({
+            results,
+            stdout: safeStdout,
+            stderr: safeStderr,
+            durationMs,
+          }),
         },
       });
+
+      return { processed: true, userId };
     });
 
-    await invalidateActivityGrid(userId);
+    if (txResult.processed && txResult.userId) {
+      await invalidateActivityGrid(txResult.userId);
+    } else {
+      apiLogger.info({ submissionId }, "Ignoring duplicate or already-processed callback");
+      return res.json({ message: "Already processed" });
+    }
 
     apiLogger.info({ submissionId, status: prismaStatus }, "Submission result recorded");
-    res.json({ message: "Result recorded" });
+    return res.json({ message: "Result recorded" });
   } catch (error) {
     apiLogger.error(
       { submissionId, error: error instanceof Error ? error.message : String(error) },
       "Failed to record submission result"
     );
-    res.status(500).json({ error: "Failed to record result" });
+    return res.status(500).json({ error: "Failed to record result" });
   }
 });
 
 router.post("/log", async (req, res) => {
-  const { submissionId } = req.body;
-  const secret = req.headers["x-runner-secret"];
-  if (secret !== process.env.RUNNER_SHARED_SECRET) {
-    apiLogger.warn({ submissionId }, "Execution log rejected - invalid secret");
-    return res.status(403).json({ error: "Forbidden" });
+  const secretCheck = verifyRunnerSecret(req);
+  if (!secretCheck.ok) {
+    return res.status(secretCheck.status).json({ error: secretCheck.error });
   }
 
-  const { level, message } = req.body;
-
-  if (!submissionId || !level || !message) {
-    return res.status(400).json({ error: "Missing required fields" });
+  const parseResult = RunnerLogSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: "Invalid execution log payload" });
   }
+
+  const { submissionId, level, message } = parseResult.data;
 
   try {
     await prisma.executionLog.create({
@@ -222,7 +359,7 @@ router.post("/log", async (req, res) => {
       { submissionId, error: error instanceof Error ? error.message : String(error) },
       "Failed to record execution log"
     );
-    res.status(500).json({ error: "Failed to record log" });
+    return res.status(500).json({ error: "Failed to record log" });
   }
 });
 

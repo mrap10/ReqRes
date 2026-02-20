@@ -37,6 +37,13 @@ if (WORKER_ENABLED) {
 const PORT = process.env.PORT;
 
 const app = express();
+const shouldTrustProxy =
+  process.env.TRUST_PROXY === "true" ||
+  (process.env.NODE_ENV === "production" && process.env.TRUST_PROXY !== "false");
+
+if (shouldTrustProxy) {
+  app.set("trust proxy", 1);
+}
 
 app.use(
   cors({
@@ -45,7 +52,7 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 app.use(correlationMiddleware);
 app.use(requestLoggingMiddleware);

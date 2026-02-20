@@ -8,11 +8,59 @@ import { captureException, setUserContext, addBreadcrumb } from "../lib/sentry.j
 import { metricsService, MetricType } from "../services/metrics.service.js";
 import { updateStreakOnSubmission, invalidateActivityGrid } from "../services/streak.service.js";
 
+const MAX_SUBMISSION_FILES = 30;
+const MAX_FILE_PATH_LENGTH = 200;
+const MAX_FILE_CONTENT_LENGTH = 100_000;
+const MAX_TOTAL_CODE_SIZE_BYTES = 500_000;
+
+const CodeFilesSchema = z
+  .record(z.string().max(MAX_FILE_PATH_LENGTH), z.string().max(MAX_FILE_CONTENT_LENGTH))
+  .superRefine((files, ctx) => {
+    const entries = Object.entries(files);
+
+    if (entries.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "At least one file is required",
+      });
+      return;
+    }
+
+    if (entries.length > MAX_SUBMISSION_FILES) {
+      ctx.addIssue({
+        code: "custom",
+        message: `Too many files. Max allowed is ${MAX_SUBMISSION_FILES}`,
+      });
+      return;
+    }
+
+    let totalCodeSize = 0;
+    for (const [filePath, content] of entries) {
+      const normalizedPath = filePath.replace(/\\/g, "/");
+      if (normalizedPath.startsWith("/") || normalizedPath.includes("..")) {
+        ctx.addIssue({
+          code: "custom",
+          message: `Invalid file path: ${filePath}`,
+        });
+        return;
+      }
+
+      totalCodeSize += Buffer.byteLength(content, "utf8");
+      if (totalCodeSize > MAX_TOTAL_CODE_SIZE_BYTES) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Submission is too large",
+        });
+        return;
+      }
+    }
+  });
+
 const CreateSubmissionSchema = z.object({
   problemId: z.cuid(),
   code: z.object({
-    files: z.record(z.string(), z.string()),
-    entryPoint: z.string().optional().default("index.ts"),
+    files: CodeFilesSchema,
+    entryPoint: z.string().min(1).max(MAX_FILE_PATH_LENGTH).optional().default("index.ts"),
   }),
   timezone: z.string().optional().default("UTC"),
   mode: z.enum(["run", "submit"]).optional().default("submit"),
@@ -52,6 +100,13 @@ export async function createSubmission(req: Request, res: Response) {
 
     if (!req.user) {
       return res.status(401).json({ error: "Unauthorized", correlationId });
+    }
+
+    if (!submissionQueue) {
+      return res.status(503).json({
+        error: "Submission queue unavailable - Redis is not configured",
+        correlationId,
+      });
     }
 
     const userId = req.user.id;
@@ -97,14 +152,6 @@ export async function createSubmission(req: Request, res: Response) {
       submissionId: submission.id,
       correlationId,
     });
-
-    if (!submissionQueue) {
-      return res.status(503).json({
-        error: "Submission queue unavailable — Redis is not configured",
-        correlationId,
-      });
-    }
-
     await submissionQueue.add(
       "processSubmission",
       {
@@ -225,19 +272,20 @@ export async function getLeaderboard(req: Request, res: Response) {
       },
     });
 
-    const uniqueProblems = await Promise.all(
-      leaderboardData.map(async (entry) => {
-        const count = await prisma.submission.findMany({
-          where: {
-            userId: entry.userId,
-            status: "PASSED",
-          },
-          distinct: ["problemId"],
-          select: { problemId: true },
-        });
-        return { userId: entry.userId, count: count.length };
-      })
-    );
+    const solvedPairs = await prisma.submission.findMany({
+      where: {
+        status: "PASSED",
+      },
+      distinct: ["userId", "problemId"],
+      select: {
+        userId: true,
+      },
+    });
+
+    const problemCountMap = new Map<string, number>();
+    for (const pair of solvedPairs) {
+      problemCountMap.set(pair.userId, (problemCountMap.get(pair.userId) ?? 0) + 1);
+    }
 
     const userIds = leaderboardData.map((entry) => entry.userId);
     const users = await prisma.user.findMany({
@@ -246,7 +294,6 @@ export async function getLeaderboard(req: Request, res: Response) {
     });
 
     const userMap = new Map(users.map((user) => [user.id, user.username]));
-    const problemCountMap = new Map(uniqueProblems.map((p) => [p.userId, p.count]));
 
     const sortedLeaderboard = leaderboardData
       .filter((entry) => userMap.has(entry.userId))
@@ -485,8 +532,21 @@ export async function streamSubmissionStatus(req: Request, res: Response) {
       res.write(`: keepalive\n\n`);
     }, 15000);
 
+    const maxConnectionTimeout = setTimeout(
+      () => {
+        cleanup();
+        clearInterval(keepAliveInterval);
+        res.write(
+          `data: ${JSON.stringify({ state: "timeout", message: "Connection timed out, please reconnect" })}\n\n`
+        );
+        res.end();
+      },
+      5 * 60 * 1000
+    );
+
     req.on("close", () => {
       clearInterval(keepAliveInterval);
+      clearTimeout(maxConnectionTimeout);
     });
   } catch (error) {
     apiLogger.error({ submissionId: req.params.id, error }, "Failed to stream submission status");

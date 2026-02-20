@@ -26,7 +26,15 @@ export const ENDPOINT_OVERRIDES: Record<string, RateLimitConfig> = {
     windowMs: 60 * 1000,
     maxRequests: 5,
   },
+  "POST:/api/auth/sign-in/email": {
+    windowMs: 60 * 1000,
+    maxRequests: 5,
+  },
   "POST:/api/auth/sign-up": {
+    windowMs: 60 * 1000,
+    maxRequests: 3,
+  },
+  "POST:/api/auth/sign-up/email": {
     windowMs: 60 * 1000,
     maxRequests: 3,
   },
@@ -34,9 +42,29 @@ export const ENDPOINT_OVERRIDES: Record<string, RateLimitConfig> = {
     windowMs: 60 * 1000,
     maxRequests: 3,
   },
+  "POST:/api/auth/forget-password": {
+    windowMs: 60 * 1000,
+    maxRequests: 3,
+  },
+  "POST:/api/auth/request-password-reset": {
+    windowMs: 60 * 1000,
+    maxRequests: 3,
+  },
   "POST:/api/auth/reset-password": {
     windowMs: 60 * 1000,
     maxRequests: 3,
+  },
+  "POST:/submissions": {
+    windowMs: 60 * 1000,
+    maxRequests: 20,
+  },
+  "GET:/health/metrics": {
+    windowMs: 60 * 1000,
+    maxRequests: 20,
+  },
+  "GET:/health/ratelimit": {
+    windowMs: 60 * 1000,
+    maxRequests: 20,
   },
 };
 

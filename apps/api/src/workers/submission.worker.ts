@@ -61,6 +61,7 @@ function mapRunnerStatusToSubmissionStatus(runnerStatus: string): SubmissionStat
 }
 
 const RUNNER_URL = process.env.RUNNER_BASE_URL;
+const RUNNER_SHARED_SECRET = process.env.RUNNER_SHARED_SECRET;
 
 async function processSubmission(job: Job<SubmissionJobData>) {
   const { submissionId, problem, codeBundle, testConfig, correlationId, mode } = job.data;
@@ -101,6 +102,10 @@ async function processSubmission(job: Job<SubmissionJobData>) {
 
     jobLogger.debug("Sending submission to runner service");
 
+    if (!RUNNER_SHARED_SECRET) {
+      throw new Error("RUNNER_SHARED_SECRET is not configured");
+    }
+
     const response = await withSentry(
       async () =>
         axios.post(
@@ -120,7 +125,7 @@ async function processSubmission(job: Job<SubmissionJobData>) {
           {
             headers: {
               "Content-Type": "application/json",
-              "x-runner-secret": process.env.RUNNER_SHARED_SECRET!,
+              "x-runner-secret": RUNNER_SHARED_SECRET,
             },
             timeout: testConfig.timeoutMs + 30000,
           }
@@ -138,7 +143,14 @@ async function processSubmission(job: Job<SubmissionJobData>) {
       durationMs: runnerResponse.durationMs,
     });
 
-    jobLogger.info({ runnerResponse }, "Received response from runner service");
+    jobLogger.info(
+      {
+        status: runnerResponse.status,
+        durationMs: runnerResponse.durationMs,
+        resultCount: runnerResponse.results?.length ?? 0,
+      },
+      "Received response from runner service"
+    );
 
     const mappedStatus = mapRunnerStatusToSubmissionStatus(runnerResponse.status);
 

@@ -45,10 +45,17 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
 router.patch("/username", requireAuth, async (req: Request, res: Response) => {
   const { username } = req.body;
 
-  if (!username || username.length < 3) {
+  if (!username || typeof username !== "string" || username.length < 3 || username.length > 30) {
     return res
       .status(400)
-      .json({ error: "Username must be at least 3 characters.", correlationId: req.correlationId });
+      .json({ error: "Username must be 3-30 characters.", correlationId: req.correlationId });
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+    return res.status(400).json({
+      error: "Username can only contain letters, numbers, underscores, and hyphens.",
+      correlationId: req.correlationId,
+    });
   }
 
   try {
@@ -220,20 +227,26 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
       if (d in byDifficulty) byDifficulty[d]++;
     }
 
-    const leaderboard = await prisma.submission.groupBy({
-      by: ["userId"],
-      where: { status: "PASSED" },
-      _sum: { score: true },
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { xp: true },
     });
 
-    const sorted = leaderboard
-      .map((e) => ({ userId: e.userId, score: e._sum.score || 0 }))
-      .sort((a, b) => b.score - a.score);
+    if (!currentUser) {
+      return res.status(404).json({ error: "User not found", correlationId: req.correlationId });
+    }
 
-    const rank = sorted.findIndex((e) => e.userId === userId) + 1;
+    const higherRankedUsers = await prisma.user.count({
+      where: {
+        role: "USER",
+        xp: { gt: currentUser.xp },
+      },
+    });
+
+    const rank = higherRankedUsers + 1;
 
     res.json({
-      rank: rank || null,
+      rank,
       totalSolved: solvedProblems.length,
       byDifficulty,
     });

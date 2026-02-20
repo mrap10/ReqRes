@@ -5,6 +5,28 @@ import { createAuthMiddleware } from "better-auth/api";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email.js";
 import { logAuditEvent, getClientIp, getUserAgent } from "./auditLogger.js";
 
+function getOriginFromUrl(urlValue?: string): string | null {
+  if (!urlValue) {
+    return null;
+  }
+
+  try {
+    return new URL(urlValue).origin;
+  } catch {
+    return null;
+  }
+}
+
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      "http://localhost:3000",
+      getOriginFromUrl(process.env.WEB_BASE_URL),
+      getOriginFromUrl(process.env.BETTER_AUTH_URL),
+    ].filter((origin): origin is string => Boolean(origin))
+  )
+);
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:4000",
   basePath: "/api/auth",
@@ -86,7 +108,7 @@ export const auth = betterAuth({
       },
     },
   },
-  trustedOrigins: ["http://localhost:3000"],
+  trustedOrigins,
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,

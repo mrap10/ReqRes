@@ -6,6 +6,53 @@ import { captureException, addBreadcrumb, setTags } from "../lib/sentry.js";
 import { runnerLogger } from "../lib/logger.js";
 
 export const executeRouter = Router();
+const MAX_FILES = 30;
+const MAX_FILE_CONTENT_LENGTH = 100_000;
+const MAX_TOTAL_CONTENT_LENGTH = 500_000;
+const MAX_FILE_PATH_LENGTH = 200;
+
+const CodeFilesSchema = z
+  .record(z.string().max(MAX_FILE_PATH_LENGTH), z.string().max(MAX_FILE_CONTENT_LENGTH))
+  .superRefine((files, ctx) => {
+    const entries = Object.entries(files);
+
+    if (entries.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one file is required",
+      });
+      return;
+    }
+
+    if (entries.length > MAX_FILES) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Too many files. Max allowed is ${MAX_FILES}`,
+      });
+      return;
+    }
+
+    let totalContentLength = 0;
+    for (const [filePath, content] of entries) {
+      const normalizedPath = filePath.replace(/\\/g, "/");
+      if (normalizedPath.startsWith("/") || normalizedPath.includes("..")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Invalid file path: ${filePath}`,
+        });
+        return;
+      }
+
+      totalContentLength += Buffer.byteLength(content, "utf8");
+      if (totalContentLength > MAX_TOTAL_CONTENT_LENGTH) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Submission is too large",
+        });
+        return;
+      }
+    }
+  });
 
 const ExecuteSchema = z.object({
   submissionId: z.string().regex(/^c[a-z0-9]{24}$/, "Invalid CUID format"),
@@ -19,8 +66,8 @@ const ExecuteSchema = z.object({
     submissionType: z.literal("EXPRESS_API"),
   }),
   codeBundle: z.object({
-    files: z.record(z.string(), z.string()),
-    entryPoint: z.string(),
+    files: CodeFilesSchema,
+    entryPoint: z.string().min(1).max(MAX_FILE_PATH_LENGTH),
   }),
   testConfig: z.object({
     timeoutMs: z.number().min(100).max(60000),

@@ -21,9 +21,11 @@ app.get("/health", (_, res) => {
   res.json({ status: "healthy" });
 });
 
-app.get("/debug/error", (_req: Request, _res: Response) => {
-  throw new Error("Test runner error - this should appear in Sentry!");
-});
+if (process.env.NODE_ENV !== "production") {
+  app.get("/debug/error", (_req: Request, _res: Response) => {
+    throw new Error("Test runner error - this should appear in Sentry!");
+  });
+}
 
 setupSentryErrorHandler(app);
 
