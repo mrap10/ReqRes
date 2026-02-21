@@ -44,25 +44,25 @@ export default function AuthLeftSide() {
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3 text-sm text-zinc-400">
             <div className="w-8 h-8 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-lg">
-              <CodeXml className="w-4 h-4 text-cyan-400" />
+              <CodeXml className="w-4 h-4 text-white" />
             </div>
             <p>Real World Scenarios</p>
           </div>
           <div className="flex items-center gap-3 text-sm text-zinc-400">
             <div className="w-8 h-8 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-lg">
-              <Cpu className="w-4 h-4 text-cyan-400" />
+              <Cpu className="w-4 h-4 text-white" />
             </div>
             <p>Instant feedback</p>
           </div>
           <div className="flex items-center gap-3 text-sm text-zinc-400">
             <div className="w-8 h-8 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-lg">
-              <Gamepad2 className="w-4 h-4 text-cyan-400" />
+              <Gamepad2 className="w-4 h-4 text-white" />
             </div>
             <p>Gamified Learning</p>
           </div>
           <div className="flex items-center gap-3 text-sm text-zinc-400">
             <div className="w-8 h-8 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded-lg">
-              <ShieldCheck className="w-4 h-4 text-cyan-400" />
+              <ShieldCheck className="w-4 h-4 text-white" />
             </div>
             <p>Production Patterns</p>
           </div>

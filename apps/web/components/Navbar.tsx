@@ -46,7 +46,10 @@ export default function Navbar() {
           <nav className="relative flex h-16 items-center justify-between px-4 md:px-6">
             <Link href="/" className="cursor-pointer">
               <h1 className="text-2xl font-bold text-white tracking-tight">
-                Req<span className="text-indigo-400">Res</span>
+                Req
+                <span className="bg-linear-to-r from-indigo-300 via-indigo-200 to-cyan-200 bg-clip-text text-transparent">
+                  Res
+                </span>
               </h1>
             </Link>
 

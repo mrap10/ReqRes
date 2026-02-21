@@ -1,6 +1,14 @@
 "use client";
 
-import { CheckCircle2, Code2, Container, PlayCircle, ShieldCheck, Zap } from "lucide-react";
+import {
+  CheckCircle2,
+  Code2,
+  Container,
+  Gamepad2,
+  PlayCircle,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 const icons = {
@@ -10,6 +18,7 @@ const icons = {
   ShieldCheck,
   Container,
   Zap,
+  Gamepad2,
 };
 
 export type IconKey = keyof typeof icons;

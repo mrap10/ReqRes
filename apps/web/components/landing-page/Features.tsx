@@ -14,12 +14,12 @@ export default function Features() {
     {
       icon: "PlayCircle",
       title: "Instant Execution",
-      desc: "Write, run, and test your code in seconds. Real-time feedback via Server-Sent Events as your code executes.",
+      desc: "Write, run, and test your code in seconds. Real-time feedback via SSE as your code executes.",
     },
     {
-      icon: "CheckCircle2",
-      title: "Automated Testing",
-      desc: "Every submission runs against comprehensive test suites. Get detailed results with pass/fail status for each test case.",
+      icon: "Gamepad2",
+      title: "Gamified Learning",
+      desc: "Earn XP, level up, and track your progress as you conquer challenges. Compete on leaderboards and unlock achievements.",
     },
     {
       icon: "ShieldCheck",
@@ -27,14 +27,14 @@ export default function Features() {
       desc: "Master JWT authentication, rate limiting, CORS, input validation, error handling, and caching strategies.",
     },
     {
+      icon: "CheckCircle2",
+      title: "Automated Testing",
+      desc: "Every submission runs against comprehensive test suites. Get detailed results with pass/fail status.",
+    },
+    {
       icon: "Container",
       title: "Sandboxed Execution",
       desc: "Your code runs in isolated Docker containers. Safe, secure, and scalable execution environment for all submissions.",
-    },
-    {
-      icon: "Zap",
-      title: "Queue-Based Processing",
-      desc: "BullMQ + Redis handle submission spikes gracefully. Scale to 100+ concurrent users without breaking a sweat.",
     },
   ];
   return (

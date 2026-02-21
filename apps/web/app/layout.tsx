@@ -25,6 +25,7 @@ const JetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "ReqRes",
   description:
     "Prove your backend logic skills with real-world Express.js easy, medium and hard challenges.",

@@ -21,7 +21,7 @@ export default function Home() {
         <FAQ />
       </main>
       <Footer />
-      <div className="-mt-17 h-90 hidden lg:flex flex-col items-center justify-center bg-zinc-950">
+      <div className="-mt-12 h-90 hidden lg:flex flex-col items-center justify-center bg-zinc-950">
         <TextHoverEffect text="ReqRes" />
       </div>
     </div>

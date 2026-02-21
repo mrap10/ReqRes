@@ -101,7 +101,10 @@ export default function PasswordReset() {
           className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <div className="text-xl font-bold text-white tracking-tight">
-            Req<span className="text-indigo-400">Res</span>
+            Req
+            <span className="bg-linear-to-r from-indigo-300 via-indigo-200 to-cyan-200 bg-clip-text text-transparent">
+              Res
+            </span>
           </div>
         </Link>
 
@@ -144,7 +147,7 @@ export default function PasswordReset() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full py-3.5 text-sm bg-white/85 hover:bg-white text-black font-bold rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isLoading ? "Sending..." : "Send Reset Link"}
                 </button>
@@ -177,7 +180,7 @@ export default function PasswordReset() {
                   className="text-sm text-zinc-400 transition-colors"
                 >
                   Didn&apos;t receive email?{" "}
-                  <span className="text-cyan-400 hover:underline cursor-pointer">Try again</span>
+                  <span className="text-cyan-50 hover:underline cursor-pointer">Try again</span>
                 </button>
               </div>
             </div>
@@ -223,7 +226,7 @@ export default function PasswordReset() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full py-3.5 text-sm bg-white/85 hover:bg-white text-black cursor-pointer font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isLoading ? "Resetting..." : "Reset Password"}
                 </button>
@@ -244,7 +247,7 @@ export default function PasswordReset() {
               </div>
               <button
                 onClick={() => router.push("/signin")}
-                className="w-full py-3.5 text-sm  bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02]"
+                className="w-full py-3.5 text-sm bg-white/85 hover:bg-white text-black cursor-pointer font-bold rounded-xl"
               >
                 Continue to Sign In
               </button>

@@ -168,7 +168,10 @@ export default function SignupPage() {
           className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <div className="text-xl font-bold text-white tracking-tight">
-            Req<span className="text-indigo-400">Res</span>
+            Req
+            <span className="bg-linear-to-r from-indigo-300 via-indigo-200 to-cyan-200 bg-clip-text text-transparent">
+              Res
+            </span>
           </div>
         </Link>
 
@@ -227,7 +230,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 text-sm bg-linear-to-r from-indigo-500 to-cyan-400 hover:from-indigo-600 hover:to-cyan-600 cursor-pointer text-white font-bold rounded-xl shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] hover:shadow-[0_0_25px_-5px_rgba(99,102,241,0.5)] transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-3.5 text-sm bg-white/85 hover:bg-white text-black cursor-pointer font-bold rounded-xl"
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </button>
@@ -238,7 +241,7 @@ export default function SignupPage() {
               Already have an account?{" "}
               <Link
                 href="/signin"
-                className="text-zinc-300 font-bold hover:text-cyan-200 transition-colors"
+                className="text-zinc-300 font-bold hover:text-cyan-50 transition-colors"
               >
                 Sign In
               </Link>

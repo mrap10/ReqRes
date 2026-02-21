@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Play } from "lucide-react";
 import TerminalCode from "./TerminalCode";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -60,19 +61,20 @@ export default function Hero() {
         <div className="flex flex-wrap gap-3">
           <Link
             href={"problems"}
-            className="rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-black transition-all hover:bg-indigo-100 cursor-pointer hover:scale-105"
+            className="inline-flex group items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-black transition-all hover:bg-indigo-100 cursor-pointer hover:scale-105"
           >
-            Start Practicing
+            Start Solving{" "}
+            <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
           </Link>
           <Link
             href={"problems"}
-            className="rounded-xl border border-white/15 px-5 py-2.5 text-sm text-white/85 transition hover:border-cyan-300/40 hover:text-white cursor-pointer"
+            className="inline-flex group items-center gap-2 rounded-xl border border-white/15 px-5 py-2.5 text-sm text-white/85 transition hover:border-cyan-300/40 hover:text-white cursor-pointer"
           >
-            View Challenge List
+            Watch Demo <Play className="size-4 group-hover:animate-spin-once duration-1000" />
           </Link>
         </div>
         <div className="flex items-center gap-5 text-xs text-white/55">
-          <span>15+ practical challenges</span>
+          <span>14+ practical challenges</span>
           <span className="h-1 w-1 rounded-full bg-white/30" />
           <span>Browser coding sandbox</span>
           <span className="h-1 w-1 rounded-full bg-white/30" />
