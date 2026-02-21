@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bun run --watch index.ts",
     "dev:api-only": "WORKER_ENABLED=false bun run --watch index.ts",
-    "build": "bun build index.ts --outdir ./dist && bun build worker.ts --outdir ./dist",
+    "build": "bun build index.ts --outdir ./dist --target=bun && bun build worker.ts --outdir ./dist --target=bun",
     "start": "bun run dist/index.js",
     "worker:dev": "bun run --watch worker.ts",
     "worker:start": "bun run worker.ts",
