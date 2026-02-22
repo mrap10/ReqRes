@@ -1,0 +1,404 @@
+[
+  {
+    "title": "Hello Express API",
+    "slug": "hello-express-api",
+    "difficulty": "EASY",
+    "track": "ROUTING",
+    "shortDescription": "Create your first Express server with a simple GET endpoint.",
+    "description": "Build a basic Express server that responds to a GET request at the root path. This is your introduction to Express routing and response handling.",
+    "instructions": "### Requirements\n- Create an Express server\n- Implement a \\`GET /\\` route\n- Return a JSON response with a welcome message\n- Export the Express app (do NOT call \\`app.listen()\\`)\n- See Example Usage section, to get more idea about status code and response format.",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\n// TODO: Implement GET / route\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Return JSON response",
+      "Use GET method"
+    ],
+    "tags": ["basics", "routing", "json"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"url\": \"http://localhost:3000/\",\n    \"curl\": \"curl -X GET http://localhost:3000/\",\n    \"method\": \"GET\",\n    \"headers\": {}\n  },\n  \"response\": {\n    \"success\": {\n      \"body\": {\n        \"message\": \"Hello, Express!\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "Query Parameter Parser",
+    "slug": "query-parameter-parser",
+    "difficulty": "EASY",
+    "track": "ROUTING",
+    "shortDescription": "Parse and validate URL query parameters.",
+    "description": "Create an endpoint that accepts query parameters and returns them in a structured format. Learn how Express handles query strings and basic input validation.",
+    "instructions": "### Requirements\n- Implement \\`GET /greet\\` endpoint\n- Accept \\`name\\` and \\`age\\` as query parameters\n- Return a personalized greeting\n- Handle missing parameters gracefully\n- See Example Usage section, to get more idea about Status codes and Response format ",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\n// TODO: Implement GET /greet route with query parameter handling\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Handle missing parameters",
+      "Return appropriate status codes"
+    ],
+    "tags": ["query-params", "validation", "routing"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"url\": \"http://localhost:3000/greet?name=Alice&age=25\",\n    \"curl\": \"curl -X GET 'http://localhost:3000/greet?name=Alice&age=25'\",\n    \"method\": \"GET\",\n    \"headers\": {}\n  },\n  \"response\": {\n    \"error\": {\n      \"body\": {\n        \"error\": \"Name parameter is required\"\n      },\n      \"status\": \"HTTP/1.1 400 Bad Request\",\n      \"example\": {\n        \"url\": \"http://localhost:3000/greet?age=25\",\n        \"curl\": \"curl -X GET 'http://localhost:3000/greet?age=25'\"\n      }\n    },\n    \"success\": {\n      \"body\": {\n        \"params\": {\n          \"age\": \"25\",\n          \"name\": \"Alice\"\n        },\n        \"message\": \"Hello, Alice! You are 25 years old.\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "Request Body Parser",
+    "slug": "request-body-parser",
+    "difficulty": "EASY",
+    "track": "ROUTING",
+    "shortDescription": "Handle POST requests and parse JSON request bodies.",
+    "description": "Create a POST endpoint that accepts JSON data and processes it. Learn how to use Express middleware for parsing request bodies.",
+    "instructions": "### Requirements\n- Implement \\`POST /users\\` endpoint\n- Accept JSON request body with \\`name\\` and \\`email\\`\n- Validate that both fields are present\n- Return the created user with a generated ID\n- See Example Usage section, to get more idea about Status codes and Response format",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\n// TODO: Add JSON body parser middleware\\n// TODO: Implement POST /users route\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Use express.json() middleware",
+      "Validate input fields",
+      "Return 201 for successful creation"
+    ],
+    "tags": ["post-request", "json", "validation"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"url\": \"http://localhost:3000/users\",\n    \"body\": {\n      \"name\": \"John Doe\",\n      \"email\": \"john@example.com\"\n    },\n    \"curl\": \"curl -X POST http://localhost:3000/users \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"name\\\":\\\"John Doe\\\",\\\"email\\\":\\\"john@example.com\\\"}'\",\n    \"method\": \"POST\",\n    \"headers\": {\n      \"Content-Type\": \"application/json\"\n    }\n  },\n  \"response\": {\n    \"error\": {\n      \"body\": {\n        \"error\": \"Name and email are required\"\n      },\n      \"status\": \"HTTP/1.1 400 Bad Request\",\n      \"examples\": [\n        {\n          \"case\": \"Missing name\",\n          \"request\": {\n            \"body\": {\n              \"email\": \"john@example.com\"\n            }\n          }\n        },\n        {\n          \"case\": \"Missing email\",\n          \"request\": {\n            \"body\": {\n              \"name\": \"John Doe\"\n            }\n          }\n        },\n        {\n          \"case\": \"Empty body\",\n          \"request\": {\n            \"body\": {}\n          }\n        }\n      ]\n    },\n    \"success\": {\n      \"body\": {\n        \"id\": 1,\n        \"name\": \"John Doe\",\n        \"email\": \"john@example.com\",\n        \"createdAt\": \"2026-01-28T10:30:00.000Z\"\n      },\n      \"status\": \"HTTP/1.1 201 Created\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "Custom Error Handler",
+    "slug": "custom-error-handler",
+    "difficulty": "EASY",
+    "track": "MIDDLEWARE",
+    "shortDescription": "Implement a global error handling middleware",
+    "description": "Create a centralized error handler that catches and formats errors from all routes. Learn about Express error handling middleware and proper error responses.",
+    "instructions": "### Requirements\n- Implement a global error handling middleware\n- Format all errors consistently\n- Handle both synchronous and asynchronous errors\n- Return appropriate status codes\n- See Example Usage section, to get more idea about Status codes and Response format\n\n### Routes to Implement\n- GET /success - Returns { message: \"Success!\" }\n- GET /error - Throws an error to test error handler\n\n### Implementation Hints\n- Error middleware has 4 parameters: (err, req, res, next)\n- Place error handler AFTER all routes\n- Use res.status() to set appropriate status codes",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\n// TODO: Implement routes\\napp.get('/success', (req, res) => {\\n  res.json({ message: 'Success!' });\\n});\\n\\napp.get('/error', (req, res) => {\\n  throw new Error('This is a test error');\\n});\\n\\n// TODO: Implement global error handler middleware\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Error middleware must have 4 parameters",
+      "Include timestamp in error response"
+    ],
+    "tags": ["error-handling", "middleware"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"error\": {\n      \"url\": \"http://localhost:3000/error\",\n      \"curl\": \"curl -X GET http://localhost:3000/error\",\n      \"method\": \"GET\"\n    },\n    \"success\": {\n      \"url\": \"http://localhost:3000/success\",\n      \"curl\": \"curl -X GET http://localhost:3000/success\",\n      \"method\": \"GET\"\n    }\n  },\n  \"response\": {\n    \"error\": {\n      \"body\": {\n        \"error\": {\n          \"status\": 500,\n          \"message\": \"Error message here\",\n          \"timestamp\": \"2026-01-28T10:30:00.000Z\"\n        }\n      },\n      \"status\": \"HTTP/1.1 500 Internal Server Error\"\n    },\n    \"success\": {\n      \"body\": {\n        \"message\": \"Success!\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "Path Parameters",
+    "slug": "path-parameters",
+    "difficulty": "EASY",
+    "track": "ROUTING",
+    "shortDescription": "Extract and use URL path parameters in routes.",
+    "description": "Create RESTful routes that use path parameters to identify resources. Learn how to work with dynamic route segments in Express.",
+    "instructions": "### Requirements\n- Implement GET /users/:id endpoint\n- Extract the id from the URL path\n- Return user information based on the ID\n- Handle invalid IDs appropriately\n- See Example Usage section, to get more idea about Status codes and Response format\n\n### Additional Challenge\n- Implement GET /posts/:postId/comments/:commentId to practice nested path parameters.",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\n// TODO: Implement GET /users/:id\\n\\n// TODO: Implement GET /posts/:postId/comments/:commentId\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Use req.params to access path parameters",
+      "Return JSON responses"
+    ],
+    "tags": ["routing", "path-params", "rest-api"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"nested\": {\n      \"url\": \"http://localhost:3000/posts/10/comments/5\",\n      \"curl\": \"curl -X GET http://localhost:3000/posts/10/comments/5\",\n      \"method\": \"GET\"\n    },\n    \"simple\": {\n      \"url\": \"http://localhost:3000/users/123\",\n      \"curl\": \"curl -X GET http://localhost:3000/users/123\",\n      \"method\": \"GET\"\n    }\n  },\n  \"response\": {\n    \"nested\": {\n      \"body\": {\n        \"postId\": \"10\",\n        \"message\": \"Comment 5 on Post 10\",\n        \"commentId\": \"5\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"simple\": {\n      \"body\": {\n        \"id\": \"123\",\n        \"message\": \"User profile for ID: 123\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "Request Logger Middleware",
+    "slug": "request-logger-middleware",
+    "difficulty": "MEDIUM",
+    "track": "MIDDLEWARE",
+    "shortDescription": "Create custom middleware to log HTTP requests",
+    "description": "Build a logging middleware that captures request details including method, URL, timestamp, and response time. Learn about middleware execution order and request/response cycle.",
+    "instructions": "### Requirements\n- Create a custom logging middleware\n- Log: method, URL, timestamp, and response time\n- Attach logs to req.logs array for testing\n- Apply middleware globally to all routes\n- See Example Usage section, to get more idea about Status codes and Response format\n\n### Log Format\nEach log entry should contain:\n\n{\n  \"method\": \"GET\",\n  \"url\": \"/api/users\",\n  \"timestamp\": \"2026-01-28T10:30:00.000Z\",\n  \"responseTime\": 15\n}\n\n### Routes to Implement\n- GET /logs - Return all captured logs\n- GET /api/users - Sample route (returns \\`{ users: [] }\\`)\n- POST /api/users - Sample route (returns \\`{ created: true }\\`)\n\n### Hints\n- Use Date.now() to measure response time\n- Attach logs array to app.locals.logs\n- Middleware runs before route handlers",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\napp.use(express.json());\\n\\n// Initialize logs storage\\napp.locals.logs = [];\\n\\n// TODO: Implement logging middleware\\n\\n// TODO: Implement routes\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Store logs in app.locals.logs",
+      "Calculate response time",
+      "Apply middleware before routes"
+    ],
+    "tags": ["middleware", "logging", "performance"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"logs\": {\n      \"url\": \"http://localhost:3000/logs\",\n      \"curl\": \"curl -X GET http://localhost:3000/logs\",\n      \"method\": \"GET\"\n    },\n    \"apiCall\": {\n      \"url\": \"http://localhost:3000/api/users\",\n      \"curl\": \"curl -X GET http://localhost:3000/api/users\",\n      \"method\": \"GET\"\n    }\n  },\n  \"response\": {\n    \"logs\": {\n      \"body\": [\n        {\n          \"url\": \"/api/users\",\n          \"method\": \"GET\",\n          \"timestamp\": \"2026-01-28T10:30:00.000Z\",\n          \"responseTime\": 15\n        },\n        {\n          \"url\": \"/api/users\",\n          \"method\": \"POST\",\n          \"timestamp\": \"2026-01-28T10:31:00.000Z\",\n          \"responseTime\": 23\n        }\n      ],\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"apiCall\": {\n      \"body\": {\n        \"users\": []\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "In-Memory CRUD API",
+    "slug": "in-memory-crud-api",
+    "difficulty": "MEDIUM",
+    "track": "DATABASE",
+    "shortDescription": "Build a complete CRUD API with in-memory storage.",
+    "description": "Implement a RESTful API for managing tasks with full CRUD operations using an in-memory array. Learn REST conventions and proper HTTP status codes.",
+    "instructions": "### Requirements\nImplement these endpoints:\n\n1. POST /tasks - Create a new task\n2. GET /tasks - Get all tasks\n3. GET /tasks/:id - Get a specific task\n4. PUT /tasks/:id - Update a task\n5. DELETE /tasks/:id - Delete a task\n\n### Status Codes\n- 201 - Created (POST)\n- 200 - Success (GET, PUT, DELETE)\n- 404 - Not Found\n- 400 - Bad Request (missing fields)\n\nSee Example Usage section, to get more idea about Status codes and Response format",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\napp.use(express.json());\\n\\n// In-memory storage\\nlet tasks = [];\\nlet nextId = 1;\\n\\n// TODO: Implement CRUD routes\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Use in-memory array for storage",
+      "Return proper HTTP status codes",
+      "Validate required fields"
+    ],
+    "tags": ["crud", "rest-api", "in-memory-db"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"create\": {\n      \"url\": \"http://localhost:3000/tasks\",\n      \"body\": {\n        \"title\": \"Learn Express.js\"\n      },\n      \"curl\": \"curl -X POST http://localhost:3000/tasks \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"title\\\":\\\"Learn Express.js\\\"}'\",\n      \"method\": \"POST\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    },\n    \"delete\": {\n      \"url\": \"http://localhost:3000/tasks/1\",\n      \"curl\": \"curl -X DELETE http://localhost:3000/tasks/1\",\n      \"method\": \"DELETE\"\n    },\n    \"getAll\": {\n      \"url\": \"http://localhost:3000/tasks\",\n      \"curl\": \"curl -X GET http://localhost:3000/tasks\",\n      \"method\": \"GET\"\n    },\n    \"getOne\": {\n      \"url\": \"http://localhost:3000/tasks/1\",\n      \"curl\": \"curl -X GET http://localhost:3000/tasks/1\",\n      \"method\": \"GET\"\n    },\n    \"update\": {\n      \"url\": \"http://localhost:3000/tasks/1\",\n      \"body\": {\n        \"title\": \"Learn Express.js Advanced\",\n        \"completed\": true\n      },\n      \"curl\": \"curl -X PUT http://localhost:3000/tasks/1 \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"title\\\":\\\"Learn Express.js Advanced\\\",\\\"completed\\\":true}'\",\n      \"method\": \"PUT\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    }\n  },\n  \"response\": {\n    \"create\": {\n      \"body\": {\n        \"id\": 1,\n        \"title\": \"Learn Express.js\",\n        \"completed\": false,\n        \"createdAt\": \"2026-01-28T10:30:00.000Z\"\n      },\n      \"status\": \"HTTP/1.1 201 Created\"\n    },\n    \"delete\": {\n      \"body\": {\n        \"message\": \"Task deleted successfully\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"getAll\": {\n      \"body\": [\n        {\n          \"id\": 1,\n          \"title\": \"Learn Express.js\",\n          \"completed\": false,\n          \"createdAt\": \"2026-01-28T10:30:00.000Z\"\n        },\n        {\n          \"id\": 2,\n          \"title\": \"Build an API\",\n          \"completed\": true,\n          \"createdAt\": \"2026-01-28T10:31:00.000Z\"\n        }\n      ],\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"getOne\": {\n      \"body\": {\n        \"id\": 1,\n        \"title\": \"Learn Express.js\",\n        \"completed\": false,\n        \"createdAt\": \"2026-01-28T10:30:00.000Z\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"update\": {\n      \"body\": {\n        \"id\": 1,\n        \"title\": \"Learn Express.js Advanced\",\n        \"completed\": true,\n        \"createdAt\": \"2026-01-28T10:30:00.000Z\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"notFound\": {\n      \"body\": {\n        \"error\": \"Task not found\"\n      },\n      \"status\": \"HTTP/1.1 404 Not Found\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "JWT Authentication Middleware",
+    "slug": "jwt-authentication-middleware",
+    "difficulty": "MEDIUM",
+    "track": "SECURITY",
+    "shortDescription": "Implement JWT-based authentication middleware",
+    "description": "Create authentication middleware that verifies JWT tokens and protects routes. Learn industry-standard authentication patterns used in modern web applications.",
+    "instructions": "### Requirements\n- Implement POST /login endpoint (generates JWT)\n- Create authentication middleware\n- Protect GET /profile route with middleware\n- Use Authorization: Bearer <token> header\n- See Example Usage section, to get more idea about Status codes and Response format\n\n### Error Responses\n- No token: 401 {\"error\": \"No token provided\"}\n- Invalid token: 401 {\"error\": \"Invalid token\"}\n\n### Environment Variables\n- JWT_SECRET - Secret key for signing/verifying tokens",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst jwt = require('jsonwebtoken');\\nconst app = express();\\n\\napp.use(express.json());\\n\\nconst JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';\\n\\n// Hardcoded user for demo (in real app, check database)\\nconst DEMO_USER = {\\n  id: '123',\\n  email: 'user@example.com',\\n  password: 'password123' // In production: use bcrypt!\\n};\\n\\n// TODO: Implement POST /login\\n\\n// TODO: Implement auth middleware\\n\\n// TODO: Implement GET /profile (protected route)\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Use jsonwebtoken package",
+      "Extract token from Authorization header",
+      "Return 401 for unauthorized requests"
+    ],
+    "tags": ["jwt", "auth", "security", "middleware"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"login\": {\n      \"url\": \"http://localhost:3000/login\",\n      \"body\": {\n        \"email\": \"user@example.com\",\n        \"password\": \"password123\"\n      },\n      \"curl\": \"curl -X POST http://localhost:3000/login \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"email\\\":\\\"user@example.com\\\",\\\"password\\\":\\\"password123\\\"}'\",\n      \"method\": \"POST\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    },\n    \"profile\": {\n      \"url\": \"http://localhost:3000/profile\",\n      \"curl\": \"curl -X GET http://localhost:3000/profile \\\\\\n  -H 'Authorization: Bearer <your-token>'\",\n      \"method\": \"GET\",\n      \"headers\": {\n        \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n      }\n    }\n  },\n  \"response\": {\n    \"login\": {\n      \"body\": {\n        \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTcwNjQ0MzgwMCwiZXhwIjoxNzA2NDQ3NDAwfQ.xyz\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"noToken\": {\n      \"body\": {\n        \"error\": \"No token provided\"\n      },\n      \"status\": \"HTTP/1.1 401 Unauthorized\"\n    },\n    \"profile\": {\n      \"body\": {\n        \"id\": \"123\",\n        \"email\": \"user@example.com\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"invalidToken\": {\n      \"body\": {\n        \"error\": \"Invalid token\"\n      },\n      \"status\": \"HTTP/1.1 401 Unauthorized\"\n    },\n    \"invalidCredentials\": {\n      \"body\": {\n        \"error\": \"Invalid credentials\"\n      },\n      \"status\": \"HTTP/1.1 401 Unauthorized\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "Input Validation Middleware",
+    "slug": "input-validation-middleware",
+    "difficulty": "MEDIUM",
+    "track": "SECURITY",
+    "shortDescription": "Create reusable validation middleware for request data.",
+    "description": "Build a validation system that checks request bodies, query parameters, and path parameters. Learn how to sanitize and validate user input to prevent security vulnerabilities.",
+    "instructions": "### Requirements\n- Create a validation middleware factory\n- Validate email format, required fields, and data types\n- Support validation for body, query, and params\n- Return clear validation error messages\n- See Example Usage section, to get more idea about Status codes and Response format\n\n### Routes to Implement\n\n1. POST /register - Validate user registration\n   - Required: \\`email\\`, \\`password\\`, \\`name\\`\n   - Email must be valid format\n   - Password min 8 characters\n   - Name must be string, 2-50 chars\n\n2. GET /search - Validate query params\n   - \\`query\\` (required, min 3 chars)\n   - \\`limit\\` (optional, number, max 100)\n\n### Successful Response (200/201)\nReturn the validated data",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\napp.use(express.json());\\n\\n// TODO: Create validation helper functions\\n// Hint: isValidEmail(email), isValidPassword(password), etc.\\n\\n// TODO: Create validation middleware\\n// function validateBody(schema) { ... }\\n\\n// TODO: Implement routes with validation\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "No validation libraries (build from scratch)",
+      "Return 400 for validation errors",
+      "Support email, string length, number validation"
+    ],
+    "tags": ["validation", "security", "middleware"],
+    "testConfig": {
+      "timeoutMs": 30000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"search\": {\n      \"url\": \"http://localhost:3000/search?query=express&limit=10\",\n      \"curl\": \"curl -X GET 'http://localhost:3000/search?query=express&limit=10'\",\n      \"method\": \"GET\"\n    },\n    \"register\": {\n      \"url\": \"http://localhost:3000/register\",\n      \"body\": {\n        \"name\": \"John Doe\",\n        \"email\": \"user@example.com\",\n        \"password\": \"password123\"\n      },\n      \"curl\": \"curl -X POST http://localhost:3000/register \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"email\\\":\\\"user@example.com\\\",\\\"password\\\":\\\"password123\\\",\\\"name\\\":\\\"John Doe\\\"}'\",\n      \"method\": \"POST\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    }\n  },\n  \"response\": {\n    \"searchError\": {\n      \"body\": {\n        \"errors\": [\n          {\n            \"field\": \"query\",\n            \"message\": \"Query must be at least 3 characters\"\n          }\n        ]\n      },\n      \"status\": \"HTTP/1.1 400 Bad Request\"\n    },\n    \"searchSuccess\": {\n      \"body\": {\n        \"limit\": 10,\n        \"query\": \"express\",\n        \"results\": []\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"registerSuccess\": {\n      \"body\": {\n        \"id\": \"1\",\n        \"name\": \"John Doe\",\n        \"email\": \"user@example.com\"\n      },\n      \"status\": \"HTTP/1.1 201 Created\"\n    },\n    \"validationError\": {\n      \"body\": {\n        \"errors\": [\n          {\n            \"field\": \"email\",\n            \"message\": \"Invalid email format\"\n          },\n          {\n            \"field\": \"password\",\n            \"message\": \"Password must be at least 8 characters\"\n          }\n        ]\n      },\n      \"status\": \"HTTP/1.1 400 Bad Request\",\n      \"examples\": [\n        {\n          \"case\": \"Invalid email\",\n          \"request\": {\n            \"body\": {\n              \"name\": \"John\",\n              \"email\": \"invalid-email\",\n              \"password\": \"password123\"\n            }\n          }\n        },\n        {\n          \"case\": \"Short password\",\n          \"request\": {\n            \"body\": {\n              \"name\": \"John\",\n              \"email\": \"user@example.com\",\n              \"password\": \"pass\"\n            }\n          }\n        },\n        {\n          \"case\": \"Name too short\",\n          \"request\": {\n            \"body\": {\n              \"name\": \"J\",\n              \"email\": \"user@example.com\",\n              \"password\": \"password123\"\n            }\n          }\n        }\n      ]\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "File Upload Handler",
+    "slug": "file-upload-handler",
+    "difficulty": "HARD",
+    "track": "MIDDLEWARE",
+    "shortDescription": "Handle multipart file uploads with validation.",
+    "description": "Implement file upload functionality with size limits, type validation, and proper error handling. Learn how to work with multipart/form-data in Express.",
+    "instructions": "### Requirements\n- Accept file uploads via POST /upload\n- Validate file type (images only: jpg, png, gif)\n- Limit file size to 5MB\n- Return file metadata on success\n- See Example Usage section, to get more idea about Status codes and Response format\n\n### Use Multer (Already Installed)\nconst multer = require('multer');\n\n### Error Responses\n- File too large (413): {\"error\": \"File too large. Max 5MB\"}\n- Invalid type (400): {\"error\": \"Invalid file type. Only images allowed\"}\n- No file (400): {\"error\": \"No file uploaded\"}",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst multer = require('multer');\\nconst app = express();\\n\\n// TODO: Configure multer\\n// - Set storage (memory storage for testing)\\n// - Add file filter for image types\\n// - Set size limit (5MB)\\n\\n// TODO: Implement POST /upload route\\n// - Use upload.single('file')\\n// - Validate and return file info\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Use multer package",
+      "Validate file type and size",
+      "Return proper error codes"
+    ],
+    "tags": ["file-upload", "multer", "validation"],
+    "testConfig": {
+      "timeoutMs": 60000,
+      "memoryMb": 512
+    },
+    "examples": "{\n  \"maxSize\": \"5MB\",\n  \"request\": {\n    \"url\": \"http://localhost:3000/upload\",\n    \"body\": \"Binary file data (image)\",\n    \"curl\": \"curl -X POST http://localhost:3000/upload \\\\\\n  -F 'file=@photo.jpg'\",\n    \"method\": \"POST\",\n    \"headers\": {\n      \"Content-Type\": \"multipart/form-data\"\n    }\n  },\n  \"response\": {\n    \"noFile\": {\n      \"body\": {\n        \"error\": \"No file uploaded\"\n      },\n      \"status\": \"HTTP/1.1 400 Bad Request\"\n    },\n    \"success\": {\n      \"body\": {\n        \"file\": {\n          \"size\": 2048576,\n          \"mimetype\": \"image/jpeg\",\n          \"uploadedAt\": \"2026-01-28T10:30:00.000Z\",\n          \"originalName\": \"photo.jpg\"\n        },\n        \"success\": true\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"invalidType\": {\n      \"body\": {\n        \"error\": \"Invalid file type. Only images allowed\"\n      },\n      \"status\": \"HTTP/1.1 400 Bad Request\",\n      \"example\": \"Upload a .pdf or .txt file\"\n    },\n    \"fileTooLarge\": {\n      \"body\": {\n        \"error\": \"File too large. Max 5MB\"\n      },\n      \"status\": \"HTTP/1.1 413 Payload Too Large\",\n      \"example\": \"Upload a 6MB file\"\n    }\n  },\n  \"acceptedTypes\": [\n    \"image/jpeg\",\n    \"image/png\",\n    \"image/gif\"\n  ]\n}",
+    "isPublished": true
+  },
+  {
+    "title": "API Versioning",
+    "slug": "api-versioning",
+    "difficulty": "HARD",
+    "track": "ROUTING",
+    "shortDescription": "Implement API versioning using route prefixes.",
+    "description": "Create multiple versions of an API endpoint to support backward compatibility. Learn best practices for evolving APIs without breaking existing clients.",
+    "instructions": "### Requirements\nImplement two versions of a users API:\n\n**Version 1 (\\`/v1/users\\`)**\n{\n  \"id\": 1,\n  \"fullName\": \"John Doe\"\n}\n\n**Version 2 (\\`/v2/users\\`)**\n{\n  \"id\": 1,\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\"\n}\n\n### Routes to Implement\n- GET /v1/users - Returns v1 format\n- GET /v1/users/:id - Returns single user (v1)\n- GET /v2/users - Returns v2 format\n- GET /v2/users/:id - Returns single user (v2)\n\n### Implementation Approach\n- Use Express Router for each version\n- Create separate route handlers\n- Share data layer (in-memory array)\n- Transform data based on version\n\n### Hint\nconst v1Router = express.Router();\n\nconst v2Router = express.Router();\n\napp.use('/v1', v1Router);\n\napp.use('/v2', v2Router);\n\nSee Example Usage section, to get more idea about Status codes and Response format",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\napp.use(express.json());\\n\\n// Shared data (in-memory)\\nconst users = [\\n  { id: 1, firstName: 'John', lastName: 'Doe', email: 'john@example.com' },\\n  { id: 2, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' }\\n];\\n\\n// TODO: Create v1 router\\n\\n// TODO: Create v2 router\\n\\n// TODO: Implement versioned endpoints\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Use Express Router",
+      "Share same data source",
+      "Different response formats per version"
+    ],
+    "tags": ["versioning", "routing", "api-design"],
+    "testConfig": {
+      "timeoutMs": 60000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"v1Users\": {\n      \"url\": \"http://localhost:3000/v1/users\",\n      \"curl\": \"curl -X GET http://localhost:3000/v1/users\",\n      \"method\": \"GET\"\n    },\n    \"v2Users\": {\n      \"url\": \"http://localhost:3000/v2/users\",\n      \"curl\": \"curl -X GET http://localhost:3000/v2/users\",\n      \"method\": \"GET\"\n    },\n    \"v1UserById\": {\n      \"url\": \"http://localhost:3000/v1/users/1\",\n      \"curl\": \"curl -X GET http://localhost:3000/v1/users/1\",\n      \"method\": \"GET\"\n    },\n    \"v2UserById\": {\n      \"url\": \"http://localhost:3000/v2/users/1\",\n      \"curl\": \"curl -X GET http://localhost:3000/v2/users/1\",\n      \"method\": \"GET\"\n    }\n  },\n  \"response\": {\n    \"v1List\": {\n      \"body\": [\n        {\n          \"id\": 1,\n          \"fullName\": \"John Doe\"\n        },\n        {\n          \"id\": 2,\n          \"fullName\": \"Jane Smith\"\n        }\n      ],\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"v2List\": {\n      \"body\": [\n        {\n          \"id\": 1,\n          \"email\": \"john@example.com\",\n          \"lastName\": \"Doe\",\n          \"firstName\": \"John\"\n        },\n        {\n          \"id\": 2,\n          \"email\": \"jane@example.com\",\n          \"lastName\": \"Smith\",\n          \"firstName\": \"Jane\"\n        }\n      ],\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"v1Single\": {\n      \"body\": {\n        \"id\": 1,\n        \"fullName\": \"John Doe\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"v2Single\": {\n      \"body\": {\n        \"id\": 1,\n        \"email\": \"john@example.com\",\n        \"lastName\": \"Doe\",\n        \"firstName\": \"John\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    }\n  },\n  \"comparison\": {\n    \"v1\": \"Legacy format with fullName\",\n    \"v2\": \"New format with separated first/last name and email\"\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "CORS Configuration",
+    "slug": "cors-configuration",
+    "difficulty": "MEDIUM",
+    "track": "SECURITY",
+    "shortDescription": "Implement custom CORS middleware with origin whitelisting.",
+    "description": "Configure Cross-Origin Resource Sharing to control which domains can access your API. Learn about browser security and modern web application architecture.",
+    "instructions": "### Requirements\n- Create custom CORS middleware (no packages)\n- Whitelist specific origins\n- Handle preflight (OPTIONS) requests\n- Support credentials\n- See Example Usage section, to get more idea about Status codes and Response format\n\n### Allowed Origins\n[\n  'http://localhost:3000',\n  'https://myapp.com',\n  'https://www.myapp.com'\n]\n\n### CORS Headers to Set\n- Access-Control-Allow-Origin\n- Access-Control-Allow-Methods\n- Access-Control-Allow-Headers\n- Access-Control-Allow-Credentials\n\n### Routes to Implement\n- GET /api/public - Public endpoint\n- POST /api/data - Protected endpoint\n- Handle \\`OPTIONS\\` for all routes\n\n### Response for Blocked Origin (403)\n{\n  \"error\": \"CORS policy: Origin not allowed\"\n}\n\n### Hints\n- Check req.headers.origin\n- Set headers using res.set()",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\napp.use(express.json());\\n\\nconst allowedOrigins = [\\n  'http://localhost:3000',\\n  'https://myapp.com',\\n  'https://www.myapp.com'\\n];\\n\\n// TODO: Implement CORS middleware\\n\\n// Routes\\napp.get('/api/public', (req, res) => {\\n  res.json({ message: 'Public data' });\\n});\\n\\napp.post('/api/data', (req, res) => {\\n  res.json({ message: 'Data received', data: req.body });\\n});\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "No CORS packages",
+      "Implement from scratch",
+      "Whitelist specific origins only"
+    ],
+    "tags": ["cors", "security", "middleware"],
+    "testConfig": {
+      "timeoutMs": 60000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"preflight\": {\n      \"url\": \"http://localhost:3000/api/data\",\n      \"curl\": \"curl -X OPTIONS http://localhost:3000/api/data \\\\\\n  -H 'Origin: http://localhost:3000' \\\\\\n  -H 'Access-Control-Request-Method: POST'\",\n      \"method\": \"OPTIONS\",\n      \"headers\": {\n        \"Origin\": \"http://localhost:3000\",\n        \"Access-Control-Request-Method\": \"POST\"\n      }\n    },\n    \"allowedOrigin\": {\n      \"url\": \"http://localhost:3000/api/public\",\n      \"curl\": \"curl -X GET http://localhost:3000/api/public \\\\\\n  -H 'Origin: http://localhost:3000'\",\n      \"method\": \"GET\",\n      \"headers\": {\n        \"Origin\": \"http://localhost:3000\"\n      }\n    },\n    \"blockedOrigin\": {\n      \"url\": \"http://localhost:3000/api/public\",\n      \"curl\": \"curl -X GET http://localhost:3000/api/public \\\\\\n  -H 'Origin: https://evil.com'\",\n      \"method\": \"GET\",\n      \"headers\": {\n        \"Origin\": \"https://evil.com\"\n      }\n    }\n  },\n  \"response\": {\n    \"blocked\": {\n      \"body\": {\n        \"error\": \"CORS policy: Origin not allowed\"\n      },\n      \"status\": \"HTTP/1.1 403 Forbidden\"\n    },\n    \"allowedSuccess\": {\n      \"body\": {\n        \"message\": \"Public data\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\",\n      \"headers\": {\n        \"Access-Control-Allow-Origin\": \"http://localhost:3000\",\n        \"Access-Control-Allow-Credentials\": \"true\"\n      }\n    },\n    \"preflightSuccess\": {\n      \"body\": null,\n      \"status\": \"HTTP/1.1 200 OK\",\n      \"headers\": {\n        \"Access-Control-Allow-Origin\": \"http://localhost:3000\",\n        \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\",\n        \"Access-Control-Allow-Methods\": \"GET, POST, PUT, DELETE, OPTIONS\",\n        \"Access-Control-Allow-Credentials\": \"true\"\n      }\n    }\n  },\n  \"allowedOrigins\": [\n    \"http://localhost:3000\",\n    \"https://myapp.com\",\n    \"https://www.myapp.com\"\n  ]\n}",
+    "isPublished": true
+  },
+  {
+    "title": "JWT with Refresh Tokens",
+    "slug": "jwt-with-refresh-tokens",
+    "difficulty": "HARD",
+    "track": "SECURITY",
+    "shortDescription": "Implement JWT authentication with access and refresh tokens.",
+    "description": "Build a complete authentication system with short-lived access tokens and long-lived refresh tokens. Learn modern authentication best practices used in production.",
+    "instructions": "### Requirements\nImplement a dual-token authentication system\n\n**Access Token**: Short-lived (15 minutes)\n**Refresh Token**: Long-lived (7 days)\n\n### Endpoints to Implement\n\n1. POST /auth/login\n   - Accept email/password\n   - Return both tokens\n\n2. POST /auth/refresh\n   - Accept refresh token\n   - Return new access token\n\n3. GET /auth/profile\n   - Protected with access token\n   - Return user profile\n\n4. POST /auth/logout\n   - Invalidate refresh token\n\n### Login Response (200)\n{\n  \"accessToken\": \"eyJhbG...\",\n  \"refreshToken\": \"eyJhbG...\",\n  \"expiresIn\": 900\n}\n\n### Token Storage\n- Store refresh tokens in-memory Map\n- Associate with user ID\n- Check validity on refresh\n\n### Security Requirements\n- Access tokens expire in 15 minutes\n- Refresh tokens expire in 7 days\n- Invalidated tokens cannot be reused\n- Return 401 for expired/invalid tokens\n\nSee Example Usage section, to get more idea about Status codes and Response format",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst jwt = require('jsonwebtoken');\\nconst app = express();\\n\\napp.use(express.json());\\n\\nconst ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'access-secret';\\nconst REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'refresh-secret';\\n\\nconst ACCESS_TOKEN_EXPIRY = '15m';\\nconst REFRESH_TOKEN_EXPIRY = '7d';\\n\\n// In-memory storage\\nconst users = new Map();\\nconst refreshTokens = new Map(); // Store valid refresh tokens\\n\\n// Demo user\\nusers.set('user@example.com', {\\n  id: '123',\\n  email: 'user@example.com',\\n  password: 'password123'\\n});\\n\\n// TODO: Implement authentication endpoints\\n\\nmodule.exports = app;\\n"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Implement token refresh logic",
+      "Store refresh tokens in-memory",
+      "Different expiry times for tokens"
+    ],
+    "tags": ["jwt", "authentication", "refresh-tokens", "security"],
+    "testConfig": {
+      "timeoutMs": 60000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"flow\": {\n    \"step1\": \"Login → Get access + refresh tokens\",\n    \"step2\": \"Use access token for API calls (15 min)\",\n    \"step3\": \"Access token expires → Use refresh token\",\n    \"step4\": \"Get new access token\",\n    \"step5\": \"Logout → Invalidate refresh token\"\n  },\n  \"request\": {\n    \"login\": {\n      \"url\": \"http://localhost:3000/auth/login\",\n      \"body\": {\n        \"email\": \"user@example.com\",\n        \"password\": \"password123\"\n      },\n      \"curl\": \"curl -X POST http://localhost:3000/auth/login \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"email\\\":\\\"user@example.com\\\",\\\"password\\\":\\\"password123\\\"}'\",\n      \"method\": \"POST\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    },\n    \"logout\": {\n      \"url\": \"http://localhost:3000/auth/logout\",\n      \"body\": {\n        \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n      },\n      \"curl\": \"curl -X POST http://localhost:3000/auth/logout \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"refreshToken\\\":\\\"<your-refresh-token>\\\"}'\",\n      \"method\": \"POST\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    },\n    \"profile\": {\n      \"url\": \"http://localhost:3000/auth/profile\",\n      \"curl\": \"curl -X GET http://localhost:3000/auth/profile \\\\\\n  -H 'Authorization: Bearer <access-token>'\",\n      \"method\": \"GET\",\n      \"headers\": {\n        \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n      }\n    },\n    \"refresh\": {\n      \"url\": \"http://localhost:3000/auth/refresh\",\n      \"body\": {\n        \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n      },\n      \"curl\": \"curl -X POST http://localhost:3000/auth/refresh \\\\\\n  -H 'Content-Type: application/json' \\\\\\n  -d '{\\\"refreshToken\\\":\\\"<your-refresh-token>\\\"}'\",\n      \"method\": \"POST\",\n      \"headers\": {\n        \"Content-Type\": \"application/json\"\n      }\n    }\n  },\n  \"response\": {\n    \"login\": {\n      \"body\": {\n        \"expiresIn\": 900,\n        \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsImVtYWlsIjoidXNlckBleGFtcGxlLmNvbSIsImlhdCI6MTcwNjQ0MzgwMCwiZXhwIjoxNzA2NDQ0NzAwfQ.access\",\n        \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMyIsImlhdCI6MTcwNjQ0MzgwMCwiZXhwIjoxNzA3MDQ4NjAwfQ.refresh\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"logout\": {\n      \"body\": {\n        \"message\": \"Logged out successfully\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"profile\": {\n      \"body\": {\n        \"id\": \"123\",\n        \"email\": \"user@example.com\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"refresh\": {\n      \"body\": {\n        \"expiresIn\": 900,\n        \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n      },\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"expiredAccess\": {\n      \"body\": {\n        \"error\": \"Access token expired\"\n      },\n      \"status\": \"HTTP/1.1 401 Unauthorized\"\n    },\n    \"invalidRefresh\": {\n      \"body\": {\n        \"error\": \"Invalid refresh token\"\n      },\n      \"status\": \"HTTP/1.1 401 Unauthorized\"\n    }\n  }\n}",
+    "isPublished": true
+  },
+  {
+    "title": "GraphQL-like Query API",
+    "slug": "graphql-like-query-api",
+    "difficulty": "HARD",
+    "track": "ROUTING",
+    "shortDescription": "Build a flexible query API with field selection and filtering.",
+    "description": "Create an API that supports GraphQL-like field selection, allowing clients to request only the data they need. Learn advanced query parsing and response transformation.",
+    "instructions": "### Requirements\nImplement a REST endpoint with query-based field selection\n\n### Query Syntax\n- GET /api/users?fields=id,name,email\n- GET /api/users?fields=id,name&filter=verified:true\n- GET /api/users/123?fields=name,posts.title\n\n### Features to Support\n\n1. **Field Selection**\n   - ?fields=id,name - Return only specified fields\n   - No fields param - Return all fields\n\n2. **Filtering**\n   - ?filter=verified:true\n   - ?filter=age>25\n   - ?filter=name:John\n\n3. **Nested Selection** (bonus)\n   - ?fields=id,posts.title,posts.date\n\n### Example\nRequest: GET /api/users?fields=id,name&filter=verified:true\n\nResponse:\n[\n  { \"id\": 1, \"name\": \"John\" },\n  { \"id\": 2, \"name\": \"Jane\" }\n]\n\nSee Example Usage section, to get more idea about Status codes and Response format",
+    "starterCode": [
+      {
+        "filename": "index.js",
+        "content": "const express = require('express');\\nconst app = express();\\n\\napp.use(express.json());\\n\\n// Sample data\\nconst users = [\\n  {\\n    id: 1,\\n    name: 'John Doe',\\n    email: 'john@example.com',\\n    age: 30,\\n    verified: true,\\n    posts: [\\n      { id: 1, title: 'First Post', date: '2026-01-01' },\\n      { id: 2, title: 'Second Post', date: '2026-01-15' }\\n    ]\\n  },\\n  {\\n    id: 2,\\n    name: 'Jane Smith',\\n    email: 'jane@example.com',\\n    age: 25,\\n    verified: true,\\n    posts: []\\n  },\\n  {\\n    id: 3,\\n    name: 'Bob Johnson',\\n    email: 'bob@example.com',\\n    age: 35,\\n    verified: false,\\n    posts: []\\n  }\\n];\\n\\n// TODO: Implement field selection logic\\n\\n// TODO: Implement filtering logic\\n\\n// TODO: Implement GET /api/users route\\n\\n// TODO: Implement GET /api/users/:id route\\n\\nmodule.exports = app;"
+      }
+    ],
+    "constraints": [
+      "No app.listen()",
+      "Export Express app",
+      "Parse query parameters manually",
+      "Support field selection",
+      "Support basic filtering"
+    ],
+    "tags": ["query-api", "graphql-like", "advanced-routing"],
+    "testConfig": {
+      "timeoutMs": 50000,
+      "memoryMb": 256
+    },
+    "examples": "{\n  \"request\": {\n    \"allFields\": {\n      \"url\": \"http://localhost:3000/api/users\",\n      \"curl\": \"curl -X GET http://localhost:3000/api/users\",\n      \"method\": \"GET\"\n    },\n    \"singleUser\": {\n      \"url\": \"http://localhost:3000/api/users/1?fields=name,email\",\n      \"curl\": \"curl -X GET 'http://localhost:3000/api/users/1?fields=name,email'\",\n      \"method\": \"GET\"\n    },\n    \"withFilter\": {\n      \"url\": \"http://localhost:3000/api/users?fields=id,name&filter=verified:true\",\n      \"curl\": \"curl -X GET 'http://localhost:3000/api/users?fields=id,name&filter=verified:true'\",\n      \"method\": \"GET\"\n    },\n    \"nestedFields\": {\n      \"url\": \"http://localhost:3000/api/users?fields=id,name,posts.title,posts.date\",\n      \"curl\": \"curl -X GET 'http://localhost:3000/api/users?fields=id,name,posts.title,posts.date'\",\n      \"method\": \"GET\"\n    },\n    \"selectedFields\": {\n      \"url\": \"http://localhost:3000/api/users?fields=id,name,email\",\n      \"curl\": \"curl -X GET 'http://localhost:3000/api/users?fields=id,name,email'\",\n      \"method\": \"GET\"\n    }\n  },\n  \"response\": {\n    \"allFields\": {\n      \"body\": [\n        {\n          \"id\": 1,\n          \"age\": 30,\n          \"name\": \"John Doe\",\n          \"email\": \"john@example.com\",\n          \"posts\": [\n            {\n              \"id\": 1,\n              \"date\": \"2026-01-01\",\n              \"title\": \"First Post\"\n            }\n          ],\n          \"verified\": true\n        }\n      ],\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"withFilter\": {\n      \"body\": [\n        {\n          \"id\": 1,\n          \"name\": \"John Doe\"\n        },\n        {\n          \"id\": 2,\n          \"name\": \"Jane Smith\"\n        }\n      ],\n      \"note\": \"Only verified users\",\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"nestedFields\": {\n      \"body\": [\n        {\n          \"id\": 1,\n          \"name\": \"John Doe\",\n          \"posts\": [\n            {\n              \"date\": \"2026-01-01\",\n              \"title\": \"First Post\"\n            }\n          ]\n        }\n      ],\n      \"status\": \"HTTP/1.1 200 OK\"\n    },\n    \"selectedFields\": {\n      \"body\": [\n        {\n          \"id\": 1,\n          \"name\": \"John Doe\",\n          \"email\": \"john@example.com\"\n        },\n        {\n          \"id\": 2,\n          \"name\": \"Jane Smith\",\n          \"email\": \"jane@example.com\"\n        }\n      ],\n      \"status\": \"HTTP/1.1 200 OK\"\n    }\n  },\n  \"filterOperators\": {\n    \"equals\": \"filter=verified:true\",\n    \"string\": \"filter=name:John\",\n    \"lessThan\": \"filter=age<40\",\n    \"greaterThan\": \"filter=age>25\"\n  }\n}",
+    "isPublished": true
+  }
+]

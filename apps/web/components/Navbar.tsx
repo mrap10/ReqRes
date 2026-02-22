@@ -158,7 +158,7 @@ export default function Navbar() {
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-white/80 transition-all hover:border-indigo-300/35 hover:text-white"
                     >
-                      <Star className="w-4 h-4 border-2 fill-white/75" />
+                      <Star className="w-4 h-4" />
                       Star
                     </Link>
                     {isLoading ? (

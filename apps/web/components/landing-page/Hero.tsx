@@ -119,7 +119,7 @@ export default function Hero() {
             </span>
           </div>
 
-          <div className="w-130 space-y-1 p-4 font-mono text-xs text-white/75">
+          <div className="md:w-130 space-y-1 p-4 font-mono text-xs text-white/75">
             <TerminalCode typingComplete={typingComplete} setTypingComplete={setTypingComplete} />
           </div>
 

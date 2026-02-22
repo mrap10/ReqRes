@@ -17,7 +17,7 @@ const TEST_USERS: TestUser[] = [
     username: "admin",
     name: "Admin User",
     role: "ADMIN",
-    xp: 500,
+    xp: 0,
   },
   {
     email: "test@reqres.site",
@@ -25,7 +25,7 @@ const TEST_USERS: TestUser[] = [
     username: "testuser",
     name: "Test User",
     role: "USER",
-    xp: 100,
+    xp: 0,
   },
   {
     email: "alice@reqres.site",
@@ -33,7 +33,7 @@ const TEST_USERS: TestUser[] = [
     username: "alice_coder",
     name: "Alice",
     role: "USER",
-    xp: 150,
+    xp: 0,
   },
 ];
 

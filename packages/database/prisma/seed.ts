@@ -7,34 +7,34 @@ import { SubmissionType, Difficulty, ProblemTrack } from "../src/generated/prism
 // This will create pre-verified users with credentials for testing
 
 async function seedUser() {
-  // Seed a basic user (no password, expects OAuth login)
   await prisma.user.upsert({
     where: { email: "dev@reqres.site" },
     update: {},
     create: {
       email: "dev@reqres.site",
       username: "devuser",
-      xp: 225,
+      xp: 0,
       emailVerified: true,
       role: "USER",
       name: "Dev",
     },
   });
 
-  console.log("✓ Seeded user");
+  console.log("\u2713 Seeded user: dev@reqres.site");
 }
 
 async function seedProblems() {
-  // 3 easy problems (indices 0, 1, 2) and 2 medium problems (indices 3, 4)
-  const problemsToSeed = problems.slice(0, 5);
+  const counts = { created: 0, skipped: 0 };
+  const byDifficulty: Record<string, number> = {};
 
-  for (const problemData of problemsToSeed) {
+  for (const problemData of problems) {
     const existing = await prisma.problem.findUnique({
       where: { slug: problemData.slug },
     });
 
     if (existing) {
-      console.log(`⊘ ${problemData.slug} already exists, skipping`);
+      console.log(`\u2298 ${problemData.slug} (already exists)`);
+      counts.skipped++;
       continue;
     }
 
@@ -50,12 +50,23 @@ async function seedProblems() {
       },
     });
 
-    console.log(`✓ Seeded ${problemData.slug}`);
+    byDifficulty[problemData.difficulty] = (byDifficulty[problemData.difficulty] || 0) + 1;
+    counts.created++;
+    console.log(`\u2713 ${problemData.slug} [${problemData.difficulty}]`);
+  }
+
+  console.log(`\nProblems: ${counts.created} created, ${counts.skipped} skipped (already existed)`);
+  if (counts.created > 0) {
+    const breakdown = Object.entries(byDifficulty)
+      .map(([d, c]) => `${c} ${d.toLowerCase()}`)
+      .join(", ");
+    console.log(`Breakdown: ${breakdown}`);
   }
 }
 
 async function main() {
   console.log("Starting database seeding...\n");
+  console.log(`Source: problems.json → ${problems.length} published problems\n`);
 
   await seedUser();
   await seedProblems();

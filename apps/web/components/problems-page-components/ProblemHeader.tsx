@@ -3,6 +3,7 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/providers/AuthProvider";
+import Image from "next/image";
 
 export default function ProblemHeader() {
   const { user, isAuthenticated } = useAuth();
@@ -44,16 +45,28 @@ export default function ProblemHeader() {
           Server Ready
         </div>
         {isAuthenticated ? (
-          <Link href="/profile" className="flex items-center gap-2">
-            <button
-              aria-label="Account"
-              className="w-9 h-9 rounded-full border border-white/15 bg-white/5 text-shadow-xs text-white/80 transition hover:border-indigo-300/40 hover:text-white cursor-pointer"
-            >
-              {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-            </button>
+          <Link
+            href="/profile"
+            aria-label="Account"
+            className="block overflow-hidden rounded-full border border-white/15 transition hover:border-indigo-300/40 cursor-pointer"
+          >
+            {user?.image ? (
+              <div className="relative h-8 w-8">
+                <Image src={user.image} alt="Avatar" fill className="object-cover" sizes="32px" />
+              </div>
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center bg-linear-to-br from-indigo-500 to-cyan-400 text-sm font-semibold text-white">
+                {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+              </div>
+            )}
           </Link>
         ) : (
-          <h1 className="hover:text-indigo-400 cursor-pointer">Sign In</h1>
+          <Link
+            href="/signin"
+            className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white/90 transition hover:border-cyan-300/40 hover:text-white"
+          >
+            Sign In
+          </Link>
         )}
       </div>
     </div>

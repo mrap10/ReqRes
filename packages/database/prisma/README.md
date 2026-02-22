@@ -6,7 +6,7 @@ This folder contains database seed scripts for development and testing.
 
 ### 1. Main Seed Script (`seed.ts`)
 
-Seeds the database with problems and a basic user.
+Seeds the database with a dev user and all **14 published problems** that have runner test suites.
 
 ```bash
 bun run db:seed
@@ -14,13 +14,8 @@ bun run db:seed
 
 **What it seeds:**
 
-- Basic user (OAuth-only, no password)
-- Problems:
-  - Hello Express API
-  - Query Parameter Parser
-  - Request Body Parser
-  - In-Memory CRUD API
-  - JWt Auth Middleware
+- **Dev user** — `dev@reqres.site` (OAuth-only, no password, 0 XP)
+- **14 published problems**
 
 ### 2. Test Users Script (`seed-test-users.ts`)
 
@@ -36,19 +31,19 @@ bun run db:seed-test-users
   - Email: `admin@reqres.site`
   - Password: `Admin@123`
   - Role: ADMIN
-  - XP: 500
+  - XP: 0
 
 - **Test User**
   - Email: `test@reqres.site`
   - Password: `Test@123`
   - Role: USER
-  - XP: 100
+  - XP: 0
 
 - **Alice**
   - Email: `alice@reqres.site`
   - Password: `Alice@123`
   - Role: USER
-  - XP: 150
+  - XP: 0
 
 All users are created with:
 
@@ -61,16 +56,28 @@ All users are created with:
 To seed everything:
 
 ```bash
-# Seed problems and basic user
+# Seed problems and dev user
 bun run db:seed
 
 # Seed test users with credentials
 bun run db:seed-test-users
 ```
 
+## Architecture
+
+```text
+problems.json          ← single source of truth (all problems, published + unpublished)
+    ↓
+problems-data.ts       ← filters to published slugs (useful if some problems' desc. and test suites are not ready to be published), normalizes for Prisma
+    ↓
+seed.ts                ← upserts dev user + creates problems (idempotent)
+seed-test-users.ts     ← creates test users with hashed passwords (idempotent)
+```
+
 ## Notes
 
-- The seed scripts are idempotent - they won't duplicate users/problems if run multiple times
-- Passwords are hashed using better-auth's `hashPassword` function (scrypt-based with format `salt:key`)
-- The `providerId` for email/password accounts is set to `"credential"` (better-auth convention)
-- Test users are pre-verified (`emailVerified: true`) for easier testing
+- Seed scripts are **idempotent** — safe to run multiple times without duplicating data
+- `problems-data.ts` forces `isPublished: true` and injects `submissionType: "EXPRESS_API"`
+- All seeded users start with **0 XP** (clean slate)
+- Passwords are hashed using better-auth's `hashPassword` (scrypt-based, format `salt:key`)
+- The `providerId` for email/password accounts is `"credential"` (better-auth convention)

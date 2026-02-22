@@ -50,7 +50,7 @@ export default function LeaderboardTable({
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b0b10]">
       {!isLoading && currentUserId && !isUserOnBoard && !userEntry && (
-        <div className="m-4 mb-0 p-4 bg-linear-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-lg">
+        <div className="m-4 mb-0 p-4 bg-linear-to-r from-indigo-500/10 via-transparent to-cyan-500/10 border border-indigo-500/20 rounded-lg">
           <div className="flex items-start gap-3">
             <div className="shrink-0 mt-0.5">
               <MessageCircleWarning className="w-5 h-5 text-red-400" />
@@ -66,7 +66,7 @@ export default function LeaderboardTable({
               </div>
               <Link
                 href="/problems"
-                className="inline-flex items-center gap-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-2 text-xs font-medium text-white hover:text-indigo-300 transition-colors whitespace-nowrap"
               >
                 Start solving problems
                 <ArrowRight className="w-3 h-3" />
