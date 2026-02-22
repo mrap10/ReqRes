@@ -15,6 +15,7 @@ import { useProblemForm } from "@/lib/hooks/useProblemForm";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function AddProblemsPage() {
   const searchParams = useSearchParams();
@@ -61,9 +62,9 @@ export default function AddProblemsPage() {
 
     const success = await submitForm();
     if (success) {
-      setSuccessMessage(
-        isEditMode ? "Problem updated successfully!" : "Problem created successfully!"
-      );
+      const msg = isEditMode ? "Problem updated successfully!" : "Problem created successfully!";
+      setSuccessMessage(msg);
+      toast.success(msg);
       setTimeout(() => {
         if (isEditMode) {
           router.push("/problem");

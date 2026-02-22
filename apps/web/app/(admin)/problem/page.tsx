@@ -4,6 +4,7 @@ import { AdminSidebar } from "@/components/admin-components";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Trash2, Pencil, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -51,12 +52,13 @@ export default function AdminProblemsPage() {
       });
       if (res.ok) {
         setProblems((prev) => prev.filter((p) => p.id !== id));
+        toast.success("Problem deleted successfully!");
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to delete problem");
+        toast.error(data.error || "Failed to delete problem");
       }
     } catch {
-      alert("Failed to delete problem");
+      toast.error("Failed to delete problem");
     } finally {
       setDeletingId(null);
     }

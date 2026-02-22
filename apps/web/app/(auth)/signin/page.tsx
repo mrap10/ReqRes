@@ -8,6 +8,7 @@ import { Github, Lock, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SigninPage() {
   const [email, setEmail] = useState("");
@@ -32,10 +33,13 @@ export default function SigninPage() {
       { email, password },
       {
         onSuccess: () => {
+          toast.success("Welcome back! 👋");
           router.push("/problems");
         },
         onError: (ctx) => {
-          setError(ctx.error.message || "An unexpected error occurred while signing in.");
+          const msg = ctx.error.message || "An unexpected error occurred while signing in.";
+          setError(msg);
+          toast.error(msg);
           setIsLoading(false);
         },
       }
@@ -52,7 +56,9 @@ export default function SigninPage() {
       },
       {
         onError: (ctx) => {
-          setError(ctx.error.message || "An unexpected error occurred.");
+          const msg = ctx.error.message || "An unexpected error occurred.";
+          setError(msg);
+          toast.error(msg);
           setIsLoading(false);
         },
       }

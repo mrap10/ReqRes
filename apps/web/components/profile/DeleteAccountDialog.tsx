@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -34,10 +35,13 @@ export default function DeleteAccountDialog({ isOpen, onClose }: DeleteAccountDi
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Failed to delete account.");
+        const msg = data.error || "Failed to delete account.";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
+      toast.success("Account deleted. Goodbye! ☹️");
       await signOut({
         fetchOptions: {
           onSuccess: () => router.push("/"),
@@ -45,6 +49,7 @@ export default function DeleteAccountDialog({ isOpen, onClose }: DeleteAccountDi
       });
     } catch {
       setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsDeleting(false);
     }

@@ -7,6 +7,7 @@ import { Mail, KeyRound, Lock, ChevronLeft, CheckCircle, AlertCircle } from "luc
 import AuthLeftSide from "@/components/AuthLeftSide";
 import InputField from "@/components/InputField";
 import { requestPasswordReset, resetPassword } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 export default function PasswordReset() {
   const searchParams = useSearchParams();
@@ -45,10 +46,13 @@ export default function PasswordReset() {
       {
         onSuccess: () => {
           setEmailSent(true);
+          toast.success("Reset link sent! Check your inbox.");
           setIsLoading(false);
         },
         onError: (ctx: { error: { message?: string } }) => {
-          setError(ctx.error.message || "Failed to send reset email. Please try again.");
+          const msg = ctx.error.message || "Failed to send reset email. Please try again.";
+          setError(msg);
+          toast.error(msg);
           setIsLoading(false);
         },
       }
@@ -81,10 +85,13 @@ export default function PasswordReset() {
       {
         onSuccess: () => {
           setStep("success");
+          toast.success("Password reset successful!");
           setIsLoading(false);
         },
         onError: (ctx: { error: { message?: string } }) => {
-          setError(ctx.error.message || "Password reset failed. The link may have expired.");
+          const msg = ctx.error.message || "Password reset failed. The link may have expired.";
+          setError(msg);
+          toast.error(msg);
           setIsLoading(false);
         },
       }

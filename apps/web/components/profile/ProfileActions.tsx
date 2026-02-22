@@ -1,6 +1,7 @@
 import { signOut } from "@/lib/auth-client";
 import { LogOut, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ProfileActionsProps {
   onDeleteAccount: () => void;
@@ -12,6 +13,7 @@ export default function ProfileActions({ onDeleteAccount }: ProfileActionsProps)
     await signOut({
       fetchOptions: {
         onSuccess: () => {
+          toast.success("Logged out successfully!");
           router.push("/signin");
         },
       },

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import AuthLeftSide from "@/components/AuthLeftSide";
+import { toast } from "sonner";
 
 export default function VerifyEmailContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -19,8 +20,10 @@ export default function VerifyEmailContent() {
     if (error === "invalid_token") {
       setStatus("error");
       setErrorMessage("The verification link is invalid or has expired.");
+      toast.error("Verification failed. The link is invalid or expired.");
     } else {
       setStatus("success");
+      toast.success("Email verified successfully! 🎉");
     }
   }, [searchParams]);
 
@@ -29,6 +32,7 @@ export default function VerifyEmailContent() {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else if (status === "success" && countdown === 0) {
+      toast.info("Redirecting to problems page...");
       router.push("/problems");
     }
   }, [status, countdown, router]);

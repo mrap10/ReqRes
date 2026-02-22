@@ -7,6 +7,7 @@ import { signIn, signUp, sendVerificationEmail } from "@/lib/auth-client";
 import { Github, Lock, Mail, Terminal, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -39,11 +40,14 @@ export default function SignupPage() {
       } as Parameters<typeof signUp.email>[0],
       {
         onSuccess: () => {
+          toast.success("Account created! Please verify your email.");
           setShowVerificationScreen(true);
           setIsLoading(false);
         },
         onError: (ctx) => {
-          setError(ctx.error.message || "An unexpected error occurred while signing up.");
+          const msg = ctx.error.message || "An unexpected error occurred while signing up.";
+          setError(msg);
+          toast.error(msg);
           setIsLoading(false);
         },
       }
@@ -60,10 +64,13 @@ export default function SignupPage() {
       {
         onSuccess: () => {
           setResendMessage("Verification email sent! Check your inbox.");
+          toast.success("Verification email sent!");
           setResendLoading(false);
         },
         onError: (ctx: { error: { message?: string } }) => {
-          setError(ctx.error.message || "Failed to resend verification email.");
+          const msg = ctx.error.message || "Failed to resend verification email.";
+          setError(msg);
+          toast.error(msg);
           setResendLoading(false);
         },
       }
@@ -80,7 +87,9 @@ export default function SignupPage() {
       },
       {
         onError: (ctx) => {
-          setError(ctx.error.message || "An unexpected error occurred.");
+          const msg = ctx.error.message || "An unexpected error occurred.";
+          setError(msg);
+          toast.error(msg);
           setIsLoading(false);
         },
       }

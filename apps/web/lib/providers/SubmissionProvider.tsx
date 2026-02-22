@@ -145,6 +145,24 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
               duration: 3000,
             });
           }
+
+          if (mappedStatus === "passed") {
+            toast.info("You will be redirected to /problems page", {
+              duration: 4000,
+            });
+          }
+
+          if (mappedStatus === "failed") {
+            toast.error("Some test cases failed. Try again!", {
+              duration: 3000,
+            });
+          }
+
+          if (mappedStatus === "error") {
+            toast.error("Runtime error encountered.", {
+              duration: 3000,
+            });
+          }
         }
 
         if (logsRes.ok) {

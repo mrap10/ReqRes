@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -44,9 +45,12 @@ export default function AvatarPicker({
       if (res.ok) {
         onSave(selected);
         onClose();
+        toast.success("Avatar updated successfully!");
+      } else {
+        toast.error("Failed to update avatar.");
       }
     } catch {
-      // silently fail
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSaving(false);
     }

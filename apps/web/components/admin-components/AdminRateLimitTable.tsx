@@ -2,6 +2,7 @@
 
 import { Ban, Edit2, Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 
@@ -62,6 +63,7 @@ export default function AdminRateLimitTable() {
       }
     } catch (error) {
       console.error("Failed to fetch rate limit data:", error);
+      toast.error("Failed to fetch rate limit data.");
     } finally {
       setIsLoading(false);
     }
@@ -83,10 +85,14 @@ export default function AdminRateLimitTable() {
       if (response.ok) {
         setShowAddOverride(false);
         setNewOverride({ userId: "", limit: 100, windowMs: 60000, reason: "" });
+        toast.success("Override added successfully!");
         fetchData();
+      } else {
+        toast.error("Failed to add override.");
       }
     } catch (error) {
       console.error("Failed to add override:", error);
+      toast.error("Failed to add override.");
     }
   };
 
@@ -108,10 +114,14 @@ export default function AdminRateLimitTable() {
 
       if (response.ok) {
         setEditingOverride(null);
+        toast.success("Override updated successfully!");
         fetchData();
+      } else {
+        toast.error("Failed to update override.");
       }
     } catch (error) {
       console.error("Failed to update override:", error);
+      toast.error("Failed to update override.");
     }
   };
 
@@ -123,10 +133,14 @@ export default function AdminRateLimitTable() {
       });
 
       if (response.ok) {
+        toast.success("Override deleted successfully!");
         fetchData();
+      } else {
+        toast.error("Failed to delete override.");
       }
     } catch (error) {
       console.error("Failed to delete override:", error);
+      toast.error("Failed to delete override.");
     }
   };
 
@@ -146,10 +160,14 @@ export default function AdminRateLimitTable() {
       if (response.ok) {
         setShowBlockIP(false);
         setNewBlock({ ip: "", reason: "", expiresInMinutes: "" });
+        toast.success("IP blocked successfully!");
         fetchData();
+      } else {
+        toast.error("Failed to block IP.");
       }
     } catch (error) {
       console.error("Failed to block IP:", error);
+      toast.error("Failed to block IP.");
     }
   };
 
@@ -164,10 +182,14 @@ export default function AdminRateLimitTable() {
       );
 
       if (response.ok) {
+        toast.success("IP unblocked successfully!");
         fetchData();
+      } else {
+        toast.error("Failed to unblock IP.");
       }
     } catch (error) {
       console.error("Failed to unblock IP:", error);
+      toast.error("Failed to unblock IP.");
     }
   };
 
@@ -272,7 +294,7 @@ export default function AdminRateLimitTable() {
                         {formatTime(override.windowMs)}
                       </span>
                     </td>
-                    <td className="p-4 text-zinc-500 text-xs max-w-[200px] truncate">
+                    <td className="p-4 text-zinc-500 text-xs max-w-50 truncate">
                       {override.reason || "—"}
                     </td>
                     <td className="p-4 text-zinc-500 text-xs">{formatDate(override.createdAt)}</td>
@@ -322,9 +344,7 @@ export default function AdminRateLimitTable() {
                       <Ban className="w-3 h-3 text-rose-500" />
                       {item.ip}
                     </td>
-                    <td className="p-4 text-zinc-400 text-sm max-w-[200px] truncate">
-                      {item.reason}
-                    </td>
+                    <td className="p-4 text-zinc-400 text-sm max-w-50 truncate">{item.reason}</td>
                     <td className="p-4 font-mono text-zinc-500 text-sm">
                       {item.expiresAt ? formatDate(item.expiresAt) : "Never"}
                     </td>

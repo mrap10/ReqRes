@@ -3,6 +3,7 @@
 import { Check, Loader2, Pencil } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -60,9 +61,12 @@ export default function ProfileCard({
         setHasSaved(true);
         setIsEditing(false);
         onUserUpdated();
+        toast.success("Name updated successfully!");
+      } else {
+        toast.error("Failed to update name.");
       }
     } catch {
-      // silently fail
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSaving(false);
     }
