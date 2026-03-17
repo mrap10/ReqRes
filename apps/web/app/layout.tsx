@@ -40,13 +40,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} ${JetBrainsMono.variable} antialiased`}
       >
         <AuthProvider>
           <UserSubmissionsProvider>
-            <ThemeProvider attribute={"class"} defaultTheme="dark" disableTransitionOnChange>
+            <ThemeProvider>
               {children}
               <Toaster position="bottom-right" theme="dark" richColors />
             </ThemeProvider>

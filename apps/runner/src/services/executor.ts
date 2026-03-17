@@ -311,7 +311,12 @@ function parseTestOutput(JestJson: JestJSON): ExecuteResponse["results"] {
             ? sanitizeError(assertion.failureMessages.join("\n"))
             : undefined,
         index: testIndex,
-        location: assertion.location,
+        location:
+          assertion.location &&
+          typeof assertion.location.line === "number" &&
+          typeof assertion.location.column === "number"
+            ? assertion.location
+            : undefined,
       });
       testIndex++;
     }

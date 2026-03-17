@@ -35,11 +35,15 @@ const RunnerResultSchema = z.object({
         error: z.string().max(2_000).optional(),
         index: z.number().int().nonnegative().optional(),
         location: z
-          .object({
-            line: z.number().int().nonnegative(),
-            column: z.number().int().nonnegative(),
-          })
-          .optional(),
+          .union([
+            z.object({
+              line: z.number().int().nonnegative(),
+              column: z.number().int().nonnegative(),
+            }),
+            z.null(),
+          ])
+          .optional()
+          .transform((value) => value ?? undefined),
       })
     )
     .max(200)
@@ -115,6 +119,16 @@ router.post("/result", async (req, res) => {
 
   const parseResult = RunnerResultSchema.safeParse(req.body);
   if (!parseResult.success) {
+    apiLogger.warn(
+      {
+        issues: parseResult.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+          code: issue.code,
+        })),
+      },
+      "Invalid runner callback payload"
+    );
     return res.status(400).json({ error: "Invalid runner callback payload" });
   }
 
