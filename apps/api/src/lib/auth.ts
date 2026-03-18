@@ -13,7 +13,11 @@ function getOriginFromUrl(urlValue?: string): string | null {
   try {
     return new URL(urlValue).origin;
   } catch {
-    return null;
+    try {
+      return new URL(`https://${urlValue}`).origin;
+    } catch {
+      return null;
+    }
   }
 }
 

@@ -79,7 +79,7 @@ export default function SignupPage() {
 
   const handleSocialLogin = async (provider: "github") => {
     setIsLoading(true);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const appUrl = window.location.origin;
     await signIn.social(
       {
         provider,

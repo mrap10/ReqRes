@@ -9,10 +9,38 @@ import { runnerLogger } from "./src/lib/logger.js";
 
 const PORT = process.env.PORT;
 
+const normalizeOrigin = (origin: string): string => {
+  const trimmed = origin.trim().replace(/\/$/, "");
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
+const allowedOrigins = (process.env.WEB_BASE_URL || "http://localhost:3000")
+  .split(",")
+  .map((value) => normalizeOrigin(value))
+  .filter(Boolean);
+
 export const app = express();
 app.use(
   cors({
-    origin: process.env.WEB_BASE_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const normalizedOrigin = normalizeOrigin(origin);
+      const isAllowed = allowedOrigins.includes(normalizedOrigin);
+
+      if (isAllowed) {
+        callback(null, true);
+        return;
+      }
+
+      runnerLogger.warn({ origin, allowedOrigins }, "Blocked by CORS policy");
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
