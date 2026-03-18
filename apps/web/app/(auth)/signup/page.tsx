@@ -79,11 +79,12 @@ export default function SignupPage() {
 
   const handleSocialLogin = async (provider: "github") => {
     setIsLoading(true);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
     await signIn.social(
       {
         provider,
-        callbackURL: "http://localhost:3000/problems",
-        errorCallbackURL: "http://localhost:3000/signup",
+        callbackURL: `${appUrl}/problems`,
+        errorCallbackURL: `${appUrl}/signup`,
       },
       {
         onError: (ctx) => {

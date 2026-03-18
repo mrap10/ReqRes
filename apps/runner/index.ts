@@ -3,12 +3,19 @@ import { initializeSentry, setupSentryErrorHandler } from "./src/lib/sentry.js";
 initializeSentry();
 
 import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { executeRouter } from "./src/routes/execute.js";
 import { runnerLogger } from "./src/lib/logger.js";
 
 const PORT = process.env.PORT;
 
 export const app = express();
+app.use(
+  cors({
+    origin: process.env.WEB_BASE_URL || "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 
 app.use("/internal/execute", executeRouter);
