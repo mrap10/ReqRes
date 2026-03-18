@@ -124,6 +124,7 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 
 app.listen(PORT, () => {
   apiLogger.info({ port: PORT }, `API server started`);
+  apiLogger.info({ allowedOrigins }, "CORS allowed origins");
   if (WORKER_ENABLED) {
     apiLogger.info({ concurrency: process.env.WORKER_CONCURRENCY || 5 }, "Embedded worker started");
   } else {

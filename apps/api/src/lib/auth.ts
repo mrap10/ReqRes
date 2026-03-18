@@ -21,19 +21,51 @@ function getOriginFromUrl(urlValue?: string): string | null {
   }
 }
 
+function parseMultipleOrigins(urlString?: string): string[] {
+  if (!urlString) return [];
+
+  return urlString
+    .split(",")
+    .map((url) => url.trim())
+    .map((url) => getOriginFromUrl(url))
+    .filter((origin): origin is string => Boolean(origin));
+}
+
 const trustedOrigins = Array.from(
   new Set(
     [
       "http://localhost:3000",
-      getOriginFromUrl(process.env.WEB_BASE_URL),
+      ...parseMultipleOrigins(process.env.WEB_BASE_URL),
       getOriginFromUrl(process.env.BETTER_AUTH_URL),
     ].filter((origin): origin is string => Boolean(origin))
   )
 );
 
+const authBaseUrl = process.env.BETTER_AUTH_URL || "http://localhost:4000";
+const githubRedirectUrl = `${authBaseUrl}/api/auth/callback/github`;
+
+const redirectOrigins = Array.from(
+  new Set(["http://localhost:3000", ...parseMultipleOrigins(process.env.WEB_BASE_URL)])
+);
+
+const authOrigin = getOriginFromUrl(process.env.BETTER_AUTH_URL);
+
+const defaultWebOrigin =
+  redirectOrigins.find((origin) => origin !== "http://localhost:3000" && origin !== authOrigin) ||
+  trustedOrigins.find((origin) => origin !== "http://localhost:3000" && origin !== authOrigin) ||
+  redirectOrigins.find((origin) => origin !== authOrigin);
+
+const authErrorRedirectUrl = `${defaultWebOrigin || "http://localhost:3000"}/signin`;
+
+const isSecureAuthContext =
+  process.env.NODE_ENV === "production" || (authOrigin ? authOrigin.startsWith("https://") : false);
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:4000",
+  baseURL: authBaseUrl,
   basePath: "/api/auth",
+  onAPIError: {
+    errorURL: authErrorRedirectUrl,
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -83,6 +115,7 @@ export const auth = betterAuth({
           github: {
             clientId: process.env.GITHUB_CLIENT_ID,
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            redirectURI: githubRedirectUrl,
             mapProfileToUser: (profile) => {
               return {
                 email: profile.email || `${profile.login}@users.noreply.github.com`,
@@ -112,13 +145,15 @@ export const auth = betterAuth({
       },
     },
   },
+  account: {
+    skipStateCookieCheck: true,
+  },
   trustedOrigins,
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
     cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60,
+      enabled: false,
     },
   },
   advanced: {
@@ -126,8 +161,25 @@ export const auth = betterAuth({
       enabled: false,
     },
     cookiePrefix: "reqres",
-    useSecureCookies: process.env.NODE_ENV === "production",
+    useSecureCookies: isSecureAuthContext,
+    defaultCookieAttributes: {
+      sameSite: isSecureAuthContext ? "none" : "lax",
+      secure: isSecureAuthContext,
+    },
   },
+  allowedRedirectURLs: [
+    "http://localhost:3000/problems",
+    "http://localhost:3000/signin",
+    "http://localhost:3000/signup",
+    "http://localhost:3000/verify-email",
+    ...redirectOrigins.flatMap((origin) => [
+      `${origin}/problems`,
+      `${origin}/signin`,
+      `${origin}/signup`,
+      `${origin}/verify-email`,
+    ]),
+    githubRedirectUrl,
+  ].filter(Boolean),
   rateLimit: {
     enabled: true,
     window: 60,

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { X, Menu, Loader2, Star } from "lucide-react";
 import { useAuth } from "@/lib/providers/AuthProvider";
 import { AnimatePresence, motion } from "motion/react";
@@ -17,26 +17,8 @@ const navItems = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const { user, isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  });
 
   return (
     <header className="sticky top-0 z-50">
@@ -85,7 +67,7 @@ export default function Navbar() {
                 <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
               ) : isAuthenticated ? (
                 <Link
-                  href="profile"
+                  href="/profile"
                   aria-label="Account"
                   className="block overflow-hidden rounded-full border border-white/15 transition hover:border-indigo-300/40 cursor-pointer"
                 >
@@ -165,7 +147,7 @@ export default function Navbar() {
                       <Loader2 className="w-5 h-5 text-zinc-400 animate-spin" />
                     ) : isAuthenticated ? (
                       <Link
-                        href="profile"
+                        href="/profile"
                         aria-label="Account"
                         className="block overflow-hidden rounded-full border border-white/15 transition hover:border-indigo-300/40 cursor-pointer"
                       >
