@@ -5,6 +5,7 @@ import { ProblemDetailDTO } from "@reqres/types";
 import InstructionsRenderer from "./InstructionsRenderer";
 import { useState, useMemo } from "react";
 import DifficultyTag from "../DifficultyTag";
+import Link from "next/link";
 
 interface LeftSideProblemsPageProps {
   problemDetails: ProblemDetailDTO;
@@ -240,6 +241,19 @@ export default function LeftSideProblemsPage({ problemDetails }: LeftSideProblem
           </div>
         </div>
       )}
+
+      <div className="flex items-center gap-2 mt-5 border-t border-zinc-800 pt-5">
+        <div className="font-mono italic text-white/70 text-[8px] rounded-full bg-zinc-800 px-1 font-semibold py-0.5">
+          i
+        </div>
+        <p className="text-[11px] text-white/50">
+          If it fails to record submissions even with correct code, please{" "}
+          <Link href={"/feedback"} className="text-blue-400 underline-offset-2 hover:underline">
+            report
+          </Link>{" "}
+          to us with the steps to reproduce. We&apos;ll investigate the server and fix it ASAP.
+        </p>
+      </div>
     </div>
   );
 }

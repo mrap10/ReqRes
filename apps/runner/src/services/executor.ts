@@ -11,12 +11,10 @@ import { executorLogger } from "../lib/logger.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TESTS_BASE_DIR = path.join(__dirname, "../../tests");
 const MAX_SUBMISSION_FILES = 30;
 const MAX_FILE_SIZE_BYTES = 100_000;
 const MAX_TOTAL_CODE_SIZE_BYTES = 500_000;
 
-// whitelisting for now (will replace it with dynamic check later in v1)
 const ALLOWED_PROBLEM_SLUGS = new Set([
   "hello-express-api",
   "query-parameter-parser",
@@ -33,6 +31,46 @@ const ALLOWED_PROBLEM_SLUGS = new Set([
   "jwt-with-refresh-tokens",
   "graphql-like-query-api",
 ]);
+
+let resolvedTestsBaseDir: string | null = null;
+
+async function resolveTestsBaseDir(): Promise<string> {
+  if (resolvedTestsBaseDir) {
+    return resolvedTestsBaseDir;
+  }
+
+  const configuredPath = process.env.RUNNER_TESTS_DIR?.trim();
+  const candidates: string[] = [];
+
+  if (configuredPath) {
+    candidates.push(
+      path.isAbsolute(configuredPath) ? configuredPath : path.resolve(process.cwd(), configuredPath)
+    );
+  }
+
+  candidates.push(path.resolve(process.cwd(), "tests"));
+  candidates.push(path.resolve(__dirname, "../../tests"));
+  candidates.push(path.resolve(__dirname, "../tests"));
+
+  const uniqueCandidates = [...new Set(candidates)];
+
+  for (const candidate of uniqueCandidates) {
+    try {
+      const stat = await fs.stat(candidate);
+      if (stat.isDirectory()) {
+        resolvedTestsBaseDir = candidate;
+        executorLogger.info({ testsBaseDir: candidate }, "Resolved tests base directory");
+        return candidate;
+      }
+    } catch {
+      // ignore and try next candidate
+    }
+  }
+
+  throw new Error(
+    `Runner test suites directory not found. Checked: ${uniqueCandidates.join(", ")}`
+  );
+}
 
 async function emitLog(
   submissionId: string,
@@ -59,7 +97,8 @@ async function copyTestFiles(problemSlug: string, workspace: string): Promise<bo
   }
 
   const sanitizedSlug = path.basename(problemSlug);
-  const testSourceDir = path.join(TESTS_BASE_DIR, sanitizedSlug);
+  const testsBaseDir = await resolveTestsBaseDir();
+  const testSourceDir = path.join(testsBaseDir, sanitizedSlug);
   const testDestDir = path.join(workspace, "tests", sanitizedSlug);
 
   try {

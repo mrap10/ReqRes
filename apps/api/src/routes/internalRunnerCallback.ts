@@ -171,6 +171,7 @@ router.post("/result", async (req, res) => {
       const { userId, problemId, problem } = currentSubmission;
       let xpToAward = 0;
       let isFirstTryBonus = false;
+      let hasRewardedPassedSubmission = false;
 
       if (prismaStatus === SubmissionStatus.PASSED && !isRunMode) {
         const previousPassedSubmission = await tx.submission.findFirst({
@@ -178,11 +179,14 @@ router.post("/result", async (req, res) => {
             userId,
             problemId,
             status: SubmissionStatus.PASSED,
+            OR: [{ score: { gt: 0 } }, { isFirstTryBonus: true }],
             id: { not: submissionId },
           },
         });
 
-        if (!previousPassedSubmission) {
+        hasRewardedPassedSubmission = Boolean(previousPassedSubmission);
+
+        if (!hasRewardedPassedSubmission) {
           const baseXP = XP_VALUES[problem.difficulty as keyof typeof XP_VALUES] || 0;
 
           const isFirstSubmission = await tx.submission.count({
@@ -267,38 +271,6 @@ router.post("/result", async (req, res) => {
 
           await tx.submission.deleteMany({
             where: { id: { in: oldIds } },
-          });
-        }
-      }
-
-      if (prismaStatus === SubmissionStatus.PASSED && !isRunMode) {
-        const oldPassedSubmissions = await tx.submission.findMany({
-          where: {
-            userId,
-            problemId,
-            status: SubmissionStatus.PASSED,
-            id: { not: submissionId },
-          },
-          select: { id: true },
-        });
-
-        if (oldPassedSubmissions.length > 0) {
-          await tx.executionResult.deleteMany({
-            where: {
-              submissionId: { in: oldPassedSubmissions.map((s) => s.id) },
-            },
-          });
-
-          await tx.executionLog.deleteMany({
-            where: {
-              submissionId: { in: oldPassedSubmissions.map((s) => s.id) },
-            },
-          });
-
-          await tx.submission.deleteMany({
-            where: {
-              id: { in: oldPassedSubmissions.map((s) => s.id) },
-            },
           });
         }
       }

@@ -146,12 +146,6 @@ export function SubmissionProvider({ children, problemId }: SubmissionProviderPr
             });
           }
 
-          if (mappedStatus === "passed") {
-            toast.info("You will be redirected to /problems page", {
-              duration: 4000,
-            });
-          }
-
           if (mappedStatus === "failed") {
             toast.error("Some test cases failed. Try again!", {
               duration: 3000,
