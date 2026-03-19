@@ -20,7 +20,7 @@ export async function sendVerificationEmail({
   if (!resend) return { success: false, error: "Email sending disabled — RESEND_API_KEY not set" };
   try {
     const { data, error } = await resend.emails.send({
-      from: "ReqRes <onboarding@resend.dev>",
+      from: "ReqRes <onboarding@reqres.online>",
       to: email,
       subject: "Verify your email address",
       html: `
@@ -99,7 +99,7 @@ export async function sendPasswordResetEmail({
   if (!resend) return { success: false, error: "Email sending disabled — RESEND_API_KEY not set" };
   try {
     const { data, error } = await resend.emails.send({
-      from: "ReqRes <onboarding@resend.dev>",
+      from: "ReqRes <onboarding@reqres.online>",
       to: email,
       subject: "Reset your password",
       html: `

@@ -31,24 +31,72 @@ function parseMultipleOrigins(urlString?: string): string[] {
     .filter((origin): origin is string => Boolean(origin));
 }
 
-const trustedOrigins = Array.from(
-  new Set(
-    [
-      "http://localhost:3000",
-      ...parseMultipleOrigins(process.env.WEB_BASE_URL),
-      getOriginFromUrl(process.env.BETTER_AUTH_URL),
-    ].filter((origin): origin is string => Boolean(origin))
+function withWwwVariants(origins: string[]): string[] {
+  return Array.from(
+    new Set(
+      origins.flatMap((origin) => {
+        try {
+          const url = new URL(origin);
+          const host = url.hostname;
+
+          if (host === "localhost" || host.startsWith("localhost:")) {
+            return [origin];
+          }
+
+          if (host.startsWith("www.")) {
+            const withoutWww = `${url.protocol}//${host.slice(4)}${url.port ? `:${url.port}` : ""}`;
+            return [origin, withoutWww];
+          }
+
+          const withWww = `${url.protocol}//www.${host}${url.port ? `:${url.port}` : ""}`;
+          return [origin, withWww];
+        } catch {
+          return [origin];
+        }
+      })
+    )
+  );
+}
+
+const trustedOrigins = withWwwVariants(
+  Array.from(
+    new Set(
+      [
+        "http://localhost:3000",
+        ...parseMultipleOrigins(process.env.WEB_BASE_URL),
+        getOriginFromUrl(process.env.BETTER_AUTH_URL),
+      ].filter((origin): origin is string => Boolean(origin))
+    )
   )
 );
 
 const authBaseUrl = process.env.BETTER_AUTH_URL || "http://localhost:4000";
 const githubRedirectUrl = `${authBaseUrl}/api/auth/callback/github`;
 
-const redirectOrigins = Array.from(
-  new Set(["http://localhost:3000", ...parseMultipleOrigins(process.env.WEB_BASE_URL)])
+const redirectOrigins = withWwwVariants(
+  Array.from(new Set(["http://localhost:3000", ...parseMultipleOrigins(process.env.WEB_BASE_URL)]))
 );
 
 const authOrigin = getOriginFromUrl(process.env.BETTER_AUTH_URL);
+
+const cookieDomain =
+  authOrigin && process.env.NODE_ENV === "production"
+    ? (() => {
+        try {
+          const { hostname } = new URL(authOrigin);
+          const parts = hostname.split(".");
+
+          if (parts.length < 2) {
+            return hostname;
+          }
+
+          const topLevel = parts.slice(-2).join(".");
+          return `.${topLevel}`;
+        } catch {
+          return undefined;
+        }
+      })()
+    : undefined;
 
 const defaultWebOrigin =
   redirectOrigins.find((origin) => origin !== "http://localhost:3000" && origin !== authOrigin) ||
@@ -158,7 +206,8 @@ export const auth = betterAuth({
   },
   advanced: {
     crossSubDomainCookies: {
-      enabled: false,
+      enabled: Boolean(cookieDomain),
+      domain: cookieDomain,
     },
     cookiePrefix: "reqres",
     useSecureCookies: isSecureAuthContext,
