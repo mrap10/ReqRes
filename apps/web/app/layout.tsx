@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import ThemeProvider from "@/lib/providers/ThemeProvider";
 import AuthProvider from "@/lib/providers/AuthProvider";
 import UserSubmissionsProvider from "@/lib/providers/UserSubmissionsProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -49,6 +50,7 @@ export default function RootLayout({
             <ThemeProvider>
               {children}
               <Toaster position="bottom-right" theme="dark" richColors />
+              <Analytics />
             </ThemeProvider>
           </UserSubmissionsProvider>
         </AuthProvider>

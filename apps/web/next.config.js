@@ -53,6 +53,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://cdn.jsdelivr.net",
+              "media-src 'self' https://res.cloudinary.com",
               "connect-src 'self' https://cdn.jsdelivr.net " +
                 (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"),
               "worker-src 'self' blob:",

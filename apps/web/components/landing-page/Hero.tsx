@@ -5,6 +5,7 @@ import TerminalCode from "./TerminalCode";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import VideoDemo from "./VideoDemo";
 
 const testCases = [
   { name: "GET /orders/42 > returns 200", status: "PASSED" },
@@ -15,6 +16,7 @@ const testCases = [
 export default function Hero() {
   const [typingComplete, setTypingComplete] = useState(false);
   const [visibleTests, setVisibleTests] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!typingComplete || visibleTests >= testCases.length) {
@@ -66,12 +68,12 @@ export default function Hero() {
             Start Solving{" "}
             <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
           </Link>
-          <Link
-            href={"problems"}
+          <button
+            onClick={() => setPreviewOpen(true)}
             className="inline-flex group items-center gap-2 rounded-xl border border-white/15 px-5 py-2.5 text-sm text-white/85 transition hover:border-cyan-300/40 hover:text-white cursor-pointer"
           >
             Watch Demo <Play className="size-4 group-hover:animate-spin-once duration-1000" />
-          </Link>
+          </button>
         </div>
         <div className="flex items-center gap-5 text-xs text-white/55">
           <span>14+ practical challenges</span>
@@ -149,6 +151,8 @@ export default function Hero() {
           </div>
         </motion.div>
       </motion.div>
+
+      <VideoDemo open={previewOpen} onClose={() => setPreviewOpen(false)} />
     </section>
   );
 }
