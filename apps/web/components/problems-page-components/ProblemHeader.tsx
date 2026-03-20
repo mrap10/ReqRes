@@ -22,7 +22,10 @@ export default function ProblemHeader() {
           <h1 className="text-sm font-bold text-white flex items-center gap-3">
             <Link href="/" className="cursor-pointer">
               <h1 className="text-2xl font-bold text-white tracking-tight">
-                Req<span className="text-indigo-400">Res</span>
+                Req
+                <span className="bg-linear-to-r from-indigo-300 via-indigo-200 to-cyan-200 bg-clip-text text-transparent">
+                  Res
+                </span>
               </h1>
             </Link>
           </h1>

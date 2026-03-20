@@ -53,12 +53,14 @@ export default function VerifyEmailContent() {
           href={"/"}
           className="absolute top-8 left-8 lg:left-12 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
         >
-          <div className="text-xl font-bold text-white tracking-tight">
-            Req
-            <span className="bg-linear-to-r from-indigo-300 via-indigo-200 to-cyan-200 bg-clip-text text-transparent">
-              Res
-            </span>
-          </div>
+          <Link href="/" className="cursor-pointer">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
+              Req
+              <span className="bg-linear-to-r from-indigo-300 via-indigo-200 to-cyan-200 bg-clip-text text-transparent">
+                Res
+              </span>
+            </h1>
+          </Link>
         </Link>
 
         <div className="w-full max-w-md">

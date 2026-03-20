@@ -13,6 +13,7 @@ const XP_VALUES = {
 } as const;
 
 const FIRST_SUBMISSION_BONUS = 25;
+const RUN_MODE_REQUIRED_PASSED_TESTS = 2;
 const MAX_OUTPUT_LENGTH = 12_000;
 const MAX_LOG_MESSAGE_LENGTH = 1_000;
 const TERMINAL_SUBMISSION_STATUSES = new Set<SubmissionStatus>([
@@ -111,6 +112,32 @@ function mapRunnerStatusToSubmissionStatus(status: string): SubmissionStatus {
   }
 }
 
+function resolveSubmissionStatus(params: {
+  mode: "run" | "submit";
+  runnerStatus: SubmissionStatus;
+  results: Array<{ passed: boolean }>;
+}): SubmissionStatus {
+  const { mode, runnerStatus, results } = params;
+
+  if (mode !== "run") {
+    return runnerStatus;
+  }
+
+  const isAssertionOutcome =
+    runnerStatus === SubmissionStatus.PASSED || runnerStatus === SubmissionStatus.WRONG_ANSWER;
+
+  if (!isAssertionOutcome) {
+    return runnerStatus;
+  }
+
+  const runModeResults = results.slice(0, RUN_MODE_REQUIRED_PASSED_TESTS);
+  const firstTestsPassed =
+    runModeResults.length === RUN_MODE_REQUIRED_PASSED_TESTS &&
+    runModeResults.every((result) => result.passed);
+
+  return firstTestsPassed ? SubmissionStatus.PASSED : SubmissionStatus.WRONG_ANSWER;
+}
+
 router.post("/result", async (req, res) => {
   const secretCheck = verifyRunnerSecret(req);
   if (!secretCheck.ok) {
@@ -138,8 +165,13 @@ router.post("/result", async (req, res) => {
     "Runner callback received"
   );
 
-  const prismaStatus = mapRunnerStatusToSubmissionStatus(status);
+  const runnerStatus = mapRunnerStatusToSubmissionStatus(status);
   const isRunMode = mode === "run";
+  const prismaStatus = resolveSubmissionStatus({
+    mode,
+    runnerStatus,
+    results,
+  });
   const safeStdout = truncateText(stdout, MAX_OUTPUT_LENGTH);
   const safeStderr = truncateText(stderr, MAX_OUTPUT_LENGTH);
 
@@ -189,15 +221,16 @@ router.post("/result", async (req, res) => {
         if (!hasRewardedPassedSubmission) {
           const baseXP = XP_VALUES[problem.difficulty as keyof typeof XP_VALUES] || 0;
 
-          const isFirstSubmission = await tx.submission.count({
+          const priorRewardedSubmissions = await tx.submission.count({
             where: {
               userId,
               problemId,
               id: { not: submissionId },
+              OR: [{ score: { gt: 0 } }, { isFirstTryBonus: true }],
             },
           });
 
-          if (isFirstSubmission === 0) {
+          if (priorRewardedSubmissions === 0) {
             isFirstTryBonus = true;
             xpToAward = baseXP + FIRST_SUBMISSION_BONUS;
           } else {
