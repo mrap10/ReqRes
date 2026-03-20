@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import AuthLeftSide from "@/components/AuthLeftSide";
+import { useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 
 export default function VerifyEmailContent() {
@@ -13,27 +14,33 @@ export default function VerifyEmailContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => {
     const error = searchParams.get("error");
+
+    if (isPending) return;
 
     if (error === "invalid_token") {
       setStatus("error");
       setErrorMessage("The verification link is invalid or has expired.");
       toast.error("Verification failed. The link is invalid or expired.");
+    } else if (!session?.user?.emailVerified) {
+      setStatus("error");
+      setErrorMessage("Invalid verification session. Please use the latest verification email.");
+      toast.error("Verification session not found. Please use the email link.");
     } else {
       setStatus("success");
       toast.success("Email verified successfully! 🎉");
     }
-  }, [searchParams]);
+  }, [searchParams, session, isPending]);
 
   useEffect(() => {
     if (status === "success" && countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else if (status === "success" && countdown === 0) {
-      toast.info("Redirecting to problems page...");
-      router.push("/problems");
+      router.push("/signin");
     }
   }, [status, countdown, router]);
 
@@ -74,25 +81,26 @@ export default function VerifyEmailContent() {
               </div>
               <h2 className="text-2xl font-bold text-white">Email Verified!</h2>
               <p className="text-zinc-400 text-sm">
-                Your email has been successfully verified. You can now access all features.
+                Your email has been successfully verified. Login with your credentials to access all
+                features.
               </p>
               <div className="pt-4">
                 <p className="text-zinc-500 text-sm">
-                  Redirecting in <span className="text-white font-bold">{countdown}</span>{" "}
-                  seconds...
+                  Redirecting you to login in{" "}
+                  <span className="text-white font-bold">{countdown}</span> seconds...
                 </p>
                 <div className="w-full bg-zinc-800 rounded-full h-2 mt-3">
                   <div
-                    className="bg-cyan-500 h-2 rounded-full transition-all duration-1000"
+                    className="bg-cyan-100 h-2 rounded-full transition-all duration-1000"
                     style={{ width: `${((5 - countdown) / 5) * 100}%` }}
                   />
                 </div>
               </div>
               <Link
-                href="/problems"
+                href="/signin"
                 className="inline-block mt-4 text-sm text-white/85 hover:text-white transition-colors"
               >
-                Go to Problems now →
+                Go to Sign In now →
               </Link>
             </div>
           )}
