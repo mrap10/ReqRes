@@ -6,6 +6,14 @@ Solve real-world **Express.js challenges** ~ build APIs, write middleware, imple
 
 Instead of reversing linked lists, you'll build JWT authentication middleware, implement CRUD APIs with error handling, configure CORS, and more. Your code runs in isolated Docker containers, tested with Jest + Supertest, scored in real-time.
 
+## Demo Video
+
+Click on the below thumbnail to watch the demo video of ReqRes.
+
+[![Watch Demo](https://res.cloudinary.com/dbglon4f7/video/upload/so_3.6/v1774013848/ReqRes_demo_g9yhnt.jpg)](https://res.cloudinary.com/dbglon4f7/video/upload/v1774013848/ReqRes_demo_g9yhnt.mp4)
+
+> The live deployment is currently paused due to server cost. Above demo video showcases key features of ReqRes. You can clone and try it locally, and post your queries in the 'Discussions' section. 
+
 ## Features
 
 - **Curated challenges** across 4 tracks: Routing, Middleware, Security, Database with difficulty levels from Easy to Hard
